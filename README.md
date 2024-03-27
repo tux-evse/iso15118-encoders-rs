@@ -8,7 +8,7 @@ Dependencies: https://github.com/tux-evse/iso15118-encoders
 
 Install C dependencies:
 ```
-dnf install libgnutls-devel
+dnf/apt/zypper install gcc cmake make libgnutls-devel
 git clone https://github.com/tux-evse/iso15118-encoders
 mkdir ./iso15118-encoders/build && cd ./iso15118-encoders/build
 cmake .. && make install
@@ -16,6 +16,7 @@ cmake .. && make install
 
 Build without libafb microservice framework
 ```
+dnf/apt/zypper install rust cargo clang
 cargo build --features=afbmock
 ```
 
@@ -30,6 +31,7 @@ cargo build --features=afbv4
 ## Testing
 
 ```
+export LD_LIBRARY_PATH=/usr/local/lib64 # or where ever you install libiso15118.so dependency
 cargo test --features=afbmock --package iso15118 --test test-v2g
 cargo test --features=afbv4 --package iso15118 --test test-v2g
 ```
