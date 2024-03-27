@@ -1,0 +1,469 @@
+/*
+ * Copyright (C) 2015-2022 IoT.bzh Company
+ * Author: Fulup Ar Foll <fulup@iot.bzh>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+use crate::prelude::*;
+use std::mem;
+use std::pin::Pin;
+
+pub const SDP_V2G_HEADER_LEN: usize = cglue::SDP_V2G_HEADER_LEN as usize;
+pub const V2GTP20_SAP_PAYLOAD_ID: u16 = cglue::V2GTP20_SAP_PAYLOAD_ID as u16;
+
+pub(self) mod cglue {
+    #![allow(dead_code)]
+    #![allow(non_upper_case_globals)]
+    #![allow(non_camel_case_types)]
+    #![allow(non_snake_case)]
+    // force reuse of C bitstream from exi-encoder
+    use crate::prelude::exi_bitstream_t;
+    include!("_v2g-capi.rs");
+}
+
+#[derive(PartialEq, Clone, Copy, Debug)]
+#[repr(u8)]
+pub enum SdpSecurityModel {
+    TLS = cglue::SDP_V2G_SECURITY_TLS,
+    NONE = cglue::SDP_V2G_SECURITY_NONE,
+}
+
+#[derive(PartialEq, Clone, Copy, Debug)]
+#[repr(u8)]
+pub enum SdpTransportProtocol {
+    TCP = cglue::SDP_V2G_TRANSPORT_TCP,
+    UDP = cglue::SDP_V2G_TRANSPORT_UDP,
+}
+
+pub enum SdpMsgType {
+    Request,
+    Response,
+}
+
+// payload buffer data type
+pub type SdpResponseBuffer =
+    [u8; (cglue::SDP_V2G_RESPONSE_LEN + cglue::SDP_V2G_HEADER_LEN) as usize];
+pub type SdpRequestBuffer = [u8; (cglue::SDP_V2G_REQUEST_LEN + cglue::SDP_V2G_HEADER_LEN) as usize];
+
+pub struct SdpRequest {
+    payload: cglue::sdp_request,
+}
+impl SdpRequest {
+
+    pub fn new(
+        transport: SdpTransportProtocol,
+        security: SdpSecurityModel,
+    ) -> Self {
+        Self {
+            payload: cglue::sdp_request {
+                header: cglue::sdp_msg_header {
+                    version_std: cglue::SDP_V2G_VERSION,
+                    version_not: cglue::SDP_V2G_VERSION_NOT,
+                    msg_len: cglue::SDP_V2G_REQUEST_LEN,
+                    msg_type: cglue::SDP_V2G_REQUEST_TYPE,
+                },
+                security: security as u8,
+                transport: transport as u8,
+            },
+        }
+    }
+
+    pub fn decode(buffer: &SdpRequestBuffer) -> Result<Self, AfbError> {
+        let mut request = mem::MaybeUninit::<cglue::sdp_request>::uninit();
+        let status = unsafe {
+            cglue::sdp_v2g_decode_req(
+                buffer.as_ptr() as *mut u8,
+                buffer.len(),
+                request.as_mut_ptr(),
+            )
+        };
+        if status != 0 {
+            return afb_error!("sdp-response-encode", "fail to decode response");
+        }
+        let response = SdpRequest {
+            payload: unsafe { request.assume_init() },
+        };
+        Ok(response)
+    }
+
+      pub fn encode(&self) -> Result<SdpRequestBuffer, AfbError> {
+        let mut buffer = mem::MaybeUninit::<SdpRequestBuffer>::uninit();
+        let status = unsafe {
+            cglue::sdp_v2g_encode_req(
+                &self.payload,
+                buffer.as_mut_ptr() as *mut u8,
+                mem::size_of::<SdpResponseBuffer>(),
+            )
+        };
+        if status != 0 {
+            return afb_error!("sdp-request-encode", "fail to encode request");
+        }
+        let buffer = unsafe { buffer.assume_init() };
+        Ok(buffer)
+    }
+
+    pub fn check_header(&self) -> Result<&Self, AfbError> {
+        let header = self.payload.header;
+        if header.version_std != cglue::SDP_V2G_VERSION
+            || header.version_not != cglue::SDP_V2G_VERSION_NOT
+        {
+            return afb_error!(
+                "sdp-request-header",
+                "invalid SDP/version expected:[{:#02x},{:#02x}] received:[{:#02x},{:#02x}]",
+                header.version_std,
+                header.version_not,
+                cglue::SDP_V2G_VERSION,
+                cglue::SDP_V2G_VERSION_NOT
+            );
+        }
+
+        if header.msg_type != cglue::SDP_V2G_REQUEST_TYPE {
+            return afb_error!(
+                "sdp-request-header",
+                "invalid SDP/type expected:{:#04x} received:{:#04x}",
+                cglue::SDP_V2G_REQUEST_TYPE,
+                header.msg_type
+            );
+        }
+
+        //let rqt_len = unsafe { cglue::ntohl(sdp_len) };
+        if header.msg_len != cglue::SDP_V2G_REQUEST_LEN {
+            return afb_error!(
+                "sdp-request-header",
+                "invalid Sdp/SDP lenght expected:{} received:{}",
+                cglue::SDP_V2G_REQUEST_LEN,
+                header.msg_type
+            );
+        }
+        Ok(self)
+    }
+
+    pub fn get_transport(&self) -> SdpTransportProtocol {
+        let transport = unsafe { mem::transmute(self.payload.transport) };
+        transport
+    }
+
+    pub fn get_security(&self) -> SdpSecurityModel {
+        let transport = unsafe { mem::transmute(self.payload.security) };
+        transport
+    }
+}
+
+pub struct SdpResponse {
+    payload: cglue::sdp_response,
+}
+
+impl SdpResponse {
+    pub fn new(
+        addr6: cglue::sdp_in6_addr,
+        port: u16,
+        transport: SdpTransportProtocol,
+        security: SdpSecurityModel,
+    ) -> Self {
+        Self {
+            payload: cglue::sdp_response {
+                header: cglue::sdp_msg_header {
+                    version_std: cglue::SDP_V2G_VERSION,
+                    version_not: cglue::SDP_V2G_VERSION_NOT,
+                    msg_len: cglue::SDP_V2G_RESPONSE_LEN,
+                    msg_type: cglue::SDP_V2G_RESPONSE_TYPE,
+                },
+                addr: addr6,
+                port,
+                security: security as u8,
+                transport: transport as u8,
+            },
+        }
+    }
+
+    pub fn encode(&self) -> Result<SdpResponseBuffer, AfbError> {
+        let mut buffer = mem::MaybeUninit::<SdpResponseBuffer>::uninit();
+        let status = unsafe {
+            cglue::sdp_v2g_encode_res(
+                &self.payload,
+                buffer.as_mut_ptr() as *mut u8,
+                mem::size_of::<SdpResponseBuffer>(),
+            )
+        };
+        if status != 0 {
+            return afb_error!("sdp-response-encode", "fail to encode response");
+        }
+        let buffer = unsafe { buffer.assume_init() };
+        Ok(buffer)
+    }
+
+    pub fn decode (buffer: &SdpResponseBuffer) -> Result<Self, AfbError> {
+        let mut response = mem::MaybeUninit::<cglue::sdp_response>::uninit();
+        let status = unsafe {
+            cglue::sdp_v2g_decode_res(
+                buffer.as_ptr() as *mut u8,
+                buffer.len(),
+                response.as_mut_ptr(),
+            )
+        };
+        if status != 0 {
+            return afb_error!("sdp-response-encode", "fail to decode response");
+        }
+        let response = SdpResponse {
+            payload: unsafe { response.assume_init() },
+        };
+        Ok(response)
+    }
+
+    pub fn check_header(&self) -> Result<&Self, AfbError> {
+        let header = self.payload.header;
+        if header.version_std != cglue::SDP_V2G_VERSION
+            || header.version_not != cglue::SDP_V2G_VERSION_NOT
+        {
+            return afb_error!(
+                "sdp-response-header",
+                "invalid Sdp/SDP version expected:[{:#02x},{:#02x}] received:[{:#02x},{:#02x}]",
+                header.version_std,
+                header.version_not,
+                cglue::SDP_V2G_VERSION,
+                cglue::SDP_V2G_VERSION_NOT
+            );
+        }
+
+        if header.msg_type != cglue::SDP_V2G_RESPONSE_TYPE {
+            return afb_error!(
+                "sdp-response-header",
+                "invalid Sdp/SDP type expected:{:#04x} received:{:#04x}",
+                cglue::SDP_V2G_RESPONSE_TYPE,
+                header.msg_type
+            );
+        }
+
+        //let rqt_len = unsafe { cglue::ntohl(sdp_len) };
+        if header.msg_len != cglue::SDP_V2G_RESPONSE_LEN {
+            return afb_error!(
+                "sdp-response-header",
+                "invalid Sdp/SDP lenght expected:{} received:{}",
+                cglue::SDP_V2G_RESPONSE_LEN,
+                header.msg_type
+            );
+        }
+        Ok(self)
+    }
+
+    pub fn get_transport(&self) -> SdpTransportProtocol {
+        let transport = unsafe { mem::transmute(self.payload.transport) };
+        transport
+    }
+
+    pub fn get_security(&self) -> SdpSecurityModel {
+        let transport = unsafe { mem::transmute(self.payload.security) };
+        transport
+    }
+
+    pub fn get_port(&self) -> u16 {
+        self.payload.port
+    }
+
+    pub fn get_addr6(&self) -> cglue::sdp_in6_addr{
+        self.payload.addr
+    }
+
+}
+#[derive(Debug)]
+#[allow(non_camel_case_types)]
+#[repr(u16)]
+pub enum V2gTypeId {
+    EXI_V2G_MSG = cglue::V2GTP20_SAP_PAYLOAD_ID as u16,
+}
+
+// check header and return expected message size (payload+header_size)
+pub fn v2gtp_header_check(type_id: V2gTypeId, buffer: Pin<&[u8]>) -> Result<u32, AfbError> {
+    let mut payload_size: u32 = 0;
+    let status = unsafe {
+        cglue::V2GTP20_ReadHeader(
+            buffer.as_ptr(),
+            &mut payload_size as *mut u32,
+            type_id as u16,
+        )
+    };
+    if status != 0 {
+        return afb_error!("v2g-header-check", "invalid payload");
+    }
+
+    Ok(payload_size + cglue::V2GTP_HEADER_LENGTH)
+}
+
+#[inline]
+// export cglue function to other create modules
+pub(crate) fn v2gtp20_write_header(
+    stream_data: *mut u8,
+    stream_payload_length: u32,
+    v2gtp20_payload_id: u16,
+) {
+    unsafe {cglue::V2GTP20_WriteHeader(stream_data, stream_payload_length, v2gtp20_payload_id)}
+}
+
+// make following type public to crate
+pub struct SupportedAppProtocolExi {
+    raw: cglue::appHand_exiDocument,
+}
+
+#[derive(Debug, Clone)]
+pub struct SupportedAppProtocolReq {
+    pub name_space: String,
+    pub version_number_major: u32,
+    pub version_number_minor: u32,
+    pub schema_id: u8,
+    pub priority: u8,
+}
+
+#[derive(Debug, Clone)]
+#[repr(u32)]
+pub enum SupportedAppResponseCode {
+    Success = cglue::appHand_responseCodeType_appHand_responseCodeType_OK_SuccessfulNegotiation,
+    SuccessWithMinorDeviation = cglue::appHand_responseCodeType_appHand_responseCodeType_OK_SuccessfulNegotiationWithMinorDeviation,
+    Failed = cglue::appHand_responseCodeType_appHand_responseCodeType_Failed_NoNegotiation,
+}
+
+#[derive(Debug, Clone)]
+pub struct SupportedAppProtocolRes {
+    pub schema_id: u8,
+    pub response_code: SupportedAppResponseCode,
+}
+
+impl SupportedAppProtocolExi {
+    #[track_caller]
+    pub fn decode_from_stream(stream_lock: &RawStream) -> Result<SupportedAppProtocolExi, AfbError> {
+        let exi_raw = unsafe {
+            let mut exi_raw = mem::MaybeUninit::<cglue::appHand_exiDocument>::uninit();
+            let status = cglue::decode_appHand_exiDocument(stream_lock.stream, exi_raw.as_mut_ptr());
+            let mut exi_raw = exi_raw.assume_init();
+            match status {
+                0 => {
+                    exi_raw.set_supportedAppProtocolReq_isUsed(1);
+                    exi_raw.set_supportedAppProtocolRes_isUsed(0);
+                }
+                1 => {
+                    exi_raw.set_supportedAppProtocolReq_isUsed(0);
+                    exi_raw.set_supportedAppProtocolRes_isUsed(1);
+                }
+                _ => return afb_error!("exi_decode_doc", "unsupported AppProtocolRes:{}", status),
+            }
+            exi_raw
+        };
+        Ok(SupportedAppProtocolExi { raw: exi_raw })
+    }
+    #[track_caller]
+    pub fn encode_to_stream(
+        stream_lock: &mut RawStream,
+        selected_protocol: &Option<SupportedAppProtocolRes>,
+    ) -> Result<(), AfbError> {
+        // lock stream mutex
+
+        let protocol = match selected_protocol {
+            Some(value) => value,
+            None => &SupportedAppProtocolRes {
+                schema_id: 0,
+                response_code: SupportedAppResponseCode::Failed,
+            },
+        };
+
+        // reserve space for v2g header
+        match unsafe { stream_lock.stream.as_mut() } {
+            Some(data) => {
+                data.byte_pos = cglue::SDP_V2G_HEADER_LEN as usize;
+            }
+            None => {
+                return afb_error!(
+                    "encode_stream-header",
+                    "fail to get stream_lock.stream (invalid stream)"
+                )
+            }
+        };
+
+        let mut exi_doc = unsafe {
+            // thanks to RUST this syntax is really simple !!!
+            let mut exi_raw = mem::zeroed::<cglue::appHand_exiDocument>();
+            exi_raw.set_supportedAppProtocolRes_isUsed(1);
+            exi_raw.__bindgen_anon_1.supportedAppProtocolRes.SchemaID = protocol.schema_id;
+            exi_raw
+                .__bindgen_anon_1
+                .supportedAppProtocolRes
+                .set_SchemaID_isUsed(1);
+            exi_raw
+                .__bindgen_anon_1
+                .supportedAppProtocolRes
+                .ResponseCode = protocol.response_code.clone() as u32;
+            exi_raw
+        };
+        let status = unsafe { cglue::encode_appHand_exiDocument(stream_lock.stream, &mut exi_doc) };
+        if status < 0 {
+            return afb_error!(
+                "exi-app-proto",
+                "fail to encode SupportedAppProtocolReq to exi"
+            );
+        }
+
+        // retrieve document encoded size from stream
+        let index = stream_lock.get_length() as u32;
+
+        // write header after document to push effective size
+        unsafe {
+            cglue::V2GTP20_WriteHeader(
+                stream_lock.buffer.as_mut_ptr(),
+                index - cglue::SDP_V2G_HEADER_LEN,
+                cglue::V2GTP20_SAP_PAYLOAD_ID as u16,
+            );
+        }
+
+        Ok(())
+    }
+    #[track_caller]
+    pub fn get_protocols(&self) -> Result<Vec<SupportedAppProtocolReq>, AfbError> {
+        let mut response: Vec<SupportedAppProtocolReq> = Vec::new();
+
+        let (protocols, count) = unsafe {
+            let request = if self.raw.supportedAppProtocolReq_isUsed() == 1 {
+                self.raw.__bindgen_anon_1.supportedAppProtocolReq
+            } else {
+                return afb_error!("exi-app-proto", "fail, exi is not a request type");
+            };
+
+            let data = request.AppProtocol;
+            (data.array, data.arrayLen as usize)
+        };
+
+        for idx in 0..count {
+            let proto = protocols[idx];
+            let slice = &proto.ProtocolNamespace.characters
+                [0..proto.ProtocolNamespace.charactersLen as usize];
+            let name_space = match std::str::from_utf8(unsafe {
+                &*(slice as *const [i8] as *const [u8])
+            }) {
+                Ok(value) => value,
+                Err(_) => return afb_error!("exi-app-proto", "fail to convert namespace to utf8"),
+            };
+
+            response.push(SupportedAppProtocolReq {
+                name_space: name_space.to_string(),
+                version_number_major: proto.VersionNumberMajor,
+                version_number_minor: proto.VersionNumberMinor,
+                schema_id: proto.SchemaID,
+                priority: proto.Priority,
+            })
+        }
+
+        // sort by priority 1 highest priority, 20 lowest
+        response.sort_by(|a, b| a.priority.cmp(&b.priority));
+
+        Ok(response)
+    }
+}

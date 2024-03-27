@@ -1,0 +1,36 @@
+[package]
+name = "iso15118"
+version = "0.0.1"
+edition = "2021"
+authors = ["Fulup Le Foll <fulup@iot.bzh>"]
+publish = false
+build = "capi/build.rs"
+
+[features]
+default = []
+afbmock=[]
+
+
+[dependencies]
+afbv4 = {git= "https://github.com/redpesk-common/afb-librust", branch="master", optional = true}
+serde = { version = "1.0", features = ["derive"] }
+serde_json={ version= "1.0"}
+
+[build-dependencies]
+bindgen    = ">=0.6"
+system-deps = "2.0"
+cc = "1"
+
+[package.metadata.system-deps]
+libiso15118= "1.0"
+
+[lib]
+name = "iso15118"
+crate-type = ["lib"]
+path = "src/lib-iso.rs"
+
+[[test]]
+name= "test-v2g"
+path = "test/lib-test.rs"
+iso15118= {path ="../iso-15118"}
+
