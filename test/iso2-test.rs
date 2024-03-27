@@ -1,5 +1,4 @@
 use crate::mock_exi::*;
-use afbv4::prelude::*;
 use iso15118::prelude::iso2::*;
 use iso15118::prelude::*;
 use std::sync::MutexGuard;
@@ -28,11 +27,17 @@ pub fn decode_from_stream(stream: &MutexGuard<RawStream>) -> Result<Iso2Payload,
     Ok(message)
 }
 
-# [test]
+#[test]
 // cargo test --package iso15118 --test test-v2g --  test_iso2::enum_rename --exact --nocapture
 fn enum_rename() {
-    println!("MessageTagId:SessionSetupReq= {}", MessageTagId::SessionSetupReq.to_json().unwrap());
-    println!("MessageTagId:SessionSetupReq= {:?}", MessageTagId::from_json("\"session_setup_req\"").unwrap());
+    println!(
+        "MessageTagId:SessionSetupReq= {}",
+        MessageTagId::SessionSetupReq.to_json().unwrap()
+    );
+    println!(
+        "MessageTagId:SessionSetupReq= {:?}",
+        MessageTagId::from_json("\"session_setup_req\"").unwrap()
+    );
 }
 #[test]
 fn session_setup_request() -> Result<(), AfbError> {
@@ -214,7 +219,8 @@ fn service_discovery_response() -> Result<(), AfbError> {
 #[test]
 fn service_detail_request() -> Result<(), AfbError> {
     let expected_response = [
-        0x01, 0xfe, 0x80, 0x01, 0x00, 0x00, 0x00, 0x07, 0x80, 0x98, 0x00, 0x11, 0x90, 0xe0, 0x00,
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x10, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x11, 0x93, 0x48, 0x24, 0x0,
     ];
 
     let id_tst = 1234;

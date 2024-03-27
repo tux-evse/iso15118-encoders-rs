@@ -51,6 +51,12 @@ impl fmt::Display for AfbError {
     }
 }
 
+impl fmt::Debug for AfbError {
+    fn fmt(&self, format: &mut fmt::Formatter) -> fmt::Result {
+        write!(format, "{}:{}\n{:?}", self.uid, self.info, self.dbg_info)
+    }
+}
+
 #[derive(Debug)]
 pub enum AfbLogLevel {
     Error,

@@ -30,7 +30,8 @@ cargo build --features=afbv4
 ## Testing
 
 ```
-cargo test --package iso15118 --test test-v2g
+cargo test --features=afbmock --package iso15118 --test test-v2g
+cargo test --features=afbv4 --package iso15118 --test test-v2g
 ```
 
 ## Encoding/Decoding Api
