@@ -80,6 +80,30 @@ impl MessageTagId {
             Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
         }
     }
+
+    pub fn match_res_id(&self) -> Self{
+        let response = match self {
+            MessageTagId::SessionSetupReq => MessageTagId::SessionSetupRes,
+            MessageTagId::ServiceDiscoveryReq => MessageTagId::ServiceDiscoveryRes,
+            MessageTagId::ServiceDetailReq => MessageTagId::ServiceDetailRes,
+            MessageTagId::AuthorizationReq => MessageTagId::AuthorizationRes,
+            MessageTagId::CableCheckReq => MessageTagId::CableCheckRes,
+            MessageTagId::CertificateInstallReq => MessageTagId::CertificateInstallRes,
+            MessageTagId::CertificateUpdateReq => MessageTagId::CertificateUpdateRes,
+            MessageTagId::ParamDiscoveryReq => MessageTagId::ParamDiscoveryRes,
+            MessageTagId::ChargingStatusReq => MessageTagId::ChargingStatusRes,
+            MessageTagId::CurrentDemandReq => MessageTagId::CurrentDemandRes,
+            MessageTagId::MeteringReceiptReq => MessageTagId::MeteringReceiptRes,
+            MessageTagId::PaymentDetailsReq => MessageTagId::PaymentDetailsRes,
+            MessageTagId::PaymentSelectionReq => MessageTagId::PaymentSelectionRes,
+            MessageTagId::PowerDeliveryReq => MessageTagId::PowerDeliveryRes,
+            MessageTagId::PreChargeReq => MessageTagId::PreChargeRes,
+            MessageTagId::SessionStopReq => MessageTagId::SessionStopRes,
+            MessageTagId::WeldingDetectionReq => MessageTagId::WeldingDetectionRes,
+            _ => MessageTagId::Unsupported,
+        };
+        response
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
