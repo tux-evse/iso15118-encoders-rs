@@ -74,7 +74,7 @@ fn sdp_decode() {
 #[test]
 fn sdp_encode() {
     // sdp reponse data bytes sample for ip:[0xfe80::1:2:3:4:5:6:7] port:0xaabb
-    let expected: SdpResponseBuffer = [
+    let expected_response: SdpResponseBuffer = [
         0x1, 0xfe, 0x90, 0x1, 0x0, 0x0, 0x0, 0x14, 0xfe, 0x80, 0x0, 0x1, 0x0, 0x2, 0x0, 0x3, 0x0,
         0x4, 0x0, 0x5, 0x0, 0x6, 0x0, 0x7, 0xaa, 0xbb, 0x0, 0x0,
     ];
@@ -82,13 +82,22 @@ fn sdp_encode() {
     let fake_ipv6 = net::Ipv6Addr::new(0xfe80, 1, 2, 3, 4, 5, 6, 7);
     let port = 0xaabb;
 
-    let response = SdpResponse::new(
+    let payload = SdpResponse::new(
         fake_ipv6.octets(),
         port,
         SdpTransportProtocol::TCP,
         SdpSecurityModel::TLS,
     );
-    let buffer = response.encode().expect("valid ipv6");
-    println!("encoded buffer= [{}]", dump_buffer(&buffer));
-    assert!(buffer == expected)
+
+    // encode message to stream_exi an compare with expected binary result
+    let buffer= payload.encode().unwrap();
+    assert!(expected_response == buffer);
+
+    // simulate network input and decode received message
+    let response= SdpResponse::decode(&buffer).unwrap();
+    assert!(response.get_addr6() == fake_ipv6.octets() );
+    assert!(response.get_transport() == SdpTransportProtocol::TCP);
+    assert!(response.get_security() == SdpSecurityModel::TLS);
+    assert!(response.get_port() == port);
 }
+
