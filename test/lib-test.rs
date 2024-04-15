@@ -25,7 +25,6 @@
 )]
 
 // cargo test --package iso15118 --test test-v2g
-
 #[cfg(not(afbv4))]
 #[cfg(not(feature = "afbmock"))]
 extern crate afbv4;

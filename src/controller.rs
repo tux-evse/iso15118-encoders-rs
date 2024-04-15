@@ -28,12 +28,12 @@ pub struct ControlerState {
     evccid: iso2::SessionSetupRequest,
 }
 
-pub struct IsoControler {
+pub struct IsoController {
     pub config: ControlerConfig,
     pub data_set: Mutex<ControlerState>,
 }
 
-impl IsoControler {
+impl IsoController {
     pub fn new() -> Result<Self, AfbError> {
         let state = Mutex::new(ControlerState {
             status: 0,
@@ -41,7 +41,7 @@ impl IsoControler {
             session_id: SessionId::null(),
             evccid: iso2::SessionSetupRequest::empty(),
         });
-        let controler = IsoControler {
+        let controler = IsoController {
             data_set: state,
             config: ControlerConfig {},
         };
