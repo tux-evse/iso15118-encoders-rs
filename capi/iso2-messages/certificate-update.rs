@@ -17,6 +17,7 @@
  */
 
 use super::*;
+use std::mem;
 
 pub struct CertificateUpdateRequest {
     payload: cglue::iso2_CertificateUpdateReqType,

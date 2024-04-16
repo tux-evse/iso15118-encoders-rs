@@ -17,6 +17,7 @@
  */
 
 use super::*;
+use std::mem;
 
 #[derive(Clone, Debug)]
 pub struct CertificateData {

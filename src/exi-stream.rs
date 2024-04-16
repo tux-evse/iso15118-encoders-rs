@@ -139,7 +139,7 @@ impl ExiStream {
         chunk: ExiDump,
     ) -> Result<String, AfbError> {
         let len = lock.get_length();
-        if len < SDP_V2G_HEADER_LEN as usize {
+        if len < v2g::SDP_V2G_HEADER_LEN as usize {
             return afb_error!(
                 "stream-buffer-dump",
                 "stream size less that v2gheader len:{}",
@@ -148,8 +148,8 @@ impl ExiStream {
         }
 
         let (start, stop) = match chunk {
-            ExiDump::V2gHeader => (0, SDP_V2G_HEADER_LEN),
-            ExiDump::IsoPayload => (SDP_V2G_HEADER_LEN, len),
+            ExiDump::V2gHeader => (0, v2g::SDP_V2G_HEADER_LEN),
+            ExiDump::IsoPayload => (v2g::SDP_V2G_HEADER_LEN, len),
             ExiDump::Everything => (0, len),
         };
         let buffer = lock.get_buffer();
@@ -173,12 +173,13 @@ impl ExiStream {
         lock.reset()
     }
 
-    // remove header from data buffer stream to match exec decoder
+    // (decode only) remove header from data buffer stream to match exi decoder
     pub fn finalize(&self, lock: &MutexGuard<RawStream>, doc_size: u32) -> Result<(), AfbError> {
         match unsafe { lock.stream.as_mut() } {
             Some(data) => {
                 data.data_size = doc_size as usize; // (cglue::SDP_V2G_HEADER_LEN+doc_size) as usize;
-                data.byte_pos = SDP_V2G_HEADER_LEN; // cglue::SDP_V2G_HEADER_LEN as usize
+                data.byte_pos= v2g::SDP_V2G_HEADER_LEN as usize; // SDP_V2G_HEADER_LEN as usize
+                data.bit_count=0;
             }
             None => return afb_error!("exi-stream-shift", "fail to shift header (invalid stream)"),
         };
@@ -187,7 +188,7 @@ impl ExiStream {
 
     pub fn header_check(&self, lock: &MutexGuard<RawStream>) -> Result<u32, AfbError> {
         // check vg2tp exi message header
-        let count = v2gtp_header_check(V2gTypeId::EXI_V2G_MSG, lock.buffer.as_ref())?;
+        let count = v2g::v2gtp_header_check(v2g::V2gTypeId::EXI_V2G_MSG, lock.buffer.as_ref())?;
         if count > EXI_MAX_DOCUMENT_SIZE as u32 {
             return afb_error!(
                 "exi_header_check",

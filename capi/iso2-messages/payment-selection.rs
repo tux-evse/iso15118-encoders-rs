@@ -17,6 +17,7 @@
  */
 
 use super::*;
+use std::mem;
 
 pub struct PaymentServiceOpt {
     service_id: u16,

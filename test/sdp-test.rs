@@ -1,4 +1,5 @@
 use iso15118::prelude::*;
+use iso15118::prelude::v2g::*;
 use std::net;
 
 #[test]

@@ -17,6 +17,7 @@
  */
 
 use super::*;
+use std::mem;
 
 pub struct CableCheckRequest {
     payload: cglue::iso2_CableCheckReqType,

@@ -17,6 +17,7 @@
  */
 
 use super::*;
+use std::mem;
 
 pub struct ServiceDetailRequest {
     payload: cglue::iso2_ServiceDetailReqType,

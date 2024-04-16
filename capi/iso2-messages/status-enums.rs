@@ -16,6 +16,7 @@
  *
  */
 use serde::{Deserialize, Serialize};
+use std::mem;
 
 use super::*;
 

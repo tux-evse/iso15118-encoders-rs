@@ -21,10 +21,10 @@
 #[path = "exi-encoder.rs"]
 mod exi_encoder;
 
-#[path = "v2g-encoder.rs"]
+#[path = "v2g-messages/v2g-lib.rs"]
 mod v2g_encoder;
 
-#[path = "iso2-encoder.rs"]
+#[path = "iso2-messages/iso2-lib.rs"]
 mod iso2_encoder;
 
 pub mod prelude {

@@ -16,24 +16,9 @@
  *
  */
 
-use crate::prelude::*;
+use crate::prelude::v2g::*;
 use std::mem;
-use std::str;
-use std::time::{SystemTime, UNIX_EPOCH};
-
-pub(self) mod cglue {
-    #![allow(dead_code)]
-    #![allow(non_upper_case_globals)]
-    #![allow(non_camel_case_types)]
-    #![allow(non_snake_case)]
-    // force reuse of C bitstream from exi-encoder
-    use crate::prelude::exi_bitstream_t;
-    include!("_iso2-capi.rs");
-}
-
-// import every message within current compilation module
-include!("iso2-messages/iso2-lib.rs");
-use iso2::*;
+use super::*;
 
 // export body type to other crate modules
 pub type Iso2BodyType = cglue::iso2_BodyType;
@@ -73,6 +58,7 @@ pub struct Iso2MessageExi {
 }
 
 impl Iso2MessageExi {
+    #[track_caller]
     pub fn decode_from_stream(locked: &RawStream) -> Result<Iso2MessageExi, AfbError> {
         let exi_raw = unsafe {
             let mut exi_raw = mem::MaybeUninit::<cglue::iso2_exiDocument>::uninit();
@@ -81,7 +67,7 @@ impl Iso2MessageExi {
             if status < 0 {
                 return afb_error!(
                     "iso2-exi-decode",
-                    "fail to decode iso-2 document from stream"
+                    "fail to decode iso-2 (ExiDocument) from stream"
                 );
             }
             exi_raw

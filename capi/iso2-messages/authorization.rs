@@ -17,6 +17,7 @@
  */
 
 use super::*;
+use std::mem;
 
 pub struct AuthorizationRequest {
     payload: cglue::iso2_AuthorizationReqType,

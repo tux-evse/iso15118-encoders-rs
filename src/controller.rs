@@ -19,12 +19,14 @@
 use crate::prelude::*;
 use std::sync::{Mutex, MutexGuard};
 
+use self::v2g::SupportedAppProtocolExi;
+
 pub struct ControlerConfig {}
 
 pub struct ControlerState {
     pub status: u32,
-    pub protocol: SupportedAppProtocolTagId,
-    session_id: SessionId,
+    pub protocol: v2g::SupportedAppProtocolTagId,
+    session_id: iso2::SessionId,
     evccid: iso2::SessionSetupRequest,
 }
 
@@ -37,8 +39,8 @@ impl IsoController {
     pub fn new() -> Result<Self, AfbError> {
         let state = Mutex::new(ControlerState {
             status: 0,
-            protocol: SupportedAppProtocolTagId::Unknown,
-            session_id: SessionId::null(),
+            protocol: v2g::SupportedAppProtocolTagId::Unknown,
+            session_id: iso2::SessionId::null(),
             evccid: iso2::SessionSetupRequest::empty(),
         });
         let controler = IsoController {
@@ -55,13 +57,13 @@ impl IsoController {
     }
 
     #[track_caller]
-    pub fn get_protocol(&self) -> Result<SupportedAppProtocolTagId, AfbError> {
+    pub fn get_protocol(&self) -> Result<v2g::SupportedAppProtocolTagId, AfbError> {
         let data_set = self.lock_handle()?;
         Ok(data_set.protocol.clone())
     }
 
     #[track_caller]
-    pub fn set_protocol(&self, protocol: SupportedAppProtocolTagId) -> Result<(), AfbError> {
+    pub fn set_protocol(&self, protocol: v2g::SupportedAppProtocolTagId) -> Result<(), AfbError> {
         let mut data_set = self.lock_handle()?;
         data_set.protocol = protocol;
         Ok(())
@@ -73,15 +75,23 @@ impl IsoController {
         lock: &mut MutexGuard<RawStream>,
     ) -> Result<(), AfbError> {
         match self.get_protocol()? {
-            SupportedAppProtocolTagId::Unknown => {
-                // wait for supported_protocols list from EV
-                let selected_proto = SupportedAppProtocolMsg::decode_msg(lock)?
-                    .match_protocol()
-                    .put_response(lock)?;
+            v2g::SupportedAppProtocolTagId::Unknown => {
+                // initial message should be v2g::AppHandSupportedAppProtocolReq
+                let v2g_msg = SupportedAppProtocolExi::decode_from_stream(lock)?;
+                let app_protocol_req= match v2g_msg {
+                    v2g::V2gMsgBody::Response(_) =>  return afb_error!(
+                        "iso2-controller-protocol",
+                        "expect 'AppHandSupportedAppProtocolReq' as initial request"
+                    ),
+                    v2g::V2gMsgBody::Request(value) => value
+                };
 
-                self.set_protocol(selected_proto)?;
+                // compare AppHandSupportedAppProtocolReq with evse supported protocols
+                let (rcode, schema) = app_protocol_req.match_protocol(&V2G_PROTOCOLS_SUPPORTED_LIST)?;
+                let v2g_response= v2g::SupportedAppProtocolRes::new(rcode, schema).encode();
+                SupportedAppProtocolExi::encode_to_stream(lock, &v2g_response)?;
             }
-            SupportedAppProtocolTagId::Iso2 => {
+            v2g::SupportedAppProtocolTagId::Iso2 => {
                 use iso2::*;
                 let message = Iso2Payload::decode(lock)?;
                 let mut data_set = self.lock_handle()?;

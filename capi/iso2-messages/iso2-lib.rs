@@ -16,6 +16,19 @@
  *
  */
 
+use crate::prelude::*;
+use iso2::*;
+
+pub(self) mod cglue {
+    #![allow(dead_code)]
+    #![allow(non_upper_case_globals)]
+    #![allow(non_camel_case_types)]
+    #![allow(non_snake_case)]
+    // force reuse of C bitstream from exi-encoder
+    use crate::prelude::exi_bitstream_t;
+    include!("_iso2-capi.rs");
+}
+
 #[path = "status-enums.rs"]
 mod status_enums;
 
@@ -79,6 +92,9 @@ mod session_stop;
 #[path = "welding-detection.rs"]
 mod welding_detection;
 
+#[path = "body-encoder.rs"]
+mod body_encoder;
+
 pub mod iso2 {
     pub use super::authorization::*;
     pub use super::body_element::*;
@@ -101,6 +117,7 @@ pub mod iso2 {
     pub use super::session_stop::*;
     pub use super::status_enums::*;
     pub use super::welding_detection::*;
+    pub use super::body_encoder::*;
 }
 
 pub enum Iso2MessageBody {

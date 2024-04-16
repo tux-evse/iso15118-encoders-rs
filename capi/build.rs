@@ -63,9 +63,9 @@ fn main() {
     //     - src/capi/capi-v2g.h for C prototype inputs
     // -----------------------------------------------------------------------
     ";
-    println!("cargo:rerun-if-changed=capi/capi-v2g.h");
+    println!("cargo:rerun-if-changed=capi/v2g-messages/capi-v2g.h");
     let libcapi = bindgen::Builder::default()
-        .header("capi/capi-v2g.h") // Chargebyte C prototype wrapper input
+        .header("capi/v2g-messages/capi-v2g.h") // Chargebyte C prototype wrapper input
         .raw_line(header)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .derive_debug(false)
@@ -74,6 +74,7 @@ fn main() {
         .allowlist_item("v2g_.*")
         .allowlist_item("v2g0_.*")
         .allowlist_var("SDP_.*")
+        .allowlist_var("appHand_.*")
         .allowlist_item("V2GTP.*")
         .allowlist_function("init_.*")
         .allowlist_function("decode_appHand_.*")
@@ -84,8 +85,8 @@ fn main() {
         .expect("Unable to generate _v2g-capi.rs");
 
     libcapi
-        .write_to_file("capi/_v2g-capi.rs")
-        .expect("Couldn't write _v2g-capi.rs!");
+        .write_to_file("capi/v2g-messages/_v2g-capi.rs")
+        .expect("Couldn't write capi/v2g-messages/_v2g-capi.rs!");
 
 
         let header = "
@@ -98,9 +99,9 @@ fn main() {
     //     - src/capi/capi-iso2.h for C prototype inputs
     // -----------------------------------------------------------------------
     ";
-    println!("cargo:rerun-if-changed=capi/capi-iso2.h");
+    println!("cargo:rerun-if-changed=capi/iso2-messages/capi-iso2.h");
     let libcapi = bindgen::Builder::default()
-        .header("capi/capi-iso2.h") // Chargebyte C prototype wrapper input
+        .header("capi/iso2-messages/capi-iso2.h") // Chargebyte C prototype wrapper input
         .raw_line(header)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .derive_debug(false)
@@ -113,6 +114,6 @@ fn main() {
         .expect("Unable to generate _iso2-capi.rs");
 
     libcapi
-        .write_to_file("capi/_iso2-capi.rs")
-        .expect("Couldn't write _iso2-capi.rs!");
+        .write_to_file("capi/iso2-messages/_iso2-capi.rs")
+        .expect("Couldn't write capi/iso2-messages/_iso2-capi.rs!");
 }

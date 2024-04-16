@@ -14,33 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Reference:
  */
 
-use crate::prelude::*;
-use crate::prelude::iso2::*;
+#[path = "v2g-protocols.rs"]
+mod protocols;
 
-pub struct Iso2Payload {
-    payload: Iso2MessageExi,
+#[path = "v2g-sdp.rs"]
+mod sdp;
+
+pub(self) mod cglue {
+        #![allow(dead_code)]
+        #![allow(non_upper_case_globals)]
+        #![allow(non_camel_case_types)]
+        #![allow(non_snake_case)]
+        // force reuse of C bitstream from exi-encoder
+        use crate::prelude::exi_bitstream_t;
+        include!("_v2g-capi.rs");
 }
 
-impl Iso2Payload {
-    pub fn decode(stream_lock: &RawStream) -> Result<Self, AfbError> {
-        let payload = Iso2MessageExi::decode_from_stream(stream_lock)?;
-        stream_lock.reset();
-        Ok(Iso2Payload { payload })
-    }
-
-    pub fn get_payload(&self) -> &Iso2MessageBody {
-        &self.payload.body
-    }
-
-    pub fn get_session(&self) -> &SessionId {
-        &self.payload.get_session()
-    }
-
-    // Fulup TBD
-    // get notification
-    // get signature
-
+pub mod v2g {
+    pub use super::protocols::*;
+    pub use super::sdp::*;
 }

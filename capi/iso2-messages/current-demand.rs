@@ -17,6 +17,7 @@
  */
 
 use super::*;
+use std::mem;
 
 #[derive(Clone)]
 pub struct CurrentDemandRequest {
