@@ -13,7 +13,7 @@ pub fn mock_network_input(exi_data: &[u8]) -> ExiStream {
         lock.buffer[0..exi_data.len()].copy_from_slice(&exi_data);
 
         // check V2G header (should be donne before finalize to get doc len)
-        let doc_size = stream.header_check(&lock).expect("expect valid V2G header");
+        let doc_size = stream.header_check(&lock, v2g::PayloadMsgId::SAP).expect("expect valid V2G header");
 
         // validate buffer stream (should not be locked)
         stream

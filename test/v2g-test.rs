@@ -51,7 +51,7 @@ fn supported_app_protocol_req() -> Result<(), AfbError> {
     let payload = request.encode();
 
     // assert add protocol build correctly message
-    let protocols= request.get_protocols();
+    let protocols = request.get_protocols();
     assert!(protocols[0].get_name()?.as_str() == proto_0.name);
 
     // encode message to stream_exi an compare with expected binary result
@@ -78,7 +78,9 @@ fn supported_app_protocol_req() -> Result<(), AfbError> {
 
 #[test]
 fn supported_app_protocol_res() -> Result<(), AfbError> {
-    let expected_response = [0x1,0xfe,0x80,0x1,0x0,0x0,0x0,0x4,0x80,0x44,0x0,0x40,];
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x4, 0x80, 0x44, 0x0, 0x40,
+    ];
 
     let schema_id = 1;
     let rcode = ResponseCode::SuccessWithMinorDeviation;

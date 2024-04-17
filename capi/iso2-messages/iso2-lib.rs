@@ -402,3 +402,28 @@ impl Iso2MessageBody {
         Ok(body)
     }
 }
+
+pub struct Iso2Payload {
+    payload: Iso2MessageExi,
+}
+
+impl Iso2Payload {
+    pub fn decode_from_stream(stream_lock: &RawStream) -> Result<Self, AfbError> {
+        let payload = Iso2MessageExi::decode_from_stream(stream_lock)?;
+        stream_lock.reset();
+        Ok(Iso2Payload { payload })
+    }
+
+    pub fn get_payload(&self) -> &Iso2MessageBody {
+        &self.payload.body
+    }
+
+    pub fn get_session(&self) -> &SessionId {
+        &self.payload.get_session()
+    }
+
+    // Fulup TBD
+    // get notification
+    // get signature
+
+}

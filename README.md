@@ -80,7 +80,7 @@ fn async_tls_client_cb(
 
         // when facing a new exi check how much data should be read
         if stream_idx == 0 {
-            ctx.payload_len = ctx.stream.header_check(&lock)?;
+            ctx.payload_len = ctx.stream.header_check(&lock, PayloadMsgId::SAP)?;
             ctx.data_len = 0;
         }
         read_count

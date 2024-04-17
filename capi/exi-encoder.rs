@@ -22,9 +22,9 @@ use core::slice;
 use std::alloc;
 use std::boxed::Box;
 use std::mem;
-use std::str;
 use std::os::raw;
 use std::pin::Pin;
+use std::str;
 
 mod cglue {
     #![allow(dead_code)]
@@ -70,7 +70,6 @@ pub enum ExiErrorCode {
 }
 
 pub const EXI_MAX_DOCUMENT_SIZE: usize = cglue::EXI_MAX_DOCUMENT_SIZE;
-
 
 #[track_caller]
 pub fn str_to_array(src: &str, dst: &mut [raw::c_char], max: u32) -> Result<u16, AfbError> {
@@ -123,16 +122,16 @@ pub fn byte_equal_array(src: &[u8], data: &[u8], len: u16) -> bool {
 }
 
 pub fn array_to_str<'a>(data: &'a [raw::c_char], len: u16) -> Result<&'a str, AfbError> {
-    let slice= unsafe {slice::from_raw_parts(data.as_ptr() as *const u8, len as usize)};
-    let text= match str::from_utf8(slice) {
+    let slice = unsafe { slice::from_raw_parts(data.as_ptr() as *const u8, len as usize) };
+    let text = match str::from_utf8(slice) {
         Ok(value) => value,
-        Err(_) => return afb_error!("array_str", "not a valid UTF string")
+        Err(_) => return afb_error!("array_str", "not a valid UTF string"),
     };
     Ok(text)
 }
 
 pub fn array_to_bytes<'a>(data: &'a [u8], len: u16) -> &'a [u8] {
-    let slice= unsafe {slice::from_raw_parts(data.as_ptr() as *const u8, len as usize)};
+    let slice = unsafe { slice::from_raw_parts(data.as_ptr() as *const u8, len as usize) };
     slice
 }
 
@@ -194,10 +193,10 @@ impl RawStream {
     }
 
     pub fn get_buffer(&self) -> &[u8] {
-        &(self.buffer[0..unsafe { cglue::exi_bitstream_get_length(self.stream) }])
+        &(self.buffer[0..self.get_size()])
     }
 
-    pub fn get_length(&self) -> usize {
+    pub fn get_cursor(&self) -> usize {
         unsafe { cglue::exi_bitstream_get_length(self.stream) }
     }
 
@@ -206,6 +205,19 @@ impl RawStream {
         (index, cglue::EXI_MAX_DOCUMENT_SIZE - index)
     }
 
+    pub fn get_size(&self) -> usize {
+        unsafe {
+            let stream = self.stream.as_ref().expect("stream.reset valid handle");
+            stream.data_size
+        }
+    }
+
+    pub fn set_size(&self, size:u32) {
+        unsafe {
+            let stream = self.stream.as_mut().expect("stream.reset valid handle");
+            stream.data_size= size as usize
+        }
+    }
     pub fn reset(&self) {
         // reset everything including data_count
         unsafe {

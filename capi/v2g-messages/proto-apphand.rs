@@ -16,38 +16,15 @@
  *
  */
 use super::*;
-use crate::prelude::*;
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::mem;
 use std::pin::Pin;
+use super::status_enums::*;
 
 pub type V2gAppHandDoc = cglue::appHand_exiDocument;
 
-#[derive(Debug)]
-#[allow(non_camel_case_types)]
-#[repr(u16)]
-pub enum V2gTypeId {
-    EXI_V2G_MSG = cglue::V2GTP20_SAP_PAYLOAD_ID as u16,
-}
-
-#[derive(Debug, Clone)]
-pub enum SupportedAppProtocolTagId {
-    Iso20,
-    Iso2,
-    Din,
-    Unknown,
-}
-
-pub struct SupportedAppProtocolConf {
-    pub tag_id: SupportedAppProtocolTagId,
-    pub name: &'static str,
-    pub major: u32,
-    pub minor: u32,
-}
-
 // check header and return expected message size (payload+header_size)
-pub fn v2gtp_header_check(type_id: V2gTypeId, buffer: Pin<&[u8]>) -> Result<u32, AfbError> {
+pub fn v2gtp_header_check(type_id: PayloadMsgId, buffer: Pin<&[u8]>) -> Result<u32, AfbError> {
     let mut payload_size: u32 = 0;
     let status = unsafe {
         cglue::V2GTP20_ReadHeader(
@@ -61,6 +38,16 @@ pub fn v2gtp_header_check(type_id: V2gTypeId, buffer: Pin<&[u8]>) -> Result<u32,
     }
 
     Ok(payload_size + cglue::V2GTP_HEADER_LENGTH)
+}
+
+pub fn v2gtp_get_payload_id(buffer: Pin<&[u8]>) -> PayloadMsgId {
+    let payload_id = unsafe { cglue::V2GTP20_GetPayloadId(buffer.as_ptr()) };
+    PayloadMsgId::from_u16(payload_id)
+}
+
+pub fn v2gtp_get_payload_len(buffer: Pin<&[u8]>) -> i32 {
+    let payload_len = unsafe { cglue::V2GTP20_GetPayloadLen(buffer.as_ptr()) };
+    payload_len
 }
 
 #[inline]
@@ -80,34 +67,6 @@ pub struct SupportedAppProtocolType {
     pub version_number_minor: u32,
     pub schema_id: u8,
     pub priority: u8,
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[repr(u32)]
-pub enum ResponseCode {
-    Success = cglue::appHand_responseCodeType_appHand_responseCodeType_OK_SuccessfulNegotiation,
-    SuccessWithMinorDeviation = cglue::appHand_responseCodeType_appHand_responseCodeType_OK_SuccessfulNegotiationWithMinorDeviation,
-    Failed = cglue::appHand_responseCodeType_appHand_responseCodeType_Failed_NoNegotiation,
-}
-
-impl ResponseCode {
-    pub fn from_u32(code: u32) -> Self {
-        unsafe { mem::transmute(code) }
-    }
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
-        }
-    }
-
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
-    }
 }
 
 #[derive(Clone)]
@@ -232,30 +191,30 @@ impl SupportedAppProtocolReq {
         response
     }
 
-    pub fn match_protocol(
+    pub fn match_protocol<'a>(
         &self,
-        supported: &[&SupportedAppProtocolConf],
-    ) -> Result<(ResponseCode, u8), AfbError> {
+        supported: &[&'a SupportedAppProtocolConf],
+    ) -> Result<(ResponseCode, &'a SupportedAppProtocolConf), ResponseCode> {
         let protocols = self.get_protocols();
         for request in protocols {
             for idx in 0..supported.len() {
                 let provided = &supported[idx];
-                if request.get_name()?.as_str() == provided.name
+                if request.get_name().unwrap().as_str() == provided.name
                     && request.get_major() == provided.major
                 {
                     afb_log_msg!(Debug, None, "Protocol:{} selected", provided.name);
                     if request.get_minor() == provided.minor {
-                        return Ok((ResponseCode::Success, request.get_schema()));
+                        return Ok((ResponseCode::Success, supported[idx]));
                     } else {
                         return Ok((
                             ResponseCode::SuccessWithMinorDeviation,
-                            request.get_schema(),
+                            supported[idx],
                         ));
                     }
                 }
             }
         }
-        Ok((ResponseCode::Failed, 0))
+        Err(ResponseCode::Failed)
     }
 }
 
@@ -301,7 +260,11 @@ impl SupportedAppProtocolRes {
     }
 
     pub fn get_schema(&self) -> u8 {
-        self.payload.SchemaID
+        if self.payload.SchemaID_isUsed() != 0 {
+            self.payload.SchemaID
+        } else {
+            255
+        }
     }
 
     pub fn get_rcode(&self) -> ResponseCode {
@@ -329,7 +292,7 @@ impl SupportedAppProtocolExi {
                     "fail to decode v2g (AppProtocolExi) from stream"
                 );
             }
-            if exi_raw.supportedAppProtocolReq_isUsed() != 0{
+            if exi_raw.supportedAppProtocolReq_isUsed() != 0 {
                 V2gMsgBody::Request(SupportedAppProtocolReq::decode(
                     exi_raw.__bindgen_anon_1.supportedAppProtocolReq,
                 ))
@@ -338,10 +301,7 @@ impl SupportedAppProtocolExi {
                     exi_raw.__bindgen_anon_1.supportedAppProtocolRes,
                 ))
             } else {
-                return afb_error!(
-                    "v2g-exi-decode",
-                    "hoops nether request or response"
-                );
+                return afb_error!("v2g-exi-decode", "hoops nether request or response");
             }
         };
         Ok(body)
@@ -378,9 +338,7 @@ impl SupportedAppProtocolExi {
         }
 
         // retrieve document encoded size from stream
-        let index = locked.get_length() as u32;
-
-        // write header after document to push effective size
+        let index = locked.get_cursor() as u32;
         unsafe {
             cglue::V2GTP20_WriteHeader(
                 locked.buffer.as_mut_ptr(),
@@ -388,6 +346,8 @@ impl SupportedAppProtocolExi {
                 cglue::V2GTP20_SAP_PAYLOAD_ID as u16,
             )
         }
+        // force stream size for get_buffer function
+        locked.set_size(index);
         Ok(())
     }
 }

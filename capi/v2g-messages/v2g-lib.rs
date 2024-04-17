@@ -15,11 +15,15 @@
  * limitations under the License.
  *
  */
+use crate::prelude::*;
 
-#[path = "v2g-protocols.rs"]
-mod protocols;
+#[path = "status-enums.rs"]
+mod status_enums;
 
-#[path = "v2g-sdp.rs"]
+#[path = "proto-apphand.rs"]
+mod app_protocol;
+
+#[path = "sdp-discovery.rs"]
 mod sdp;
 
 pub(self) mod cglue {
@@ -33,6 +37,7 @@ pub(self) mod cglue {
 }
 
 pub mod v2g {
-    pub use super::protocols::*;
+    pub use super::status_enums::*;
+    pub use super::app_protocol::*;
     pub use super::sdp::*;
 }

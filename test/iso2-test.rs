@@ -23,7 +23,7 @@ pub fn encode_to_stream<'a>(
 pub fn decode_from_stream(stream: &MutexGuard<RawStream>) -> Result<Iso2Payload, AfbError> {
     let stream_decode = mock_network_input(stream.get_buffer());
     let stream_lock = stream_decode.lock_stream();
-    let message = Iso2Payload::decode(&stream_lock)?;
+    let message = Iso2Payload::decode_from_stream(&stream_lock)?;
     Ok(message)
 }
 

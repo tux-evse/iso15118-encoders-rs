@@ -152,12 +152,15 @@ impl Iso2MessageExi {
         }
 
         // retrieve document encoded size from stream and insert header
-        let index = locked.get_length() as u32;
+        let index = locked.get_cursor() as u32;
         v2gtp20_write_header(
             locked.buffer.as_mut_ptr(),
             index - SDP_V2G_HEADER_LEN as u32,
             V2GTP20_SAP_PAYLOAD_ID,
         );
+
+        // force stream size for get_buffer function
+        locked.set_size(index);
 
         Ok(())
     }

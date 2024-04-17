@@ -138,26 +138,30 @@ impl ExiStream {
         lock: &MutexGuard<RawStream>,
         chunk: ExiDump,
     ) -> Result<String, AfbError> {
-        let len = lock.get_length();
-        if len < v2g::SDP_V2G_HEADER_LEN as usize {
+        let size = lock.get_size();
+        if size < v2g::SDP_V2G_HEADER_LEN as usize {
             return afb_error!(
                 "stream-buffer-dump",
                 "stream size less that v2gheader len:{}",
-                len
+                size
             );
         }
 
         let (start, stop) = match chunk {
             ExiDump::V2gHeader => (0, v2g::SDP_V2G_HEADER_LEN),
-            ExiDump::IsoPayload => (v2g::SDP_V2G_HEADER_LEN, len),
-            ExiDump::Everything => (0, len),
+            ExiDump::IsoPayload => (v2g::SDP_V2G_HEADER_LEN, size),
+            ExiDump::Everything => (0, size),
         };
         let buffer = lock.get_buffer();
         Ok(dump_buffer(&buffer[start..stop]))
     }
 
-    pub fn get_length(&self, lock: &MutexGuard<RawStream>) -> usize {
-        lock.get_length()
+    pub fn get_cursor(&self, lock: &MutexGuard<RawStream>) -> usize {
+        lock.get_cursor()
+    }
+
+    pub fn get_size(&self, lock: &MutexGuard<RawStream>) -> usize {
+        lock.get_size()
     }
 
     pub fn get_index(&self, lock: &MutexGuard<RawStream>) -> (usize, usize) {
@@ -177,18 +181,22 @@ impl ExiStream {
     pub fn finalize(&self, lock: &MutexGuard<RawStream>, doc_size: u32) -> Result<(), AfbError> {
         match unsafe { lock.stream.as_mut() } {
             Some(data) => {
-                data.data_size = doc_size as usize; // (cglue::SDP_V2G_HEADER_LEN+doc_size) as usize;
-                data.byte_pos= v2g::SDP_V2G_HEADER_LEN as usize; // SDP_V2G_HEADER_LEN as usize
-                data.bit_count=0;
+                data.data_size = v2g::SDP_V2G_HEADER_LEN+doc_size as usize;
+                data.byte_pos = v2g::SDP_V2G_HEADER_LEN as usize; // SDP_V2G_HEADER_LEN as usize
+                data.bit_count = 0;
             }
             None => return afb_error!("exi-stream-shift", "fail to shift header (invalid stream)"),
         };
         Ok(())
     }
 
-    pub fn header_check(&self, lock: &MutexGuard<RawStream>) -> Result<u32, AfbError> {
+    pub fn header_check(
+        &self,
+        lock: &MutexGuard<RawStream>,
+        type_id: v2g::PayloadMsgId,
+    ) -> Result<u32, AfbError> {
         // check vg2tp exi message header
-        let count = v2g::v2gtp_header_check(v2g::V2gTypeId::EXI_V2G_MSG, lock.buffer.as_ref())?;
+        let count = v2g::v2gtp_header_check(type_id, lock.buffer.as_ref())?;
         if count > EXI_MAX_DOCUMENT_SIZE as u32 {
             return afb_error!(
                 "exi_header_check",
@@ -199,4 +207,13 @@ impl ExiStream {
         }
         Ok(count)
     }
+
+    pub fn get_payload_id(&self, lock: &MutexGuard<RawStream>) -> v2g::PayloadMsgId {
+        v2g::v2gtp_get_payload_id(lock.buffer.as_ref())
+    }
+
+    pub fn get_payload_len(&self, lock: &MutexGuard<RawStream>) -> i32 {
+        v2g::v2gtp_get_payload_len(lock.buffer.as_ref())
+    }
+
 }

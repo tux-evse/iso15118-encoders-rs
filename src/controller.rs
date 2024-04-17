@@ -25,7 +25,7 @@ pub struct ControlerConfig {}
 
 pub struct ControlerState {
     pub status: u32,
-    pub protocol: v2g::SupportedAppProtocolTagId,
+    pub protocol: v2g::V2gProtocolTagId,
     session_id: iso2::SessionId,
     evccid: iso2::SessionSetupRequest,
 }
@@ -39,7 +39,7 @@ impl IsoController {
     pub fn new() -> Result<Self, AfbError> {
         let state = Mutex::new(ControlerState {
             status: 0,
-            protocol: v2g::SupportedAppProtocolTagId::Unknown,
+            protocol: v2g::V2gProtocolTagId::Unknown,
             session_id: iso2::SessionId::null(),
             evccid: iso2::SessionSetupRequest::empty(),
         });
@@ -57,25 +57,25 @@ impl IsoController {
     }
 
     #[track_caller]
-    pub fn get_protocol(&self) -> Result<v2g::SupportedAppProtocolTagId, AfbError> {
+    pub fn get_protocol(&self) -> Result<v2g::V2gProtocolTagId, AfbError> {
         let data_set = self.lock_handle()?;
         Ok(data_set.protocol.clone())
     }
 
     #[track_caller]
-    pub fn set_protocol(&self, protocol: v2g::SupportedAppProtocolTagId) -> Result<(), AfbError> {
+    pub fn set_protocol(&self, protocol: v2g::V2gProtocolTagId) -> Result<(), AfbError> {
         let mut data_set = self.lock_handle()?;
         data_set.protocol = protocol;
         Ok(())
     }
 
-    pub fn handle_exi_doc(
+    pub fn iso_decode_payload(
         &self,
         stream: &ExiStream,
         lock: &mut MutexGuard<RawStream>,
     ) -> Result<(), AfbError> {
         match self.get_protocol()? {
-            v2g::SupportedAppProtocolTagId::Unknown => {
+            v2g::V2gProtocolTagId::Unknown => {
                 // initial message should be v2g::AppHandSupportedAppProtocolReq
                 let v2g_msg = SupportedAppProtocolExi::decode_from_stream(lock)?;
                 let app_protocol_req= match v2g_msg {
@@ -91,9 +91,9 @@ impl IsoController {
                 let v2g_response= v2g::SupportedAppProtocolRes::new(rcode, schema).encode();
                 SupportedAppProtocolExi::encode_to_stream(lock, &v2g_response)?;
             }
-            v2g::SupportedAppProtocolTagId::Iso2 => {
+            v2g::V2gProtocolTagId::Iso2 => {
                 use iso2::*;
-                let message = Iso2Payload::decode(lock)?;
+                let message = Iso2Payload::decode_from_stream(lock)?;
                 let mut data_set = self.lock_handle()?;
                 match message.get_payload() {
                     Iso2MessageBody::SessionSetupReq(request) => {
