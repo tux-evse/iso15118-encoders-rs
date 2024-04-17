@@ -128,7 +128,7 @@ impl SdpRequest {
         if header.msg_len != cglue::SDP_V2G_REQUEST_LEN {
             return afb_error!(
                 "sdp-request-header",
-                "invalid Sdp/SDP lenght expected:{} received:{}",
+                "invalid v2g/sdp lenght expected:{} received:{}",
                 cglue::SDP_V2G_REQUEST_LEN,
                 header.msg_type
             );
@@ -215,7 +215,7 @@ impl SdpResponse {
         {
             return afb_error!(
                 "sdp-response-header",
-                "invalid Sdp/SDP version expected:[{:#02x},{:#02x}] received:[{:#02x},{:#02x}]",
+                "invalid v2g/sdp version expected:[{:#02x},{:#02x}] received:[{:#02x},{:#02x}]",
                 header.version_std,
                 header.version_not,
                 cglue::SDP_V2G_VERSION,
@@ -226,7 +226,7 @@ impl SdpResponse {
         if header.msg_type != cglue::SDP_V2G_RESPONSE_TYPE {
             return afb_error!(
                 "sdp-response-header",
-                "invalid Sdp/SDP type expected:{:#04x} received:{:#04x}",
+                "invalid v2g/sdp type expected:{:#04x} received:{:#04x}",
                 cglue::SDP_V2G_RESPONSE_TYPE,
                 header.msg_type
             );
@@ -236,7 +236,7 @@ impl SdpResponse {
         if header.msg_len != cglue::SDP_V2G_RESPONSE_LEN {
             return afb_error!(
                 "sdp-response-header",
-                "invalid Sdp/SDP lenght expected:{} received:{}",
+                "invalid v2g/sdp lenght expected:{} received:{}",
                 cglue::SDP_V2G_RESPONSE_LEN,
                 header.msg_type
             );
