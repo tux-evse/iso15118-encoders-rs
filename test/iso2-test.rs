@@ -14,7 +14,7 @@ pub fn encode_to_stream<'a>(
     let mut stream_lock = stream.lock_stream();
     Iso2MessageExi::encode_to_stream(&mut stream_lock, &body, &net_session).unwrap();
 
-    let length = stream_lock.get_length();
+    let length = stream_lock.get_cursor();
     let buffer = &stream_lock.buffer[0..length];
     println!("{}: [{}]", funcname, dump_buffer(buffer));
     stream_lock
