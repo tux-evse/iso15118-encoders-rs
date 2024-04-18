@@ -47,7 +47,7 @@ impl MeterInfoType {
         self
     }
 
-    pub fn get_reading(&mut self) -> Option<u64> {
+    pub fn get_reading(&self) -> Option<u64> {
         if self.payload.MeterReading_isUsed() == 0 {
             None
         } else {
@@ -63,13 +63,13 @@ impl MeterInfoType {
         )?;
 
         if self.payload.SigMeterReading.bytesLen > 0 {
-            self.payload.set_MeterReading_isUsed(1);
+            self.payload.set_SigMeterReading_isUsed(1);
         }
         Ok(self)
     }
 
     pub fn get_sig(&self) -> Option<&[u8]> {
-        if self.payload.MeterReading_isUsed() == 0 {
+        if self.payload.SigMeterReading_isUsed() == 0 {
             None
         } else {
             let bytes = array_to_bytes(
@@ -121,7 +121,7 @@ pub struct MeteringReceiptRequest {
     payload: cglue::iso2_MeteringReceiptReqType,
 }
 impl MeteringReceiptRequest {
-    pub fn new(session_id: &[u8], info: MeterInfoType) -> Result<Self, AfbError> {
+    pub fn new(session_id: &[u8], info: &MeterInfoType) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_MeteringReceiptReqType>() };
 
         payload.SessionID.bytesLen = bytes_to_array(
@@ -144,7 +144,7 @@ impl MeteringReceiptRequest {
         MeterInfoType::decode(self.payload.MeterInfo)
     }
 
-    pub fn set_id(&mut self, id: &str) -> Result<&Self, AfbError> {
+    pub fn set_id(&mut self, id: &str) -> Result<&mut Self, AfbError> {
         self.payload.Id.charactersLen = str_to_array(
             id,
             &mut self.payload.Id.characters,

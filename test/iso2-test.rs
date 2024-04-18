@@ -663,70 +663,277 @@ fn certificate_install_response() -> Result<(), AfbError> {
     Ok(())
 }
 
-// CertificateSupportAppProtocol
-// "\x98\xfa\x9b\x84\xb1\x3f\x00\x01\x87\x05\xbb\xc8\x86\xdd\x60\x0b" \
-// "\xd0\x12\x03\xe1\x06\x40\xfe\x80\x00\x00\x00\x00\x00\x00\x02\x01" \
-// "\x87\xff\xfe\x05\xbb\xc8\xfe\x80\x00\x00\x00\x00\x00\x00\x29\xd0" \
-// "\x26\xf7\xe7\x8a\xa2\x32\xd2\x34\xfa\x6d\x01\xb9\xdc\x0e\x10\xca" \
-// "\x3a\xde\x80\x18\x08\xb4\xf2\x50\x00\x00\x01\x01\x08\x0a\x00\x00" \
-// "\x32\x03\x3b\x34\xdf\x0a\x9a\xb8\x05\xfa\x87\x36\x4d\x72\xd0\x43" \
-// "\x38\xfb\xab\x21\x8a\xd8\x08\xda\xe7\xc4\xb6\x8c\x71\x81\x2a\xa9" \
-// "\x67\xa5\xef\x46\xdc\xae\x52\x99\x41\xa0\xf2\xcc\xd5\xb7\xe2\x15" \
-// "\x44\x8a\x5b\xe5\x17\x37\x65\xa6\xa6\x9d\x27\xa7\x5a\x20\x79\x30" \
-// "\x82\x9a\x45\xd3\xa8\xaa\xe7\xe3\x17\xf5\x81\xe9\x37\x69\x61\x3c" \
-// "\x8e\xe2\xf2\xcf\x5a\x65\x3a\xff\x42\xb6\x6e\xeb\x24\x13\x59\x6f" \
-// "\x8d\x9e\x33\x41\x55\x93\x6b\x0b\x68\x9f\xf4\x9c\x43\x2d\x18\x7c" \
-// "\xdf\xe7\x26\x5b\x72\x9f\xd1\x46\xa9\x22\xe6\x6c\x62\x97\x22\x58" \
-// "\xc2\x66\x39\x88\xe7\x7e\x10\xe7\x32\xb1\xad\x7a\x8d\xe1\xdf\x65" \
-// "\xee\x2e\x65\xce\x74\x7e\x9f\xae\x9c\xda\x29\xac\xb3\xdd\x22\x53" \
-// "\xfd\x10\xe4\x3f\x50\x42\x81\x7d\xb2\x86\x4f\x4a\x98\x48\x62\x9a" \
-// "\xae\xcb\x87\xbd\x23\xf7\xf8\xb8\x58\x1c\xf9\x1f\xd6\xd1\x9d\xaf" \
-// "\xb7\x69\x7b\x7e\xc4\xb5\x30\x86\xa8\xa6\xad\xb9\x17\x5b\x42\x39" \
-// "\xed\x00\x36\xf7\xa8\x37\xca\x04\xc4\xe4\xdc\xe0\xe2\x6e\xb3\x1b" \
-// "\x6c\xcc\x7b\x34\xa3\x69\x45\x4b\x33\xbb\x8b\xf4\x4e\x18\x1d\xa7" \
-// "\x1c\xc0\xd9\x74\x25\xfe\xd3\xd8\xc0\x71\x89\x42\xd6\x56\xc3\x15" \
-// "\xc8\x44\xb8\xe9\x5b\xc8\xe0\xec\x0a\x20\xa4\xbb\xad\xe5\x80\x27" \
-// "\x0a\x27\x60\x32\xa0\x1a\xcd\x76\x60\xce\x40\xfa\x12\x0d\x03\x91" \
-// "\xcc\x35\x65\xeb\x8d\x3a\xb0\xfa\xa7\x86\x45\x6a\x16\x55\x61\xb9" \
-// "\x7c\x6c\xe7\x41\x34\xb1\x03\x32\xd1\x28\x0d\x5b\xff\x89\x89\x02" \
-// "\xf4\xee\xfa\x26\x42\xf1\xca\x97\x3c\xa1\x7f\x50\x55\xea\xa6\x0a" \
-// "\x48\x06\xe3\x95\x05\x82\xf8\x68\x3b\x8f\x24\xee\x8a\xcc\xbc\x80" \
-// "\x8e\x62\x24\xe8\x7f\x64\xf8\x15\xec\x29\x24\xf9\x21\x36\x2e\x8e" \
-// "\x5e\x53\xf3\x7c\xb6\xc0\xe8\xf4\x07\xbd\xc3\x93\x3b\x1f\x24\x10" \
-// "\xd2\x44\x69\xa9\x19\xe6\x62\x7c\x7a\xb7\x02\x38\x52\x83\x30\xa6" \
-// "\x3c\xe5\x1e\x37\x88\x40\x3e\xe8\x89\xa6\x88\xd4\xd1\xdd\x3c\xea" \
-// "\x71\x21\x03\xfd\xf6\xb2\x99\x10\xf6\x7a\x26\xb2\x85\x65\x78\x48" \
-// "\x4b\x3b\x81\x5b\xbb\xf7\xb6\x6b\x07\x2e\x17\x7c\xfe\x79\x16\xd5" \
-// "\xd6\x0c\xeb\x3b\x12\x63\x84\x72\x2f\x25\x49\x69\x34\x0a\xdf\x9d" \
-// "\x1e\x35\xd2\x3d\x83\x10\x1b\x34\x82\xda\xbd\xd9\x95\xab\x31\x7f" \
-// "\xe4\xca\xa6\xd2\xb8\x94\xe1\xe7\xfe\x44\x8b\xf6\xb5\x56\x86\x5d" \
-// "\xca\xcd\xac\xba\x53\xe2\xf4\x41\xcb\x98\x96\x6d\x49\x04\xa2\x64" \
-// "\xd5\x6b\x16\xd7\x16\x2d\x03\x22\xb0\x52\x2f\x39\xe4\x98\x92\x4c" \
-// "\xe2\xc0\xf0\x91\xa5\x43\xa6\xd5\x53\x5e\xe0\x65\x83\x35\x6d\x2f" \
-// "\x74\x20\x52\x86\xe0\x1d\x1c\x27\x26\x73\xd7\xc3\xfc\x53\x5f\x84" \
-// "\x82\x40\x9e\x3f\x7f\x50\x5d\x7a\x0c\xc0\xcb\x6a\x88\x7d\x91\xfe" \
-// "\x57\x80\x93\xc5\xe8\x91\xac\x0a\x39\x6b\x89\x76\x95\x8b\x34\x85" \
-// "\x12\x11\x52\x5f\x80\xa7\xdb\x82\xf5\x31\x5f\x84\xe3\xa6\x47\xbb" \
-// "\x28\x6a\x93\xa2\xa8\x64\x34\x3c\x68\xdc\x59\x5a\x95\x67\x82\x06" \
-// "\x83\x6a\x17\x03\x03\x00\xa4\xf2\x36\x6e\x04\x3f\x19\xe4\x4a\x88" \
-// "\x67\xa5\x25\x3d\x9f\x54\x2a\x76\x29\xfa\x25\xcb\xc7\x44\x43\x03" \
-// "\xa6\xbb\x15\xd6\xcc\x76\x1c\x4e\x69\x52\x8c\x78\xe2\xb5\xfa\xa4" \
-// "\xa6\x7e\x2c\x09\xd0\xed\x93\xe1\x1d\x87\x45\x18\xc4\x47\x1f\x5f" \
-// "\xd3\x13\x6d\x11\x01\x2f\x8b\x00\x2b\x78\x3a\x38\x97\x3c\x88\x1d" \
-// "\x2a\xc2\x98\xb8\x9e\x73\x9b\xa8\xd3\x76\xd3\xe7\x4d\xe6\xd3\xf8" \
-// "\xca\xc0\xc9\xd9\x02\x5f\xdb\x85\x31\xf6\xd4\x37\x05\x6a\xb6\x47" \
-// "\x7d\x67\x5e\xb4\xa7\xc5\x6b\x45\x89\x0d\xea\xd1\xe5\xdc\x77\xd9" \
-// "\xe5\x7e\x0e\x36\x63\x0e\x48\xaa\x75\xd0\x06\x55\x59\x02\xc3\x56" \
-// "\xda\x0c\x17\x82\xe0\xff\xa5\xd8\x2f\x10\xc9\xb3\x7f\x58\x11\xee" \
-// "\x80\xf0\xc5\x09\x4f\xba\x6f\x2e\xd7\x3e\xe0\x17\x03\x03\x00\x45" \
-// "\x54\x4f\xa9\x64\xd6\xbc\xe8\x0a\x9c\xdd\xa2\x86\x9b\x28\x4a\xa2" \
-// "\xc1\xce\x4d\x7c\xe8\xa2\xa4\xb2\xd5\x8c\xbe\x9b\xbb\x4d\xe4\xde" \
-// "\xe3\x6a\xf3\x0a\xcf\xbc\x32\x85\xab\x52\x6a\xec\x40\xf3\x1a\x75" \
-// "\x61\x0f\x1e\x8b\xf4\xd7\xdc\xe6\x12\x1f\xde\x40\x47\x56\x1c\x54" \
-// "\x56\xbf\x63\xa0\xa0\x17\x03\x03\x00\x5d\xd7\x86\xcf\x9b\x26\x66" \
-// "\xbf\x43\x54\x73\x23\x4d\x84\xc6\x89\x69\x1d\x76\x4d\x84\x43\xb8" \
-// "\x88\xd2\x76\x59\xc8\x67\x2d\x18\x70\x72\x77\x1a\xc3\xca\x8c\x1f" \
-// "\xce\x32\xe0\xbe\x19\x26\xbc\x66\xd0\xbf\x2e\x6c\x74\xc5\x14\xc3" \
-// "\x46\x3c\x6d\x81\x46\x77\xe8\xad\x63\xfe\xa4\x91\xdc\x0a\x2c\xf8" \
-// "\x4a\x89\xa8\xc8\xf5\x2c\x14\xe3\x7e\x68\xbd\x42\xb3\x15\x47\xc3" \
-// "\x77\xb2\x74\x8b\x95\x1b\x2f"
+#[test]
+fn current_demand_request() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x1d, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x10, 0xd1, 0x0, 0x0, 0x82, 0x6, 0xa, 0x0, 0x20, 0x81, 0x40, 0xc, 0x35,
+        0x10, 0x40, 0x90, 0x3, 0x0,
+    ];
+
+    // Encoding API
+    let dc_ready = true;
+    let dc_error = DcEvErrorCode::NoError;
+    let dc_evresssoc = 1;
+
+    let dc_status = DcEvStatusType::new(dc_ready, dc_error, dc_evresssoc);
+    let dc_current = PhysicalValue::new(80, 1, Isp2PhysicalUnit::Ampere);
+    let dc_tension = PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt);
+    let dc_limit = PhysicalValue::new(800, 1, Isp2PhysicalUnit::Volt);
+    let dc_complete = true;
+
+    let payload = CurrentDemandRequest::new(dc_status, &dc_current, &dc_tension, dc_complete)
+        .set_voltage_limit(&dc_limit)
+        .encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(&stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::CurrentDemandReq(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(dc_complete == payload.get_charging_complete());
+    let current = payload.get_current_target();
+    assert!(current.get_unit() == Isp2PhysicalUnit::Ampere);
+    assert!(current.get_value() == 80);
+    assert!(current.get_multiplier() == 1);
+    let tension = payload.get_voltage_target();
+    assert!(tension.get_value() == 400);
+    assert!(payload.get_voltage_limit().unwrap().get_value() == 800);
+
+    Ok(())
+}
+
+#[test]
+fn charging_status_request() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0xd, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x10, 0xb0,
+    ];
+
+    // Encoding API
+    let payload = ChargingStatusRequest::new().encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(&stream)?;
+    let _payload = match message.get_payload() {
+        Iso2MessageBody::ChargingStatusReq(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API (nothing to do)
+
+    Ok(())
+}
+
+#[test]
+fn metering_receipt_request() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x3e, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x10, 0xf0, 0x3d, 0x99, 0xd5, 0xb1, 0xd5, 0xc0, 0xb5, 0xa5, 0xbd, 0xd0,
+        0xb5, 0x89, 0xe9, 0xa0, 0x6, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x3, 0xf0, 0xa, 0x74, 0x75,
+        0x78, 0x2d, 0x65, 0x76, 0x73, 0x65, 0x2, 0x0, 0x1, 0x42, 0x82, 0xc3, 0x3, 0x43, 0x81, 0xfe,
+        0x2, 0xa, 0x5d, 0x9f, 0x43, 0xa0, 0x0,
+    ];
+
+    // Encoding API
+    let session_id = [0x1, 0x2, 0x3, 0x4, 0x5, 0x6];
+    let meeter_id = "tux-evse";
+    let payload_id = "fulup-iot-bzh";
+    let signature = [0xa, 0xb, 0xc, 0xd, 0xe];
+
+    let mut meter_info = MeterInfoType::new(meeter_id)?;
+    meter_info
+        .set_reading(64)
+        .set_status(255)
+        .set_tmeter(123546789)
+        .set_sig(&signature)?;
+
+    let payload = MeteringReceiptRequest::new(&session_id, &meter_info)?
+        .set_id(payload_id)?
+        .set_tupple_id(64)
+        .encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(&stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::MeteringReceiptReq(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_id().unwrap() == payload_id);
+    assert!(payload.get_session_id() == session_id);
+    assert!(payload.get_tuple_id().unwrap() == 64);
+    let info = payload.get_info();
+    assert!(info.get_reading().unwrap() == 64);
+    assert!(info.get_id()? == meeter_id);
+    assert!(info.get_status().unwrap() == 255);
+    assert!(info.get_tmeter().unwrap() == 123546789);
+    assert!(info.get_sig().unwrap() == signature);
+
+    Ok(())
+}
+
+#[test]
+fn ac_param_discovery_request() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x20, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x10, 0x90, 0x20, 0x0, 0x1a, 0x41, 0x21, 0x46, 0x1, 0x40, 0x41, 0x2,
+        0x40, 0xc, 0x10, 0x30, 0x40, 0x4, 0xc, 0x2, 0x80,
+    ];
+    let ea_mount = PhysicalValue::new(20, 10, Isp2PhysicalUnit::Wh);
+    let ac_max_voltage = PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt);
+    let ac_max_current = PhysicalValue::new(64, 1, Isp2PhysicalUnit::Ampere);
+    let ac_min_current = PhysicalValue::new(10, 1, Isp2PhysicalUnit::Ampere);
+    let mut ac_params =
+        AcEvChargeParam::new(&ea_mount, &ac_max_voltage, &ac_max_current, &ac_min_current)?;
+    ac_params.set_departure_time(1234);
+
+    // Encoding API
+    let payload = ParamDiscoveryRequest::new(EngyTransfertMode::AcSinglePhase)
+        .set_max_schedule_tuple(16)
+        .set_ac_charge_param(&ac_params)?
+        .encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(&stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::ParamDiscoveryReq(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_max_schedule_tuple().unwrap() == 16);
+    let ac_value = payload.get_ac_charge_param().unwrap();
+    assert!(ac_value.get_departure_time().unwrap() == 1234);
+    assert!(ac_value.get_max_current().get_value() == 64);
+    assert!(ac_value.get_min_current().get_value() == 10);
+    assert!(ac_value.get_max_voltage().get_value() == 400);
+
+    Ok(())
+}
+
+#[test]
+fn dc_param_discovery_request() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x1b, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x10, 0x90, 0x20, 0x11, 0x48, 0x0, 0x4, 0x10, 0x30, 0x64, 0x12, 0x8,
+        0x14, 0x0, 0xc4, 0x0,
+    ];
+
+    let dc_max_voltage = PhysicalValue::new(800, 1, Isp2PhysicalUnit::Volt);
+    let dc_max_current = PhysicalValue::new(100, 1, Isp2PhysicalUnit::Ampere);
+    let dc_status = DcEvStatusType::new(true, DcEvErrorCode::NoError, 1);
+    let dc_params = DcEvChargeParam::new(dc_status, dc_max_current, dc_max_voltage)?;
+
+    // Encoding API
+    let payload = ParamDiscoveryRequest::new(EngyTransfertMode::DcBasic)
+        .set_max_schedule_tuple(16)
+        .set_dc_charge_param(&dc_params)?
+        .encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(&stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::ParamDiscoveryReq(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_max_schedule_tuple().unwrap() == 16);
+    let dc_value = payload.get_dc_charge_param().unwrap();
+    assert!(dc_value.get_max_current().get_value() == 100);
+    assert!(dc_value.get_max_voltage().get_value() == 800);
+    assert!(dc_value.get_status().get_error() == DcEvErrorCode::NoError);
+    assert!(dc_value.get_status().get_ready() == true);
+    Ok(())
+}
+
+#[test]
+fn ev_param_discovery_request() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x2e, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x10, 0x90, 0x20, 0x22, 0x1a, 0x41, 0x22, 0x40, 0x0, 0x20, 0x81, 0x83,
+        0x20, 0x90, 0x40, 0xa0, 0x6, 0x20, 0x69, 0x4, 0x85, 0x18, 0x5, 0x1, 0x4, 0x9, 0x0, 0x30,
+        0x40, 0xc1, 0x0, 0x10, 0x30, 0xa, 0x0,
+    ];
+
+    let ea_mount = PhysicalValue::new(20, 10, Isp2PhysicalUnit::Wh);
+    let ac_max_voltage = PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt);
+    let ac_max_current = PhysicalValue::new(64, 1, Isp2PhysicalUnit::Ampere);
+    let ac_min_current = PhysicalValue::new(10, 1, Isp2PhysicalUnit::Ampere);
+    let mut ac_params =
+        AcEvChargeParam::new(&ea_mount, &ac_max_voltage, &ac_max_current, &ac_min_current)?;
+    ac_params.set_departure_time(1234);
+
+    let dc_max_voltage = PhysicalValue::new(800, 1, Isp2PhysicalUnit::Volt);
+    let dc_max_current = PhysicalValue::new(100, 1, Isp2PhysicalUnit::Ampere);
+    let dc_status = DcEvStatusType::new(true, DcEvErrorCode::NoError, 1);
+    let dc_params = DcEvChargeParam::new(dc_status, dc_max_current, dc_max_voltage)?;
+
+    let mut charge_param = EvChargeParam::new(&ac_params, &dc_params);
+    charge_param.set_departure_time(1234);
+
+    // Encoding API
+    let payload = ParamDiscoveryRequest::new(EngyTransfertMode::DcCombo)
+        .set_max_schedule_tuple(16)
+        .set_charge_param(&charge_param)?
+        .encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(&stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::ParamDiscoveryReq(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_max_schedule_tuple().unwrap() == 16);
+    // check DC params
+    let params = payload.get_charge_param().unwrap();
+    let dc_value = params.get_dc_param();
+    assert!(dc_value.get_max_current().get_value() == 100);
+    assert!(dc_value.get_max_voltage().get_value() == 800);
+    assert!(dc_value.get_status().get_error() == DcEvErrorCode::NoError);
+    assert!(dc_value.get_status().get_ready() == true);
+    // check ac params
+    let ac_value = params.get_ac_param();
+    assert!(ac_value.get_departure_time().unwrap() == 1234);
+    assert!(ac_value.get_max_current().get_value() == 64);
+    assert!(ac_value.get_min_current().get_value() == 10);
+    assert!(ac_value.get_max_voltage().get_value() == 400);
+    Ok(())
+}

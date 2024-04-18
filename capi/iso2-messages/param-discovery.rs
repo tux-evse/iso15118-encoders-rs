@@ -27,13 +27,21 @@ impl DcEvChargeParam {
         status: DcEvStatusType,
         max_current: PhysicalValue,
         max_voltage: PhysicalValue,
-    ) -> Self {
+    ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVChargeParameterType>() };
+
+        if max_current.get_unit() != Isp2PhysicalUnit::Ampere {
+            return afb_error! ("dc-ev-charge-param", "expect: Isp2PhysicalUnit::Ampere get:{:?}", max_current.get_unit())
+        }
+
+        if max_voltage.get_unit() != Isp2PhysicalUnit::Volt {
+            return afb_error! ("dc-ev-charge-param", "expect: Isp2PhysicalUnit::Volt get:{:?}", max_current.get_unit())
+        }
 
         payload.DC_EVStatus = status.encode();
         payload.EVMaximumCurrentLimit = max_current.encode();
         payload.EVMaximumVoltageLimit = max_voltage.encode();
-        Self { payload }
+        Ok(Self { payload })
     }
 
     pub fn get_status(&self) -> DcEvStatusType {
@@ -147,18 +155,30 @@ pub struct AcEvChargeParam {
 
 impl AcEvChargeParam {
     pub fn new(
-        ea_mount: PhysicalValue,
-        max_voltage: PhysicalValue,
-        max_current: PhysicalValue,
-        min_current: PhysicalValue,
-    ) -> Self {
+        ea_mount: &PhysicalValue,
+        max_voltage: &PhysicalValue,
+        max_current: &PhysicalValue,
+        min_current: &PhysicalValue,
+    ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_AC_EVChargeParameterType>() };
+
+        if max_current.get_unit() != Isp2PhysicalUnit::Ampere {
+            return afb_error! ("ac-ev-charge-param", "expect: Isp2PhysicalUnit::Ampere get:{:?}", max_current.get_unit())
+        }
+
+        if min_current.get_unit() != Isp2PhysicalUnit::Ampere {
+            return afb_error! ("ac-ev-charge-param", "expect: Isp2PhysicalUnit::Ampere get:{:?}", max_current.get_unit())
+        }
+
+        if max_voltage.get_unit() != Isp2PhysicalUnit::Volt {
+            return afb_error! ("ac-ev-charge-param", "expect: Isp2PhysicalUnit::Volt get:{:?}", max_current.get_unit())
+        }
 
         payload.EAmount = ea_mount.encode();
         payload.EVMaxVoltage = max_voltage.encode();
         payload.EVMaxCurrent = max_current.encode();
         payload.EVMinCurrent = min_current.encode();
-        Self { payload }
+        Ok(Self { payload })
     }
 
     pub fn get_ea_mount(&self) -> PhysicalValue {
@@ -183,7 +203,7 @@ impl AcEvChargeParam {
         self
     }
 
-    pub fn get_departure_time(&mut self) -> Option<u32> {
+    pub fn get_departure_time(&self) -> Option<u32> {
         if self.payload.DepartureTime_isUsed() == 0 {
             None
         } else {
@@ -205,7 +225,7 @@ pub struct EvChargeParam {
 }
 
 impl EvChargeParam {
-    pub fn new(ac_param: AcEvChargeParam, dc_param: DcEvChargeParam) -> Self {
+    pub fn new(ac_param: &AcEvChargeParam, dc_param: &DcEvChargeParam) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_EVChargeParameterType>() };
         payload.AC_EVChargeParameter = ac_param.encode();
         payload.DC_EVChargeParameter = dc_param.encode();
@@ -226,7 +246,7 @@ impl EvChargeParam {
         self
     }
 
-    pub fn get_departure_time(&mut self) -> Option<u32> {
+    pub fn get_departure_time(&self) -> Option<u32> {
         if self.payload.DepartureTime_isUsed() == 0 {
             None
         } else {
@@ -260,7 +280,7 @@ impl ParamDiscoveryRequest {
         self
     }
 
-    pub fn get_max_schedule_tuple(&mut self) -> Option<u16> {
+    pub fn get_max_schedule_tuple(&self) -> Option<u16> {
         if self.payload.MaxEntriesSAScheduleTuple_isUsed() == 0 {
             None
         } else {
@@ -268,13 +288,16 @@ impl ParamDiscoveryRequest {
         }
     }
 
-    pub fn set_ac_charge_param(&mut self, ac_params: AcEvChargeParam) -> &mut Self {
+    pub fn set_ac_charge_param(&mut self, ac_params: &AcEvChargeParam) -> Result<&mut Self, AfbError> {
+        if self.payload.DC_EVChargeParameter_isUsed() != 0 {
+            return afb_error!("param-discovery-request", "fail set_ac_charge_param bacause dc already set")
+        }
         self.payload.AC_EVChargeParameter = ac_params.encode();
         self.payload.set_AC_EVChargeParameter_isUsed(1);
-        self
+        Ok(self)
     }
 
-    pub fn get_ac_charge_param(&mut self) -> Option<AcEvChargeParam> {
+    pub fn get_ac_charge_param(&self) -> Option<AcEvChargeParam> {
         if self.payload.AC_EVChargeParameter_isUsed() == 0 {
             None
         } else {
@@ -282,21 +305,24 @@ impl ParamDiscoveryRequest {
         }
     }
 
-    pub fn set_dc_charge_param(&mut self, dc_params: DcEvChargeParam) -> &mut Self {
+    pub fn set_dc_charge_param(&mut self, dc_params: &DcEvChargeParam) -> Result<&mut Self, AfbError> {
+        if self.payload.AC_EVChargeParameter_isUsed() != 0 {
+            return afb_error!("param-discovery-request", "fail set_dc_charge_param bacause ac already set")
+        }
         self.payload.DC_EVChargeParameter = dc_params.encode();
         self.payload.set_DC_EVChargeParameter_isUsed(1);
-        self
+        Ok(self)
     }
 
-    pub fn get_dc_charge_param(&mut self) -> Option<DcEvChargeParam> {
-        if self.payload.EVChargeParameter_isUsed() == 0 {
+    pub fn get_dc_charge_param(&self) -> Option<DcEvChargeParam> {
+        if self.payload.DC_EVChargeParameter_isUsed() == 0 {
             None
         } else {
             Some(DcEvChargeParam::decode(self.payload.DC_EVChargeParameter))
         }
     }
 
-    pub fn get_charge_param(&mut self) -> Option<EvChargeParam> {
+    pub fn get_charge_param(&self) -> Option<EvChargeParam> {
         if self.payload.EVChargeParameter_isUsed() == 0 {
             None
         } else {
@@ -304,10 +330,13 @@ impl ParamDiscoveryRequest {
         }
     }
 
-    pub fn set_charge_param(&mut self, dc_params: EvChargeParam) -> &mut Self {
-        self.payload.EVChargeParameter = dc_params.encode();
+    pub fn set_charge_param(&mut self, charge_params: &EvChargeParam) -> Result<&mut Self, AfbError> {
+        if self.payload.DC_EVChargeParameter_isUsed() != 0 || self.payload.AC_EVChargeParameter_isUsed() != 0 {
+            return afb_error!("param-discovery-request", "fail set_charge_param bacause ac|dc already set")
+        }
+        self.payload.EVChargeParameter = charge_params.encode();
         self.payload.set_EVChargeParameter_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn decode(payload: cglue::iso2_ChargeParameterDiscoveryReqType) -> Self {
