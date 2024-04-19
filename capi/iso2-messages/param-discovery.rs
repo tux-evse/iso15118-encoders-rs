@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-use std::mem;
 use super::*;
+use std::mem;
 
 pub struct DcEvChargeParam {
     payload: cglue::iso2_DC_EVChargeParameterType,
@@ -31,11 +31,19 @@ impl DcEvChargeParam {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVChargeParameterType>() };
 
         if max_current.get_unit() != Isp2PhysicalUnit::Ampere {
-            return afb_error! ("dc-ev-charge-param", "expect: Isp2PhysicalUnit::Ampere get:{:?}", max_current.get_unit())
+            return afb_error!(
+                "dc-ev-charge-param",
+                "expect: Isp2PhysicalUnit::Ampere get:{:?}",
+                max_current.get_unit()
+            );
         }
 
         if max_voltage.get_unit() != Isp2PhysicalUnit::Volt {
-            return afb_error! ("dc-ev-charge-param", "expect: Isp2PhysicalUnit::Volt get:{:?}", max_current.get_unit())
+            return afb_error!(
+                "dc-ev-charge-param",
+                "expect: Isp2PhysicalUnit::Volt get:{:?}",
+                max_current.get_unit()
+            );
         }
 
         payload.DC_EVStatus = status.encode();
@@ -163,15 +171,27 @@ impl AcEvChargeParam {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_AC_EVChargeParameterType>() };
 
         if max_current.get_unit() != Isp2PhysicalUnit::Ampere {
-            return afb_error! ("ac-ev-charge-param", "expect: Isp2PhysicalUnit::Ampere get:{:?}", max_current.get_unit())
+            return afb_error!(
+                "ac-ev-charge-param",
+                "expect: Isp2PhysicalUnit::Ampere get:{:?}",
+                max_current.get_unit()
+            );
         }
 
         if min_current.get_unit() != Isp2PhysicalUnit::Ampere {
-            return afb_error! ("ac-ev-charge-param", "expect: Isp2PhysicalUnit::Ampere get:{:?}", max_current.get_unit())
+            return afb_error!(
+                "ac-ev-charge-param",
+                "expect: Isp2PhysicalUnit::Ampere get:{:?}",
+                max_current.get_unit()
+            );
         }
 
         if max_voltage.get_unit() != Isp2PhysicalUnit::Volt {
-            return afb_error! ("ac-ev-charge-param", "expect: Isp2PhysicalUnit::Volt get:{:?}", max_current.get_unit())
+            return afb_error!(
+                "ac-ev-charge-param",
+                "expect: Isp2PhysicalUnit::Volt get:{:?}",
+                max_current.get_unit()
+            );
         }
 
         payload.EAmount = ea_mount.encode();
@@ -288,9 +308,26 @@ impl ParamDiscoveryRequest {
         }
     }
 
-    pub fn set_ac_charge_param(&mut self, ac_params: &AcEvChargeParam) -> Result<&mut Self, AfbError> {
-        if self.payload.DC_EVChargeParameter_isUsed() != 0 {
-            return afb_error!("param-discovery-request", "fail set_ac_charge_param bacause dc already set")
+    pub fn set_ac_charge_param(
+        &mut self,
+        ac_params: &AcEvChargeParam,
+    ) -> Result<&mut Self, AfbError> {
+        if self.payload.DC_EVChargeParameter_isUsed() != 0
+            || self.payload.EVChargeParameter_isUsed() != 0
+        {
+            return afb_error!(
+                "param-discovery-request",
+                "fail set_ac_charge_param because dc already set"
+            );
+        }
+
+        if self.payload.RequestedEnergyTransferMode != EngyTransfertMode::AcSinglePhase as u32
+            && self.payload.RequestedEnergyTransferMode != EngyTransfertMode::AcSinglePhase as u32
+        {
+            return afb_error!(
+                "param-discovery-request",
+                "set_ac_charge_param incompatible with current RequestedEnergyTransferMode"
+            );
         }
         self.payload.AC_EVChargeParameter = ac_params.encode();
         self.payload.set_AC_EVChargeParameter_isUsed(1);
@@ -305,9 +342,25 @@ impl ParamDiscoveryRequest {
         }
     }
 
-    pub fn set_dc_charge_param(&mut self, dc_params: &DcEvChargeParam) -> Result<&mut Self, AfbError> {
-        if self.payload.AC_EVChargeParameter_isUsed() != 0 {
-            return afb_error!("param-discovery-request", "fail set_dc_charge_param bacause ac already set")
+    pub fn set_dc_charge_param(
+        &mut self,
+        dc_params: &DcEvChargeParam,
+    ) -> Result<&mut Self, AfbError> {
+        if self.payload.AC_EVChargeParameter_isUsed() != 0
+            || self.payload.EVChargeParameter_isUsed() != 0
+        {
+            return afb_error!(
+                "param-discovery-request",
+                "fail set_dc_charge_param because ac already set"
+            );
+        }
+        if self.payload.RequestedEnergyTransferMode | EngyTransfertMode::DcAny as u32
+            != EngyTransfertMode::DcAny as u32
+        {
+            return afb_error!(
+                "param-discovery-request",
+                "set_dc_charge_param incompatible with current RequestedEnergyTransferMode"
+            );
         }
         self.payload.DC_EVChargeParameter = dc_params.encode();
         self.payload.set_DC_EVChargeParameter_isUsed(1);
@@ -330,9 +383,17 @@ impl ParamDiscoveryRequest {
         }
     }
 
-    pub fn set_charge_param(&mut self, charge_params: &EvChargeParam) -> Result<&mut Self, AfbError> {
-        if self.payload.DC_EVChargeParameter_isUsed() != 0 || self.payload.AC_EVChargeParameter_isUsed() != 0 {
-            return afb_error!("param-discovery-request", "fail set_charge_param bacause ac|dc already set")
+    pub fn set_charge_param(
+        &mut self,
+        charge_params: &EvChargeParam,
+    ) -> Result<&mut Self, AfbError> {
+        if self.payload.DC_EVChargeParameter_isUsed() != 0
+            || self.payload.AC_EVChargeParameter_isUsed() != 0
+        {
+            return afb_error!(
+                "param-discovery-request",
+                "fail set_charge_param bacause ac|dc already set"
+            );
         }
         self.payload.EVChargeParameter = charge_params.encode();
         self.payload.set_EVChargeParameter_isUsed(1);
@@ -776,9 +837,7 @@ impl DcEvseChargeParam {
         if self.payload.EVSEEnergyToBeDelivered_isUsed() == 0 {
             None
         } else {
-            Some(PhysicalValue::decode(
-                self.payload.EVSEEnergyToBeDelivered,
-            ))
+            Some(PhysicalValue::decode(self.payload.EVSEEnergyToBeDelivered))
         }
     }
 

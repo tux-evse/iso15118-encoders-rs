@@ -84,7 +84,7 @@ impl MessageTagId {
         }
     }
 
-    pub fn match_res_id(&self) -> Self{
+    pub fn match_res_id(&self) -> Self {
         let response = match self {
             MessageTagId::AppProtocolReq => MessageTagId::AppProtocolRes,
             MessageTagId::SessionSetupReq => MessageTagId::SessionSetupRes,
@@ -376,6 +376,9 @@ pub enum EngyTransfertMode {
     DcExtended = cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_extended,
     DcCombo = cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_combo_core,
     DcUnique = cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_unique,
+    DcAny = cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_core
+        | cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_combo_core
+        | cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_unique,
 }
 impl EngyTransfertMode {
     pub fn from_u32(code: u32) -> Self {
