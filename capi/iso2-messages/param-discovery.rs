@@ -312,6 +312,8 @@ impl ParamDiscoveryRequest {
         &mut self,
         ac_params: &AcEvChargeParam,
     ) -> Result<&mut Self, AfbError> {
+        const AC_ANY: u32 = EngyTransfertMode::AcSinglePhase as u32 | EngyTransfertMode::AcTreePhase as u32;
+
         if self.payload.DC_EVChargeParameter_isUsed() != 0
             || self.payload.EVChargeParameter_isUsed() != 0
         {
@@ -321,13 +323,13 @@ impl ParamDiscoveryRequest {
             );
         }
 
-        if self.payload.RequestedEnergyTransferMode != EngyTransfertMode::AcSinglePhase as u32
-            && self.payload.RequestedEnergyTransferMode != EngyTransfertMode::AcSinglePhase as u32
-        {
-            return afb_error!(
+        match EngyTransfertMode::from_u32 (self.payload.RequestedEnergyTransferMode) {
+        EngyTransfertMode::AcSinglePhase => {},
+        EngyTransfertMode::AcTreePhase => {}
+        _ => return afb_error!(
                 "param-discovery-request",
                 "set_ac_charge_param incompatible with current RequestedEnergyTransferMode"
-            );
+            )
         }
         self.payload.AC_EVChargeParameter = ac_params.encode();
         self.payload.set_AC_EVChargeParameter_isUsed(1);
@@ -346,6 +348,7 @@ impl ParamDiscoveryRequest {
         &mut self,
         dc_params: &DcEvChargeParam,
     ) -> Result<&mut Self, AfbError> {
+
         if self.payload.AC_EVChargeParameter_isUsed() != 0
             || self.payload.EVChargeParameter_isUsed() != 0
         {
@@ -354,14 +357,17 @@ impl ParamDiscoveryRequest {
                 "fail set_dc_charge_param because ac already set"
             );
         }
-        if self.payload.RequestedEnergyTransferMode | EngyTransfertMode::DcAny as u32
-            != EngyTransfertMode::DcAny as u32
-        {
-            return afb_error!(
+        match EngyTransfertMode::from_u32 (self.payload.RequestedEnergyTransferMode) {
+            EngyTransfertMode::DcBasic => {},
+            EngyTransfertMode::DcExtended => {},
+            EngyTransfertMode::DcCombo => {},
+            EngyTransfertMode::DcUnique => {},
+        _ =>    return afb_error!(
                 "param-discovery-request",
                 "set_dc_charge_param incompatible with current RequestedEnergyTransferMode"
-            );
+            )
         }
+
         self.payload.DC_EVChargeParameter = dc_params.encode();
         self.payload.set_DC_EVChargeParameter_isUsed(1);
         Ok(self)
