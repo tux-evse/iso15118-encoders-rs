@@ -20,7 +20,7 @@ use std::mem;
 
 use super::*;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[repr(u32)]
 #[allow(dead_code)]
@@ -110,7 +110,7 @@ impl MessageTagId {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[repr(u32)]
 #[allow(dead_code)]
@@ -177,7 +177,7 @@ impl ResponseCode {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[repr(u32)]
 pub enum ServiceCategory {
@@ -207,7 +207,7 @@ impl ServiceCategory {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
@@ -236,7 +236,7 @@ impl PaymentOption {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
@@ -265,7 +265,7 @@ impl ChargingSessionType {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[repr(u32)]
 pub enum ChargeProgress {
@@ -293,7 +293,7 @@ impl ChargeProgress {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[repr(u32)]
 pub enum EvseProcessing {
@@ -321,7 +321,7 @@ impl EvseProcessing {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[repr(u32)]
 pub enum DcEvErrorCode {
@@ -363,7 +363,7 @@ impl DcEvErrorCode {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
@@ -396,7 +396,7 @@ impl EngyTransfertMode {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
@@ -425,7 +425,7 @@ impl EvseNotification {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
@@ -455,7 +455,7 @@ impl IsolationStatus {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
@@ -523,7 +523,7 @@ impl DcEvseStatusType {
         }
     }
 
-    pub fn get_error(&self) -> DcEvseErrorCode {
+    pub fn get_rcode(&self) -> DcEvseErrorCode {
         DcEvseErrorCode::from_u32(self.payload.EVSEStatusCode)
     }
 
@@ -591,9 +591,13 @@ pub struct AcEvseStatusType {
 }
 
 impl AcEvseStatusType {
-    pub fn new(notification: EvseNotification, delay: u16, rcd: i32) -> Self {
+    pub fn new(notification: EvseNotification, delay: u16, rcd: bool) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_AC_EVSEStatusType>() };
-        payload.RCD = rcd;
+        if rcd  {
+            payload.RCD=1;
+        } else {
+            payload.RCD=0;
+        }
         payload.NotificationMaxDelay = delay;
         payload.EVSENotification = notification as u32;
         Self { payload }
@@ -607,8 +611,12 @@ impl AcEvseStatusType {
         self.payload.NotificationMaxDelay
     }
 
-    pub fn get_rcd(&self) -> i32 {
-        self.payload.RCD
+    pub fn get_rcd(&self) -> bool {
+        if self.payload.RCD == 0 {
+            false
+        } else {
+            true
+        }
     }
 
     pub fn decode(payload: cglue::iso2_AC_EVSEStatusType) -> Self {

@@ -42,7 +42,7 @@ impl DcEvChargeParam {
             return afb_error!(
                 "dc-ev-charge-param",
                 "expect: Isp2PhysicalUnit::Volt get:{:?}",
-                max_current.get_unit()
+                max_voltage.get_unit()
             );
         }
 
@@ -312,7 +312,6 @@ impl ParamDiscoveryRequest {
         &mut self,
         ac_params: &AcEvChargeParam,
     ) -> Result<&mut Self, AfbError> {
-        const AC_ANY: u32 = EngyTransfertMode::AcSinglePhase as u32 | EngyTransfertMode::AcTreePhase as u32;
 
         if self.payload.DC_EVChargeParameter_isUsed() != 0
             || self.payload.EVChargeParameter_isUsed() != 0
@@ -516,9 +515,9 @@ impl SalesTariff {
 }
 
 pub struct PMaxScheduleEntry {
-    value: PhysicalValue,
-    start: u32,
-    duration: u32,
+    pub value: PhysicalValue,
+    pub start: u32,
+    pub duration: u32,
 }
 
 #[repr(u32)]
@@ -687,6 +686,7 @@ impl SasScheduleTuple {
             slot.set_RelativeTimeInterval_isUsed(1);
             slot.RelativeTimeInterval.duration = pmax.duration;
         }
+        self.payload.PMaxSchedule.PMaxScheduleEntry.arrayLen= idx+1;
         Ok(self)
     }
 
@@ -775,11 +775,11 @@ pub struct DcEvseChargeParam {
 impl DcEvseChargeParam {
     pub fn new(
         status: &DcEvseStatusType,
-        max_current: &PhysicalValue,
-        max_power: &PhysicalValue,
         max_voltage: &PhysicalValue,
-        min_current: &PhysicalValue,
         min_voltage: &PhysicalValue,
+        max_current: &PhysicalValue,
+        min_current: &PhysicalValue,
+        max_power: &PhysicalValue,
     ) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVSEChargeParameterType>() };
 
@@ -801,20 +801,19 @@ impl DcEvseChargeParam {
         PhysicalValue::decode(self.payload.EVSEMaximumVoltageLimit)
     }
 
+    pub fn get_min_voltage(&self) -> PhysicalValue {
+        PhysicalValue::decode(self.payload.EVSEMinimumVoltageLimit)
+    }
+
     pub fn get_max_current(&self) -> PhysicalValue {
         PhysicalValue::decode(self.payload.EVSEMaximumCurrentLimit)
     }
 
+    pub fn get_min_current(&self) -> PhysicalValue {
+        PhysicalValue::decode(self.payload.EVSEMinimumCurrentLimit)
+    }
     pub fn get_max_power(&self) -> PhysicalValue {
         PhysicalValue::decode(self.payload.EVSEMaximumPowerLimit)
-    }
-
-    pub fn get_powermin_voltage(&self) -> PhysicalValue {
-        PhysicalValue::decode(self.payload.EVSEMinimumVoltageLimit)
-    }
-
-    pub fn get_powermin_current(&self) -> PhysicalValue {
-        PhysicalValue::decode(self.payload.EVSEMinimumCurrentLimit)
     }
 
     pub fn set_regul_tolerance(&mut self, tolerance: PhysicalValue) -> &mut Self {
@@ -900,7 +899,21 @@ impl ParamDiscoveryResponse {
         }
     }
 
-    pub fn add_schedule_tuple(&mut self, tuple: SasScheduleTuple) -> Result<&mut Self, AfbError> {
+    pub fn add_charge_param(&mut self, unused: i32) -> &mut Self {
+        self.payload.set_EVSEChargeParameter_isUsed(1);
+        self.payload.SASchedules._unused = unused;
+        self
+    }
+
+    pub fn get_charge_param(&mut self) -> Option<i32> {
+        if self.payload.EVSEChargeParameter_isUsed() == 0 {
+            None
+        } else {
+            Some(self.payload.SASchedules._unused)
+        }
+    }
+
+    pub fn add_schedule_tuple(&mut self, tuple: &SasScheduleTuple) -> Result<&mut Self, AfbError> {
         let idx = self.payload.SAScheduleList.SAScheduleTuple.arrayLen;
         if idx == cglue::iso2_SAScheduleTupleType_3_ARRAY_SIZE as u16 {
             return afb_error!(
@@ -910,7 +923,7 @@ impl ParamDiscoveryResponse {
         }
         self.payload.SAScheduleList.SAScheduleTuple.array[idx as usize] = tuple.encode();
         self.payload.SAScheduleList.SAScheduleTuple.arrayLen = idx + 1;
-
+        self.payload.set_SAScheduleList_isUsed(1);
         Ok(self)
     }
 
@@ -920,7 +933,7 @@ impl ParamDiscoveryResponse {
         self
     }
 
-    pub fn get_evse_dc_charge_param(&mut self) -> Option<DcEvseChargeParam> {
+    pub fn get_evse_dc_charge_param(&self) -> Option<DcEvseChargeParam> {
         if self.payload.DC_EVSEChargeParameter_isUsed() == 0 {
             None
         } else {
@@ -936,7 +949,7 @@ impl ParamDiscoveryResponse {
         self
     }
 
-    pub fn get_evse_ac_charge_param(&mut self) -> Option<AcEvseChargeParam> {
+    pub fn get_evse_ac_charge_param(&self) -> Option<AcEvseChargeParam> {
         if self.payload.AC_EVSEChargeParameter_isUsed() == 0 {
             None
         } else {

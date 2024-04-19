@@ -60,6 +60,15 @@ pub(crate) fn v2gtp20_write_header(
     unsafe { cglue::V2GTP20_WriteHeader(stream_data, stream_payload_length, v2gtp20_payload_id) }
 }
 
+#[inline]
+#[allow(dead_code)]
+// export cglue function to other create modules
+pub(crate) fn v2gtp20_read_header(
+    stream_data: *mut u8,
+) -> i32 {
+    unsafe { cglue::V2GTP20_GetPayloadLen(stream_data) }
+}
+
 #[derive(Debug, Clone)]
 pub struct SupportedAppProtocolType {
     pub name_space: String,

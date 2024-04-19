@@ -132,3 +132,10 @@ match message.get_payload() {
 }
 ...
 ```
+
+
+Fulup TBD finir param_discovery_response
+
+ - set_regul_tolerance
+ - set_energy_to_deliver
+ - set_peak_current_ripple

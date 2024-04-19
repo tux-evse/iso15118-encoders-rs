@@ -197,11 +197,11 @@ pub struct MeteringReceiptResponse {
 }
 
 impl MeteringReceiptResponse {
-    pub fn new(code: ResponseCode) -> Result<Self, AfbError> {
+    pub fn new(code: ResponseCode) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_MeteringReceiptResType>() };
 
         payload.ResponseCode = code as u32;
-        Ok(Self { payload })
+        Self { payload }
     }
 
     pub fn get_rcode(&self) -> ResponseCode {

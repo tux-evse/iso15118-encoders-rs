@@ -13,14 +13,23 @@ pub fn encode_to_stream<'a>(
     // mock network stream and encode message
     let mut stream_lock = stream.lock_stream();
     Iso2MessageExi::encode_to_stream(&mut stream_lock, &body, &net_session).unwrap();
+    let doc_size = stream
+        .header_check(&stream_lock, v2g::PayloadMsgId::SAP)
+        .expect("expect valid V2G header");
+    println!(
+        "{}-> ({}) [{}]",
+        funcname,
+        doc_size,
+        dump_buffer(stream_lock.get_buffer())
+    );
 
-    let length = stream_lock.get_cursor();
-    let buffer = &stream_lock.buffer[0..length];
-    println!("{}: [{}]", funcname, dump_buffer(buffer));
     stream_lock
 }
 
-pub fn decode_from_stream(stream: &MutexGuard<RawStream>) -> Result<Iso2Payload, AfbError> {
+pub fn decode_from_stream(
+    _funcname: &str,
+    stream: &MutexGuard<RawStream>,
+) -> Result<Iso2Payload, AfbError> {
     let stream_decode = mock_network_input(stream.get_buffer());
     let stream_lock = stream_decode.lock_stream();
     let message = Iso2Payload::decode_from_stream(&stream_lock)?;
@@ -56,7 +65,7 @@ fn session_setup_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::SessionSetupReq(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -78,9 +87,9 @@ fn session_setup_response() -> Result<(), AfbError> {
     ];
 
     // Encoding API
-    let evse_tst = "tux-evse-001";
-    let code_tst = ResponseCode::Ok;
-    let payload = iso2::SessionSetupResponse::new(evse_tst, code_tst.clone())?.encode();
+    let evse_id = "tux-evse-001";
+    let rcode = ResponseCode::Ok;
+    let payload = iso2::SessionSetupResponse::new(evse_id, rcode)?.encode();
 
     // encode message to stream_exi an compare with expected binary result
     let exi = ExiStream::new();
@@ -88,7 +97,7 @@ fn session_setup_response() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::SessionSetupRes(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -99,8 +108,8 @@ fn session_setup_response() -> Result<(), AfbError> {
     let code_rec = payload.get_rcode();
     let _time_stamp = payload.get_time_stamp();
 
-    assert!(evse_tst == evse_rec);
-    assert!(code_tst == code_rec);
+    assert!(evse_id == evse_rec);
+    assert!(rcode == code_rec);
 
     Ok(())
 }
@@ -119,7 +128,7 @@ fn service_discovery_request() -> Result<(), AfbError> {
     let category_tst = ServiceCategory::EvCharger;
     let payload = ServiceDiscoveryRequest::new()
         .set_scope(scope_tst)?
-        .set_category(category_tst.clone())
+        .set_category(category_tst)
         .encode();
 
     // encode message to stream_exi an compare with expected binary result
@@ -128,7 +137,7 @@ fn service_discovery_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::ServiceDiscoveryReq(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -155,7 +164,7 @@ fn service_discovery_response() -> Result<(), AfbError> {
         0x80, 0x2a, 0x7a, 0xa2, 0x8, 0xc0, 0x21, 0x55, 0xc1, 0x91, 0x85, 0xd1, 0x94, 0x44, 0x0,
     ];
 
-    let rcode_tst = ResponseCode::Ok;
+    let rcode = ResponseCode::Ok;
     let charging_tst = ServiceCharging::new("Tux-Evse", "IoT.bzh", false);
     let payment_tst0 = PaymentOption::Contract;
     let payment_tst1 = PaymentOption::External;
@@ -164,12 +173,12 @@ fn service_discovery_response() -> Result<(), AfbError> {
     let transfer_tst0 = EngyTransfertMode::AcSinglePhase;
     let transfer_tst1 = EngyTransfertMode::DcBasic;
 
-    let payload = ServiceDiscoveryResponse::new(rcode_tst.clone())
+    let payload = ServiceDiscoveryResponse::new(rcode)
         .set_charging(&charging_tst)?
-        .add_transfer(transfer_tst0.clone())?
-        .add_transfer(transfer_tst1.clone())?
-        .add_payment(payment_tst0.clone())?
-        .add_payment(payment_tst1.clone())?
+        .add_transfer(transfer_tst0)?
+        .add_transfer(transfer_tst1)?
+        .add_payment(payment_tst0)?
+        .add_payment(payment_tst1)?
         .add_service(&service_tst0)?
         .add_service(&service_tst1)?
         .encode();
@@ -180,7 +189,7 @@ fn service_discovery_response() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::ServiceDiscoveryRes(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -194,7 +203,7 @@ fn service_discovery_response() -> Result<(), AfbError> {
     let services_rec = payload.get_services()?;
 
     // assert input==output
-    assert!(rcode_rec == rcode_tst);
+    assert!(rcode_rec == rcode);
     assert!(charging_rec.get_name() == charging_tst.get_name());
     assert!(charging_rec.get_scope() == charging_tst.get_scope());
     assert!(charging_rec.get_isfree() == charging_tst.get_isfree());
@@ -234,7 +243,7 @@ fn service_detail_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::ServiceDetailReq(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -278,10 +287,10 @@ fn service_detail_response() -> Result<(), AfbError> {
     )?;
 
     let id_tst = 56;
-    let rcode_tst = ResponseCode::Ok;
+    let rcode = ResponseCode::Ok;
 
     // Encoding api
-    let mut payload = ServiceDetailResponse::new(id_tst, rcode_tst.clone());
+    let mut payload = ServiceDetailResponse::new(id_tst, rcode);
     payload.add_pset(&param_tst0)?;
     payload.add_pset(&param_tst1)?;
 
@@ -294,7 +303,7 @@ fn service_detail_response() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::ServiceDetailRes(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -307,7 +316,7 @@ fn service_detail_response() -> Result<(), AfbError> {
 
     // assert input == output
     assert!(id_tst == id_rec);
-    assert!(rcode_tst == rcode_rec);
+    assert!(rcode == rcode_rec);
     assert!(psets_rec.len() == psets_tst.len());
     for idx in 0..psets_rec.len() {
         let set_rec = psets_rec[idx].clone();
@@ -373,7 +382,7 @@ fn authorization_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::AuthorizationReq(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -397,11 +406,11 @@ fn authorization_response() -> Result<(), AfbError> {
         0x41, 0x81, 0xc2, 0x10, 0x10, 0x20, 0x0,
     ];
 
-    let rcode_tst = ResponseCode::NewSession;
+    let rcode = ResponseCode::NewSession;
     let processing_tst = EvseProcessing::Finished;
 
     // Encoding api
-    let payload = AuthorizationResponse::new(rcode_tst.clone(), processing_tst.clone()).encode();
+    let payload = AuthorizationResponse::new(rcode, processing_tst).encode();
 
     // encode message to stream_exi an compare with expected binary result
     let exi = ExiStream::new();
@@ -409,7 +418,7 @@ fn authorization_response() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::AuthorizationRes(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -420,7 +429,7 @@ fn authorization_response() -> Result<(), AfbError> {
     let processing_rec = payload.get_processing();
 
     // assert input == output
-    assert!(rcode_rec == rcode_tst);
+    assert!(rcode_rec == rcode);
     assert!(processing_rec == processing_tst);
 
     Ok(())
@@ -435,9 +444,9 @@ fn cable_check_request() -> Result<(), AfbError> {
 
     // Encoding api
     let ready_tst = true;
-    let error_tst = DcEvErrorCode::NoError;
+    let dc_rcode = DcEvErrorCode::NoError;
     let evresssoc_tst: i8 = 16;
-    let status_tst = DcEvStatusType::new(ready_tst, error_tst.clone(), evresssoc_tst);
+    let status_tst = DcEvStatusType::new(ready_tst, dc_rcode, evresssoc_tst);
     let payload = CableCheckRequest::new(&status_tst).encode();
 
     // encode message to stream_exi an compare with expected binary result
@@ -446,7 +455,7 @@ fn cable_check_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::CableCheckReq(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -457,7 +466,7 @@ fn cable_check_request() -> Result<(), AfbError> {
 
     // assert input == output
     assert!(status_rec.get_ready() == ready_tst);
-    assert!(status_rec.get_error() == error_tst);
+    assert!(status_rec.get_error() == dc_rcode);
     assert!(status_rec.get_evresssoc() == evresssoc_tst);
 
     Ok(())
@@ -471,16 +480,15 @@ fn cable_check_response() -> Result<(), AfbError> {
     ];
 
     // Encoding api
-    let code_tst = ResponseCode::NewSession;
+    let rcode = ResponseCode::NewSession;
     let processing_tst = EvseProcessing::Ongoing;
 
-    let error_tst = DcEvseErrorCode::Ready;
+    let dc_rcode = DcEvseErrorCode::Ready;
     let notification_tst = EvseNotification::ReNegociation;
     let delay_tst = 160;
-    let status_tst = DcEvseStatusType::new(error_tst.clone(), notification_tst.clone(), delay_tst);
+    let status_tst = DcEvseStatusType::new(dc_rcode, notification_tst, delay_tst);
 
-    let payload =
-        CableCheckResponse::new(code_tst.clone(), &status_tst, processing_tst.clone()).encode();
+    let payload = CableCheckResponse::new(rcode, &status_tst, processing_tst).encode();
 
     // encode message to stream_exi an compare with expected binary result
     let exi = ExiStream::new();
@@ -488,7 +496,7 @@ fn cable_check_response() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::CableCheckRes(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -500,11 +508,11 @@ fn cable_check_response() -> Result<(), AfbError> {
     let processing_rec = payload.get_processing();
 
     // assert input == output
-    assert!(code_rec == code_tst);
+    assert!(code_rec == rcode);
     assert!(processing_rec == processing_tst);
     assert!(status_rec.get_notification() == notification_tst);
     assert!(status_rec.get_delay() == delay_tst);
-    assert!(status_rec.get_error() == error_tst);
+    assert!(status_rec.get_rcode() == dc_rcode);
 
     Ok(())
 }
@@ -537,7 +545,7 @@ fn certificate_install_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::CertificateInstallReq(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -612,10 +620,10 @@ fn certificate_install_response() -> Result<(), AfbError> {
     let emaid_str_tst = "my emaid testing string";
     let emaid_tst = EmaidType::new(emaid_id_tst, emaid_str_tst)?;
 
-    let rcode_tst = ResponseCode::NewSession;
+    let rcode = ResponseCode::NewSession;
 
     let payload = CertificateInstallResponse::new(
-        rcode_tst.clone(),
+        rcode,
         &cert_chain_tst,
         &contract_chain_tst,
         &private_key_tst,
@@ -630,7 +638,7 @@ fn certificate_install_response() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::CertificateInstallRes(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -645,7 +653,7 @@ fn certificate_install_response() -> Result<(), AfbError> {
     let emaid_rec = payload.get_emaid();
 
     // assert input == output
-    assert!(rcode_rec == rcode_tst);
+    assert!(rcode_rec == rcode);
     assert!(cert_chain_rec.get_id() == cert_chain_tst.get_id());
     assert!(cert_chain_rec.get_cert() == cert_chain_tst.get_cert());
     assert!(contract_chain_rec.get_id() == contract_chain_tst.get_id());
@@ -692,7 +700,7 @@ fn current_demand_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::CurrentDemandReq(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -707,6 +715,73 @@ fn current_demand_request() -> Result<(), AfbError> {
     let tension = payload.get_voltage_target();
     assert!(tension.get_value() == 400);
     assert!(payload.get_voltage_limit().unwrap().get_value() == 800);
+
+    Ok(())
+}
+
+#[test]
+fn current_demand_response() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x2b, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x10, 0xe0, 0x1, 0xa4, 0x12, 0x10, 0x40, 0x1, 0x4, 0x9, 0x0, 0x30, 0x40,
+        0xc1, 0x0, 0x20, 0x26, 0xe, 0x74, 0x75, 0x78, 0x2d, 0x65, 0x76, 0x73, 0x65, 0x2d, 0x30,
+        0x30, 0x31, 0x6, 0xe8,
+    ];
+
+    // Encoding API
+    let evse_id = "tux-evse-001";
+    let rcode = ResponseCode::Ok;
+    let voltage = PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt);
+    let current = PhysicalValue::new(64, 1, Isp2PhysicalUnit::Ampere);
+    let current_limit = true;
+    let voltage_limit = false;
+    let power_limit = true;
+    let schd_tuple_id = 56;
+
+    let dc_rcode = DcEvseErrorCode::NotReady;
+    let delay = 1234;
+    let notif = EvseNotification::StopCharging;
+    let isolation = IsolationStatus::Warning;
+    let mut dc_status = DcEvseStatusType::new(dc_rcode, notif, delay);
+    dc_status.set_isolation_status(isolation);
+
+    let payload = iso2::CurrentDemandResponse::new(
+        evse_id,
+        rcode,
+        dc_status,
+        &current,
+        current_limit,
+        &voltage,
+        voltage_limit,
+        power_limit,
+        schd_tuple_id,
+    )?
+    .encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), &stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::CurrentDemandRes(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_rcode() == rcode);
+    assert!(payload.get_id().unwrap() == evse_id);
+    assert!(payload.get_current_limit_reach() == current_limit);
+    assert!(payload.get_voltage_limit_reach() == voltage_limit);
+    assert!(payload.get_power_limit_reach() == power_limit);
+    assert!(payload.get_tuple_id() == schd_tuple_id);
+    let status = payload.get_dc_status();
+    assert!(status.get_isolation_status().unwrap() == isolation);
+    assert!(status.get_rcode() == dc_rcode);
+    assert!(status.get_notification() == notif);
+    assert!(status.get_delay() == delay);
 
     Ok(())
 }
@@ -727,13 +802,57 @@ fn charging_status_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let _payload = match message.get_payload() {
         Iso2MessageBody::ChargingStatusReq(msg) => msg,
         _ => panic!("Unexpected message type"),
     };
 
     // Decoding API (nothing to do)
+
+    Ok(())
+}
+
+#[test]
+fn charging_status_response() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x21, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x10, 0xc0, 0x0, 0x39, 0xd1, 0xd5, 0xe0, 0xb5, 0x95, 0xd9, 0xcd, 0x94,
+        0xb4, 0xc0, 0xc0, 0xc4, 0x1f, 0x99, 0xa4, 0x12, 0x11, 0x0,
+    ];
+
+    // Encoding API
+    let evse_id = "tux-evse-001";
+    let rcode = ResponseCode::Ok;
+    let tuple_id = 64;
+
+    let rcd = true;
+    let delay = 1234;
+    let notif = EvseNotification::StopCharging;
+    let ac_status = AcEvseStatusType::new(notif, delay, rcd);
+
+    let payload = iso2::ChargingStatusResponse::new(rcode, evse_id, tuple_id, &ac_status)?.encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), &stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::ChargingStatusRes(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_rcode() == rcode);
+    assert!(payload.get_id().unwrap() == evse_id);
+    assert!(payload.get_tuple_id() == tuple_id);
+    let status = payload.get_ac_evse_status();
+    assert!(status.get_notification() == notif);
+    assert!(status.get_delay() == delay);
+    assert!(status.get_rcd() == rcd);
 
     Ok(())
 }
@@ -772,7 +891,7 @@ fn metering_receipt_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::MeteringReceiptReq(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -788,6 +907,35 @@ fn metering_receipt_request() -> Result<(), AfbError> {
     assert!(info.get_status().unwrap() == 255);
     assert!(info.get_tmeter().unwrap() == 123546789);
     assert!(info.get_sig().unwrap() == signature);
+
+    Ok(())
+}
+
+#[test]
+fn metering_receipt_response() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x17, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x11, 0x0, 0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0,
+    ];
+
+    // Encoding API
+    let rcode = ResponseCode::Ok;
+    let payload = iso2::MeteringReceiptResponse::new(rcode).encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), &stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::MeteringReceiptRes(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_rcode() == rcode);
 
     Ok(())
 }
@@ -819,7 +967,7 @@ fn ac_param_discovery_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::ParamDiscoveryReq(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -861,7 +1009,7 @@ fn dc_param_discovery_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::ParamDiscoveryReq(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -914,7 +1062,7 @@ fn ev_param_discovery_request() -> Result<(), AfbError> {
     assert!(expected_response == stream.get_buffer());
 
     // simulate network exi_stream input and decode received message
-    let message = decode_from_stream(&stream)?;
+    let message = decode_from_stream(func_name!(), &stream)?;
     let payload = match message.get_payload() {
         Iso2MessageBody::ParamDiscoveryReq(msg) => msg,
         _ => panic!("Unexpected message type"),
@@ -935,5 +1083,174 @@ fn ev_param_discovery_request() -> Result<(), AfbError> {
     assert!(ac_value.get_max_current().get_value() == 64);
     assert!(ac_value.get_min_current().get_value() == 10);
     assert!(ac_value.get_max_voltage().get_value() == 400);
+    Ok(())
+}
+
+#[test]
+fn param_discovery_response() -> Result<(), AfbError> {
+    let expected_response = [0x1,0xfe,0x80,0x1,0x0,0x0,0x0,0x47,0x80,0x98,0x2,0x0,0x40,0x80,0xc1,0x1,0x41,0x81,0xc2,0x10,0xa0,0x1,0x0,0x0,0x0,0x4,0x88,0x20,0x78,0x0,0x80,0x0,0x48,0x81,0x80,0x50,0x50,0x0,0x0,0x2,0x44,0x10,0x24,0x0,0xc0,0x0,0x24,0x40,0xc1,0x90,0x2a,0x8a,0x0,0x11,0x10,0x82,0x6,0x8,0x0,0xe2,0x84,0x1,0x90,0x20,0x81,0xf4,0x2,0x8,0x18,0x5,0x2,0x8,0x19,0x0,0x22,0x30,0x0,0x0,0x40,];
+    // Encoding API
+    let rcode = ResponseCode::Ok;
+    let processing = EvseProcessing::Ongoing;
+
+    let pmax_a1 = PMaxScheduleEntry {
+        value: PhysicalValue::new(240, 1, Isp2PhysicalUnit::Volt),
+        start: 1,
+        duration: 2,
+    };
+    let pmax_a2 = PMaxScheduleEntry {
+        value: PhysicalValue::new(10, 1, Isp2PhysicalUnit::Ampere),
+        start: 1,
+        duration: 2,
+    };
+    let mut sched_a = SasScheduleTuple::new(1);
+    sched_a.add_pmax(&pmax_a1)?.add_pmax(&pmax_a2)?;
+    let pmax_b1 = PMaxScheduleEntry {
+        value: PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt),
+        start: 1,
+        duration: 2,
+    };
+    let pmax_b2 = PMaxScheduleEntry {
+        value: PhysicalValue::new(100, 1, Isp2PhysicalUnit::Ampere),
+        start: 1,
+        duration: 2,
+    };
+    let mut sched_b = SasScheduleTuple::new(1);
+    sched_b.add_pmax(&pmax_b1)?.add_pmax(&pmax_b2)?;
+
+    let dc_rcode = DcEvseErrorCode::Ready;
+    let dc_notification = EvseNotification::ReNegociation;
+    let dc_delay = 160;
+    let dc_status = DcEvseStatusType::new(dc_rcode, dc_notification, dc_delay);
+    let max_voltage = PhysicalValue::new(250, 1, Isp2PhysicalUnit::Volt);
+    let min_voltage = PhysicalValue::new(200, 1, Isp2PhysicalUnit::Volt);
+    let max_current = PhysicalValue::new(64, 1, Isp2PhysicalUnit::Ampere);
+    let min_current = PhysicalValue::new(10, 1, Isp2PhysicalUnit::Ampere);
+    let max_power = PhysicalValue::new(6400, 100, Isp2PhysicalUnit::Watt);
+    let charge_param = DcEvseChargeParam::new(
+        &dc_status,
+        &max_voltage,
+        &min_voltage,
+        &max_current,
+        &min_current,
+        &max_power,
+    );
+
+    let payload = iso2::ParamDiscoveryResponse::new(rcode, processing)
+        .add_schedule_tuple(&sched_a)?
+        .add_schedule_tuple(&sched_b)?
+        .set_evse_dc_charge_param(&charge_param)
+        .encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), &stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::ParamDiscoveryRes(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_rcode() == rcode);
+    assert!(payload.get_processing() == processing);
+    let charge_prm= payload.get_evse_dc_charge_param().unwrap();
+    assert! (charge_prm.get_status().get_rcode() == dc_rcode);
+    assert! (charge_prm.get_status().get_notification() == dc_notification);
+    assert! (charge_prm.get_status().get_delay() == dc_delay);
+    assert! (charge_param.get_max_voltage().get_value() == 240);
+    assert! (charge_param.get_min_voltage().get_value() == 200);
+    assert! (charge_param.get_max_current().get_value() == 64);
+    assert! (charge_param.get_min_voltage().get_value() == 10);
+    assert! (charge_param.get_max_power().get_value() == 6400);
+
+
+    Ok(())
+}
+
+#[test]
+fn payment_detail_request() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x44, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x11, 0x10, 0x45, 0xd1, 0xd5, 0xe0, 0xb5, 0x95, 0xd9, 0x95, 0xcd, 0x94,
+        0xb5, 0x95, 0xb5, 0x85, 0xa5, 0x90, 0x4, 0x1d, 0x1d, 0x5e, 0xb, 0x59, 0x5d, 0x99, 0x5c,
+        0xd9, 0x4b, 0x58, 0xd9, 0x5c, 0x9d, 0x0, 0x6a, 0xab, 0xbc, 0xcd, 0xde, 0xef, 0xf0, 0x3,
+        0x50, 0xd8, 0xe0, 0xe8, 0xf0, 0xf8, 0x80, 0x35, 0x15, 0x96, 0x16, 0x97, 0x17, 0x91, 0x0,
+    ];
+
+    let emaid = "tux-evese-emaid";
+    let cert_id = "tux-evese-cert";
+    let cert_data = [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff];
+    let cert_sub_0 = [0xa1, 0xb1, 0xc1, 0xd1, 0xe1, 0xf1];
+    let cert_sub_1 = [0xa2, 0xb2, 0xc2, 0xd2, 0xe2, 0xf2];
+
+    let mut cert_chain = CertificateChainType::new(&cert_id, &cert_data)?;
+    cert_chain
+        .add_subcert(&cert_sub_0)?
+        .add_subcert(&cert_sub_1)?;
+
+    // Encoding API
+    let payload = PaymentDetailsRequest::new(&emaid, &cert_chain)?.encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), &stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::PaymentDetailsReq(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_emaid().unwrap() == emaid);
+
+    let contract = payload.get_contract_chain();
+    assert!(contract.get_id().unwrap() == cert_id);
+    assert!(contract.get_cert() == cert_data);
+    let subcerts = contract.get_subcerts();
+    assert!(subcerts[0] == cert_sub_0);
+    assert!(subcerts[1] == cert_sub_1);
+    Ok(())
+}
+
+#[test]
+fn payment_detail_response() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x18, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x11, 0x21, 0xe0, 0x1c, 0x24, 0x20, 0x1c, 0x18, 0x14, 0x10, 0xc, 0x0,
+        0x0,
+    ];
+
+    // Encoding API
+    let rcode = ResponseCode::ContractCanceled;
+    let challenge = [0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03];
+
+    let payload = iso2::PaymentDetailsResponse::new(rcode, &challenge)?
+        .set_timestamp(0) // force timestamp to get a fix testable buffer
+        .encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), &stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::PaymentDetailsRes(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_challenge() == challenge);
+    assert!(payload.get_rcode() == rcode);
+
     Ok(())
 }

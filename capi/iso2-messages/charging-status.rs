@@ -49,7 +49,7 @@ pub struct ChargingStatusResponse {
 }
 
 impl ChargingStatusResponse {
-    pub fn new(code: ResponseCode, evse_id: &str, tuple_id: u8) -> Result<Self, AfbError> {
+    pub fn new(code: ResponseCode, evse_id: &str, tuple_id: u8, status: &AcEvseStatusType) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_ChargingStatusResType>() };
 
         payload.ResponseCode = code as u32;
@@ -59,16 +59,12 @@ impl ChargingStatusResponse {
             cglue::iso2_EVSEID_CHARACTER_SIZE,
         )?;
         payload.SAScheduleTupleID = tuple_id;
+        payload.AC_EVSEStatus = status.encode();
 
         Ok(Self { payload })
     }
 
-    pub fn set_ac_evse_status(&mut self, status: AcEvseStatusType) -> &mut Self {
-        self.payload.AC_EVSEStatus = status.encode();
-        self
-    }
-
-    pub fn get_ac_evse_status(&mut self) -> AcEvseStatusType  {
+    pub fn get_ac_evse_status(&self) -> AcEvseStatusType  {
         AcEvseStatusType::decode (self.payload.AC_EVSEStatus)
     }
 

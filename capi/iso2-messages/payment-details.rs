@@ -25,7 +25,7 @@ pub struct PaymentDetailsRequest {
 }
 
 impl PaymentDetailsRequest {
-    pub fn new(emaid: &str, contract_chain: CertificateChainType) -> Result<Self, AfbError> {
+    pub fn new(emaid: &str, contract_chain: &CertificateChainType) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_PaymentDetailsReqType>() };
         payload.eMAID.charactersLen = str_to_array(
             emaid,
@@ -86,6 +86,11 @@ impl PaymentDetailsResponse {
             }
         };
         Ok(Self { payload })
+    }
+
+    pub fn set_timestamp(&mut self, epoch: i64) -> &mut Self {
+        self.payload.EVSETimeStamp = epoch;
+        self
     }
 
     pub fn get_challenge(&self) -> &[u8] {

@@ -180,8 +180,8 @@ impl CurrentDemandResponse {
         code: ResponseCode,
         dc_status: DcEvseStatusType,
         current: &PhysicalValue,
-        voltage: PhysicalValue,
         current_limit: bool,
+        voltage: &PhysicalValue,
         voltage_limit: bool,
         power_limit: bool,
         schd_tuple_id: u8,
@@ -194,6 +194,23 @@ impl CurrentDemandResponse {
             &mut payload.EVSEID.characters,
             cglue::iso2_EVSEID_CHARACTER_SIZE,
         )?;
+
+        if current.get_unit() != Isp2PhysicalUnit::Ampere {
+            return afb_error!(
+                "current-demand-res",
+                "expect: Isp2PhysicalUnit::Ampere get:{:?}",
+                current.get_unit()
+            );
+        }
+
+        if voltage.get_unit() != Isp2PhysicalUnit::Volt {
+            return afb_error!(
+                "current-demand-res",
+                "expect: Isp2PhysicalUnit::Volt get:{:?}",
+                voltage.get_unit()
+            );
+        }
+
         payload.DC_EVSEStatus= dc_status.encode();
         payload.EVSEPresentVoltage= voltage.encode();
         payload.EVSEPresentCurrent= current.encode();
