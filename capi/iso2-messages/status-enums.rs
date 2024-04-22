@@ -501,9 +501,9 @@ pub struct DcEvseStatusType {
 }
 
 impl DcEvseStatusType {
-    pub fn new(error: DcEvseErrorCode, notification: EvseNotification, delay: u16) -> Self {
+    pub fn new(status: DcEvseErrorCode, notification: EvseNotification, delay: u16) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVSEStatusType>() };
-        payload.EVSEStatusCode = error as u32;
+        payload.EVSEStatusCode = status as u32;
         payload.NotificationMaxDelay = delay;
         payload.EVSENotification = notification as u32;
         Self { payload }
@@ -523,7 +523,7 @@ impl DcEvseStatusType {
         }
     }
 
-    pub fn get_rcode(&self) -> DcEvseErrorCode {
+    pub fn get_status(&self) -> DcEvseErrorCode {
         DcEvseErrorCode::from_u32(self.payload.EVSEStatusCode)
     }
 
@@ -546,6 +546,7 @@ impl DcEvseStatusType {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct DcEvStatusType {
     payload: cglue::iso2_DC_EVStatusType,
 }

@@ -58,42 +58,59 @@ impl CurrentDemandRequest {
         }
     }
 
-    pub fn set_voltage_limit(&mut self, voltage_limit: &PhysicalValue) -> &mut Self {
+    pub fn set_voltage_limit(&mut self, voltage_limit: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if voltage_limit.get_unit() != Isp2PhysicalUnit::Volt {
+            return afb_error!(
+                "current-demand-req",
+                "expect: Isp2PhysicalUnit::Volt get:{:?}",
+                voltage_limit.get_unit()
+            );
+        }
         self.payload.EVMaximumVoltageLimit = voltage_limit.encode();
         self.payload.set_EVMaximumVoltageLimit_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_voltage_limit(&self) -> Option<PhysicalValue> {
         if self.payload.EVMaximumVoltageLimit_isUsed() == 0 {
             None
         } else {
-            Some(PhysicalValue::decode(
-                self.payload.EVMaximumVoltageLimit,
-            ))
+            Some(PhysicalValue::decode(self.payload.EVMaximumVoltageLimit))
         }
     }
 
-    pub fn set_current_limit(&mut self, current_limit: &PhysicalValue) -> &mut Self {
+    pub fn set_current_limit(&mut self, current_limit: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if current_limit.get_unit() != Isp2PhysicalUnit::Ampere {
+            return afb_error!(
+                "current-demand-req",
+                "expect: Isp2PhysicalUnit::Ampere get:{:?}",
+                current_limit.get_unit()
+            );
+        }
         self.payload.EVMaximumCurrentLimit = current_limit.encode();
         self.payload.set_EVMaximumCurrentLimit_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_current_limit(&self) -> Option<PhysicalValue> {
         if self.payload.EVMaximumCurrentLimit_isUsed() == 0 {
             None
         } else {
-            Some(PhysicalValue::decode(
-                self.payload.EVMaximumCurrentLimit,
-            ))
+            Some(PhysicalValue::decode(self.payload.EVMaximumCurrentLimit))
         }
     }
 
-    pub fn set_power_limit(&mut self, power_limit: &PhysicalValue) -> &mut Self {
+    pub fn set_power_limit(&mut self, power_limit: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if power_limit.get_unit() != Isp2PhysicalUnit::Watt {
+            return afb_error!(
+                "current-demand-req",
+                "expect: Isp2PhysicalUnit::Watt get:{:?}",
+                power_limit.get_unit()
+            );
+        }
         self.payload.EVMaximumPowerLimit = power_limit.encode();
         self.payload.set_EVMaximumPowerLimit_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_power_limit(&self) -> Option<PhysicalValue> {
@@ -104,35 +121,48 @@ impl CurrentDemandRequest {
         }
     }
 
-    pub fn set_time_to_full_sock(&mut self, remaining_time: &PhysicalValue) -> &mut Self {
+    pub fn set_time_to_full_sock(&mut self, remaining_time: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if remaining_time.get_unit() != Isp2PhysicalUnit::Percent
+        {
+            return afb_error!(
+                "current-demand-req",
+                "expect: Isp2PhysicalUnit::Percent get:{:?}",
+                remaining_time.get_unit()
+            );
+        }
         self.payload.RemainingTimeToFullSoC = remaining_time.encode();
         self.payload.set_RemainingTimeToFullSoC_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_time_to_full_sock(&self) -> Option<PhysicalValue> {
         if self.payload.RemainingTimeToFullSoC_isUsed() == 0 {
             None
         } else {
-            Some(PhysicalValue::decode(
-                self.payload.RemainingTimeToFullSoC,
-            ))
+            Some(PhysicalValue::decode(self.payload.RemainingTimeToFullSoC))
         }
     }
 
-    pub fn set_time_to_bulk_sock(&mut self, remaining_time: &PhysicalValue) -> &mut Self {
+    pub fn set_time_to_bulk_sock(&mut self, remaining_time: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if remaining_time.get_unit() != Isp2PhysicalUnit::Percent
+        {
+            return afb_error!(
+                "current-demand-req",
+                "expect: Isp2PhysicalUnit::Percent get:{:?}",
+                remaining_time.get_unit()
+            );
+        }
+
         self.payload.RemainingTimeToBulkSoC = remaining_time.encode();
         self.payload.set_RemainingTimeToBulkSoC_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_time_to_bulk_sock(&self) -> Option<PhysicalValue> {
         if self.payload.RemainingTimeToBulkSoC_isUsed() == 0 {
             None
         } else {
-            Some(PhysicalValue::decode(
-                self.payload.RemainingTimeToBulkSoC,
-            ))
+            Some(PhysicalValue::decode(self.payload.RemainingTimeToBulkSoC))
         }
     }
 
@@ -211,13 +241,13 @@ impl CurrentDemandResponse {
             );
         }
 
-        payload.DC_EVSEStatus= dc_status.encode();
-        payload.EVSEPresentVoltage= voltage.encode();
-        payload.EVSEPresentCurrent= current.encode();
-        payload.EVSECurrentLimitAchieved= if current_limit {1} else {0};
-        payload.EVSEVoltageLimitAchieved= if voltage_limit {1} else {0};
-        payload.EVSEPowerLimitAchieved= if power_limit {1} else {0};
-        payload.SAScheduleTupleID= schd_tuple_id;
+        payload.DC_EVSEStatus = dc_status.encode();
+        payload.EVSEPresentVoltage = voltage.encode();
+        payload.EVSEPresentCurrent = current.encode();
+        payload.EVSECurrentLimitAchieved = if current_limit { 1 } else { 0 };
+        payload.EVSEVoltageLimitAchieved = if voltage_limit { 1 } else { 0 };
+        payload.EVSEPowerLimitAchieved = if power_limit { 1 } else { 0 };
+        payload.SAScheduleTupleID = schd_tuple_id;
 
         Ok(Self { payload })
     }
@@ -246,15 +276,27 @@ impl CurrentDemandResponse {
     }
 
     pub fn get_current_limit_reach(&self) -> bool {
-        if self.payload.EVSECurrentLimitAchieved == 0 {false} else {true}
+        if self.payload.EVSECurrentLimitAchieved == 0 {
+            false
+        } else {
+            true
+        }
     }
 
     pub fn get_voltage_limit_reach(&self) -> bool {
-        if self.payload.EVSEVoltageLimitAchieved == 0 {false} else {true}
+        if self.payload.EVSEVoltageLimitAchieved == 0 {
+            false
+        } else {
+            true
+        }
     }
 
     pub fn get_power_limit_reach(&self) -> bool {
-        if self.payload.EVSEPowerLimitAchieved == 0 {false} else {true}
+        if self.payload.EVSEPowerLimitAchieved == 0 {
+            false
+        } else {
+            true
+        }
     }
 
     pub fn get_tuple_id(&self) -> u8 {
@@ -262,7 +304,7 @@ impl CurrentDemandResponse {
     }
 
     pub fn set_voltage_limit(&mut self, voltage: &PhysicalValue) -> &mut Self {
-        self.payload.EVSEMaximumVoltageLimit= voltage.encode();
+        self.payload.EVSEMaximumVoltageLimit = voltage.encode();
         self.payload.set_EVSEMaximumVoltageLimit_isUsed(1);
         self
     }
@@ -271,12 +313,12 @@ impl CurrentDemandResponse {
         if self.payload.EVSEMaximumVoltageLimit_isUsed() == 0 {
             None
         } else {
-           Some(PhysicalValue::decode( self.payload.EVSEMaximumVoltageLimit))
+            Some(PhysicalValue::decode(self.payload.EVSEMaximumVoltageLimit))
         }
     }
 
     pub fn set_current_limit(&mut self, current: &PhysicalValue) -> &mut Self {
-        self.payload.EVSEMaximumCurrentLimit= current.encode();
+        self.payload.EVSEMaximumCurrentLimit = current.encode();
         self.payload.set_EVSEMaximumCurrentLimit_isUsed(1);
         self
     }
@@ -285,12 +327,12 @@ impl CurrentDemandResponse {
         if self.payload.EVSEMaximumCurrentLimit_isUsed() == 0 {
             None
         } else {
-           Some(PhysicalValue::decode( self.payload.EVSEMaximumCurrentLimit))
+            Some(PhysicalValue::decode(self.payload.EVSEMaximumCurrentLimit))
         }
     }
 
     pub fn set_power_limit(&mut self, power: &PhysicalValue) -> &mut Self {
-        self.payload.EVSEMaximumPowerLimit= power.encode();
+        self.payload.EVSEMaximumPowerLimit = power.encode();
         self.payload.set_EVSEMaximumPowerLimit_isUsed(1);
         self
     }
@@ -299,12 +341,12 @@ impl CurrentDemandResponse {
         if self.payload.EVSEMaximumPowerLimit_isUsed() == 0 {
             None
         } else {
-           Some(PhysicalValue::decode( self.payload.EVSEMaximumPowerLimit))
+            Some(PhysicalValue::decode(self.payload.EVSEMaximumPowerLimit))
         }
     }
 
     pub fn set_receipt_require(&mut self, require: bool) -> &mut Self {
-        self.payload.ReceiptRequired= if require {1} else {0};
+        self.payload.ReceiptRequired = if require { 1 } else { 0 };
         self.payload.set_ReceiptRequired_isUsed(1);
         self
     }
@@ -313,12 +355,16 @@ impl CurrentDemandResponse {
         if self.payload.ReceiptRequired_isUsed() == 0 {
             None
         } else {
-           Some(if self.payload.ReceiptRequired == 0 {false} else {true})
+            Some(if self.payload.ReceiptRequired == 0 {
+                false
+            } else {
+                true
+            })
         }
     }
 
-    pub fn set_meter_info (&mut self, meter: MeterInfoType) -> &mut Self {
-        self.payload.MeterInfo= meter.encode();
+    pub fn set_meter_info(&mut self, meter: MeterInfoType) -> &mut Self {
+        self.payload.MeterInfo = meter.encode();
         self.payload.set_MeterInfo_isUsed(1);
         self
     }

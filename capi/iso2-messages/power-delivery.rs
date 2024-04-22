@@ -19,16 +19,18 @@
 use super::*;
 use std::mem;
 
+#[derive(Clone, Copy)]
 pub struct ChargingProfileEntry {
-    start: u32,
-    power_max: PhysicalValue,
-    phases_max: Option<i8>,
+    pub start: u32,
+    pub power_max: PhysicalValue,
+    pub phases_max: Option<i8>,
 }
 
+#[derive(Clone, Copy)]
 pub struct DcEvPowerDeliveryParam {
-    status: DcEvStatusType,
-    bulk_complete: Option<bool>,
-    charge_complete: bool,
+    pub status: DcEvStatusType,
+    pub bulk_complete: Option<bool>,
+    pub charge_complete: bool,
 }
 
 #[derive(Clone)]
@@ -53,8 +55,15 @@ impl PowerDeliveryRequest {
 
     pub fn add_charging_profile(
         &mut self,
-        profile: ChargingProfileEntry,
+        profile: &ChargingProfileEntry,
     ) -> Result<&mut Self, AfbError> {
+        if profile.power_max.get_unit() != Isp2PhysicalUnit::Watt {
+            return afb_error!(
+                "power-delivery-req",
+                "charging profile require Isp2PhysicalUnit::Watt get {:?}",
+                profile.power_max.get_unit()
+            );
+        }
         let idx = self.payload.ChargingProfile.ProfileEntry.arrayLen;
         if idx == cglue::iso2_ProfileEntryType_24_ARRAY_SIZE as u16 {
             return afb_error!(
@@ -77,6 +86,7 @@ impl PowerDeliveryRequest {
 
     pub fn get_charging_profiles(&self) -> Vec<ChargingProfileEntry> {
         let mut response = Vec::new();
+
         for idx in 0..self.payload.ChargingProfile.ProfileEntry.arrayLen as usize {
             let slot = &self.payload.ChargingProfile.ProfileEntry.array[idx as usize];
             let profile = ChargingProfileEntry {
@@ -93,7 +103,14 @@ impl PowerDeliveryRequest {
         response
     }
 
-    pub fn set_dc_delivery_params(&mut self, params: DcEvPowerDeliveryParam) -> &mut Self {
+    pub fn set_dc_delivery_params(
+        &mut self,
+        params: &DcEvPowerDeliveryParam,
+    ) -> Result<&mut Self, AfbError> {
+        if self.payload.EVPowerDeliveryParameter_isUsed() != 0 {
+            return afb_error!("power-delivery-req", "Cannot define both AC+DC profile");
+        }
+
         self.payload.DC_EVPowerDeliveryParameter.DC_EVStatus = params.status.encode();
         self.payload.DC_EVPowerDeliveryParameter.ChargingComplete =
             if params.charge_complete { 1 } else { 0 };
@@ -107,11 +124,14 @@ impl PowerDeliveryRequest {
         }
         self.payload.set_DC_EVPowerDeliveryParameter_isUsed(1);
 
-        self
+        Ok(self)
     }
 
-    pub fn get_dc_delivery_params(&self) -> DcEvPowerDeliveryParam {
-        DcEvPowerDeliveryParam {
+    pub fn get_dc_delivery_params(&self) -> Option<DcEvPowerDeliveryParam> {
+        if self.payload.DC_EVPowerDeliveryParameter_isUsed() == 0 {
+            return None;
+        }
+        let response = DcEvPowerDeliveryParam {
             status: DcEvStatusType::decode(self.payload.DC_EVPowerDeliveryParameter.DC_EVStatus),
             charge_complete: if self.payload.DC_EVPowerDeliveryParameter.ChargingComplete == 0 {
                 false
@@ -137,16 +157,17 @@ impl PowerDeliveryRequest {
                     Some(true)
                 }
             },
-        }
+        };
+        Some(response)
     }
 
-    pub fn set_ec_delivery_params (&mut self) -> &mut Self {
+    pub fn set_ev_delivery_params(&mut self) -> &mut Self {
         // unused attached data iso2_EVPowerDeliveryParameterType
         self.payload.set_EVPowerDeliveryParameter_isUsed(1);
         self
     }
 
-    pub fn get_ec_delivery_params (&self) -> Option<i32> {
+    pub fn get_ev_delivery_params(&self) -> Option<i32> {
         if self.payload.EVPowerDeliveryParameter_isUsed() == 0 {
             None
         } else {
@@ -174,33 +195,48 @@ pub struct PowerDeliveryResponse {
 }
 
 impl PowerDeliveryResponse {
-    pub fn new(code: ResponseCode) -> Result<Self, AfbError> {
+    pub fn new(code: ResponseCode) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_PowerDeliveryResType>() };
 
         payload.ResponseCode = code as u32;
-        Ok(Self { payload })
-    }
-
-    pub fn set_ac_evse_status(&mut self, status: AcEvseStatusType) -> &mut Self {
-        self.payload.AC_EVSEStatus = status.encode();
-        self
-    }
-
-    pub fn get_ac_evse_status(&mut self) -> AcEvseStatusType {
-        AcEvseStatusType::decode(self.payload.AC_EVSEStatus)
-    }
-
-    pub fn set_dc_evse_status(&mut self, status: DcEvseStatusType) -> &mut Self {
-        self.payload.DC_EVSEStatus = status.encode();
-        self
-    }
-
-    pub fn get_dc_evse_status(&mut self) -> DcEvseStatusType {
-        DcEvseStatusType::decode(self.payload.DC_EVSEStatus)
+        Self { payload }
     }
 
     pub fn get_rcode(&self) -> ResponseCode {
         ResponseCode::from_u32(self.payload.ResponseCode)
+    }
+
+    pub fn set_ac_evse_status(&mut self, status: &AcEvseStatusType) -> Result<&mut Self, AfbError> {
+        if self.payload.DC_EVSEStatus_isUsed() != 0 {
+            return afb_error!("power-delivery-res", "cannot set both AC & DC status",);
+        }
+        self.payload.AC_EVSEStatus = status.encode();
+        self.payload.set_AC_EVSEStatus_isUsed(1);
+        Ok(self)
+    }
+
+    pub fn get_ac_evse_status(&self) -> Option<AcEvseStatusType> {
+        if self.payload.AC_EVSEStatus_isUsed() == 0 {
+            None
+        } else {
+            Some(AcEvseStatusType::decode(self.payload.AC_EVSEStatus))
+        }
+    }
+
+    pub fn set_dc_evse_status(&mut self, status: &DcEvseStatusType) -> Result<&mut Self, AfbError> {
+        if self.payload.AC_EVSEStatus_isUsed() != 0 {
+            return afb_error!("power-delivery-res", "cannot set both AC & DC status",);
+        }
+        self.payload.DC_EVSEStatus = status.encode();
+        Ok(self)
+    }
+
+    pub fn get_dc_evse_status(&self) -> Option<DcEvseStatusType> {
+        if self.payload.DC_EVSEStatus_isUsed() == 0 {
+            None
+        } else {
+            Some(DcEvseStatusType::decode(self.payload.DC_EVSEStatus))
+        }
     }
 
     pub fn decode(payload: cglue::iso2_PowerDeliveryResType) -> Self {

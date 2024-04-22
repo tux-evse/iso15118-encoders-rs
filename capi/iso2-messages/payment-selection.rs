@@ -20,8 +20,8 @@ use super::*;
 use std::mem;
 
 pub struct PaymentServiceOpt {
-    service_id: u16,
-    param_id: Option<i16>,
+    pub service_id: u16,
+    pub param_id: Option<i16>,
 }
 
 pub struct PaymentSelectionRequest {
@@ -99,7 +99,7 @@ impl PaymentSelectionResponse {
         Self { payload }
     }
 
-    pub fn get_code (&self) -> ResponseCode {
+    pub fn get_rcode (&self) -> ResponseCode {
         ResponseCode::from_u32(self.payload.ResponseCode)
     }
 
@@ -117,7 +117,4 @@ impl PaymentSelectionResponse {
         body
     }
 
-    pub fn get_rcode(&self) -> ResponseCode {
-        ResponseCode::from_u32(self.payload.ResponseCode)
-    }
 }

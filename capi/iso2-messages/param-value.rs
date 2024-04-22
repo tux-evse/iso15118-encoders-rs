@@ -20,7 +20,7 @@ use super::*;
 use std::fmt;
 
 #[repr(u32)]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Isp2PhysicalUnit {
     Hour = cglue::iso2_unitSymbolType_iso2_unitSymbolType_h,
     Minute = cglue::iso2_unitSymbolType_iso2_unitSymbolType_m,
@@ -29,6 +29,7 @@ pub enum Isp2PhysicalUnit {
     Volt = cglue::iso2_unitSymbolType_iso2_unitSymbolType_V,
     Watt = cglue::iso2_unitSymbolType_iso2_unitSymbolType_W,
     Wh = cglue::iso2_unitSymbolType_iso2_unitSymbolType_Wh,
+    Percent= 9999,
 }
 impl Isp2PhysicalUnit {
     pub fn from_u32(value: u32) -> Self {
@@ -36,7 +37,7 @@ impl Isp2PhysicalUnit {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct PhysicalValue {
     payload: cglue::iso2_PhysicalValueType,
 }

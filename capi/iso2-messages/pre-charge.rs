@@ -24,23 +24,43 @@ pub struct PreChargeRequest {
     payload: cglue::iso2_PreChargeReqType,
 }
 impl PreChargeRequest {
-    pub fn new(ev_status: DcEvStatusType, target_voltage: PhysicalValue, target_current: PhysicalValue) -> Self {
+    pub fn new(
+        ev_status: &DcEvStatusType,
+        target_voltage: &PhysicalValue,
+        target_current: &PhysicalValue,
+    ) -> Result<Self, AfbError> {
+        if target_voltage.get_unit() != Isp2PhysicalUnit::Volt {
+            return afb_error!(
+                "pre-charge-req",
+                "expect: Isp2PhysicalUnit::Volt get:{:?}",
+                target_voltage.get_unit()
+            );
+        }
+
+        if target_current.get_unit() != Isp2PhysicalUnit::Ampere {
+            return afb_error!(
+                "pre-charge-req",
+                "expect: Isp2PhysicalUnit::Ampere get:{:?}",
+                target_current.get_unit()
+            );
+        }
+
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_PreChargeReqType>() };
-        payload.DC_EVStatus= ev_status.encode();
-        payload.EVTargetVoltage= target_voltage.encode();
-        payload.EVTargetCurrent= target_current.encode();
-        Self { payload }
+        payload.DC_EVStatus = ev_status.encode();
+        payload.EVTargetVoltage = target_voltage.encode();
+        payload.EVTargetCurrent = target_current.encode();
+        Ok(Self { payload })
     }
 
-    pub fn get_status (&self) -> DcEvStatusType {
+    pub fn get_status(&self) -> DcEvStatusType {
         DcEvStatusType::decode(self.payload.DC_EVStatus)
     }
 
-    pub fn target_voltage (&self) -> PhysicalValue {
+    pub fn get_target_voltage(&self) -> PhysicalValue {
         PhysicalValue::decode(self.payload.EVTargetVoltage)
     }
 
-    pub fn target_current (&self) -> PhysicalValue {
+    pub fn get_target_current(&self) -> PhysicalValue {
         PhysicalValue::decode(self.payload.EVTargetCurrent)
     }
 
@@ -64,24 +84,35 @@ pub struct PreChargeResponse {
 }
 
 impl PreChargeResponse {
-    pub fn new(code: ResponseCode, evse_status: DcEvseStatusType, evse_voltage: PhysicalValue) -> Result<Self, AfbError> {
+    pub fn new(
+        rcode: ResponseCode,
+        evse_status: &DcEvseStatusType,
+        evse_voltage: &PhysicalValue,
+    ) -> Result<Self, AfbError> {
+        if evse_voltage.get_unit() != Isp2PhysicalUnit::Volt {
+            return afb_error!(
+                "pre-charge-res",
+                "expect: Isp2PhysicalUnit::Volt get:{:?}",
+                evse_voltage.get_unit()
+            );
+        }
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_PreChargeResType>() };
-        payload.ResponseCode = code as u32;
-        payload.DC_EVSEStatus= evse_status.encode();
-        payload.EVSEPresentVoltage= evse_voltage.encode();
+        payload.ResponseCode = rcode as u32;
+        payload.DC_EVSEStatus = evse_status.encode();
+        payload.EVSEPresentVoltage = evse_voltage.encode();
 
         Ok(Self { payload })
     }
 
-    pub fn get_code (&self) -> ResponseCode {
+    pub fn get_rcode(&self) -> ResponseCode {
         ResponseCode::from_u32(self.payload.ResponseCode)
     }
 
-    pub fn get_status (&self) -> DcEvseStatusType {
+    pub fn get_status(&self) -> DcEvseStatusType {
         DcEvseStatusType::decode(self.payload.DC_EVSEStatus)
     }
 
-    pub fn get_voltage (&self) -> PhysicalValue {
+    pub fn get_voltage(&self) -> PhysicalValue {
         PhysicalValue::decode(self.payload.EVSEPresentVoltage)
     }
 
