@@ -59,10 +59,10 @@ impl CurrentDemandRequest {
     }
 
     pub fn set_voltage_limit(&mut self, voltage_limit: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        if voltage_limit.get_unit() != Isp2PhysicalUnit::Volt {
+        if voltage_limit.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "current-demand-req",
-                "expect: Isp2PhysicalUnit::Volt get:{:?}",
+                "expect: PhysicalUnit::Volt get:{:?}",
                 voltage_limit.get_unit()
             );
         }
@@ -80,10 +80,10 @@ impl CurrentDemandRequest {
     }
 
     pub fn set_current_limit(&mut self, current_limit: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        if current_limit.get_unit() != Isp2PhysicalUnit::Ampere {
+        if current_limit.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "current-demand-req",
-                "expect: Isp2PhysicalUnit::Ampere get:{:?}",
+                "expect: PhysicalUnit::Ampere get:{:?}",
                 current_limit.get_unit()
             );
         }
@@ -101,10 +101,10 @@ impl CurrentDemandRequest {
     }
 
     pub fn set_power_limit(&mut self, power_limit: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        if power_limit.get_unit() != Isp2PhysicalUnit::Watt {
+        if power_limit.get_unit() != PhysicalUnit::Watt {
             return afb_error!(
                 "current-demand-req",
-                "expect: Isp2PhysicalUnit::Watt get:{:?}",
+                "expect: PhysicalUnit::Watt get:{:?}",
                 power_limit.get_unit()
             );
         }
@@ -122,11 +122,12 @@ impl CurrentDemandRequest {
     }
 
     pub fn set_time_to_full_sock(&mut self, remaining_time: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        if remaining_time.get_unit() != Isp2PhysicalUnit::Percent
+        let unit= remaining_time.get_unit();
+        if unit != PhysicalUnit::Hour && unit != PhysicalUnit::Minute && unit != PhysicalUnit::Second
         {
             return afb_error!(
                 "current-demand-req",
-                "expect: Isp2PhysicalUnit::Percent get:{:?}",
+                "expect: PhysicalUnit::(Hour|Minute|Second) got:{:?}",
                 remaining_time.get_unit()
             );
         }
@@ -144,11 +145,12 @@ impl CurrentDemandRequest {
     }
 
     pub fn set_time_to_bulk_sock(&mut self, remaining_time: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        if remaining_time.get_unit() != Isp2PhysicalUnit::Percent
+        let unit= remaining_time.get_unit();
+        if unit != PhysicalUnit::Hour && unit != PhysicalUnit::Minute && unit != PhysicalUnit::Second
         {
             return afb_error!(
                 "current-demand-req",
-                "expect: Isp2PhysicalUnit::Percent get:{:?}",
+                "expect: PhysicalUnit::Percent get:{:?}",
                 remaining_time.get_unit()
             );
         }
@@ -225,18 +227,18 @@ impl CurrentDemandResponse {
             cglue::iso2_EVSEID_CHARACTER_SIZE,
         )?;
 
-        if current.get_unit() != Isp2PhysicalUnit::Ampere {
+        if current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "current-demand-res",
-                "expect: Isp2PhysicalUnit::Ampere get:{:?}",
+                "expect: PhysicalUnit::Ampere get:{:?}",
                 current.get_unit()
             );
         }
 
-        if voltage.get_unit() != Isp2PhysicalUnit::Volt {
+        if voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "current-demand-res",
-                "expect: Isp2PhysicalUnit::Volt get:{:?}",
+                "expect: PhysicalUnit::Volt get:{:?}",
                 voltage.get_unit()
             );
         }

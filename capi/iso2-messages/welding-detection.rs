@@ -24,13 +24,13 @@ pub struct WeldingDetectionRequest {
     payload: cglue::iso2_WeldingDetectionReqType,
 }
 impl WeldingDetectionRequest {
-    pub fn new(status: DcEvStatusType) -> Self {
+    pub fn new(status: &DcEvStatusType) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_WeldingDetectionReqType>() };
-        payload.DC_EVStatus= status.encode();
+        payload.DC_EVStatus = status.encode();
         Self { payload }
     }
 
-    pub fn get_status (&self) -> DcEvStatusType {
+    pub fn get_status(&self) -> DcEvStatusType {
         DcEvStatusType::decode(self.payload.DC_EVStatus)
     }
 
@@ -54,24 +54,36 @@ pub struct WeldingDetectionResponse {
 }
 
 impl WeldingDetectionResponse {
-    pub fn new(code: ResponseCode, evse_status: DcEvseStatusType, evse_voltage: PhysicalValue) -> Result<Self, AfbError> {
+    pub fn new(
+        code: ResponseCode,
+        evse_status: &DcEvseStatusType,
+        evse_voltage: &PhysicalValue,
+    ) -> Result<Self, AfbError> {
+        if evse_voltage.get_unit() != PhysicalUnit::Volt {
+            return afb_error!(
+                "welding-detection-response",
+                "expect: PhysicalUnit::Volt get:{:?}",
+                evse_voltage.get_unit()
+            );
+        }
+
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_WeldingDetectionResType>() };
         payload.ResponseCode = code as u32;
-        payload.DC_EVSEStatus= evse_status.encode();
-        payload.EVSEPresentVoltage= evse_voltage.encode();
+        payload.DC_EVSEStatus = evse_status.encode();
+        payload.EVSEPresentVoltage = evse_voltage.encode();
 
         Ok(Self { payload })
     }
 
-    pub fn get_code (&self) -> ResponseCode {
+    pub fn get_rcode(&self) -> ResponseCode {
         ResponseCode::from_u32(self.payload.ResponseCode)
     }
 
-    pub fn get_status (&self) -> DcEvseStatusType {
+    pub fn get_status(&self) -> DcEvseStatusType {
         DcEvseStatusType::decode(self.payload.DC_EVSEStatus)
     }
 
-    pub fn get_voltage (&self) -> PhysicalValue {
+    pub fn get_voltage(&self) -> PhysicalValue {
         PhysicalValue::decode(self.payload.EVSEPresentVoltage)
     }
 
@@ -83,7 +95,7 @@ impl WeldingDetectionResponse {
         let body = unsafe {
             let mut exi_body = mem::zeroed::<Iso2BodyType>();
             exi_body.__bindgen_anon_1.WeldingDetectionRes = self.payload;
-            exi_body.set_PreChargeRes_isUsed(1);
+            exi_body.set_WeldingDetectionRes_isUsed(1);
             exi_body
         };
         body

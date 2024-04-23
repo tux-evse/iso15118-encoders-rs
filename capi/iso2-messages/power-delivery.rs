@@ -57,10 +57,10 @@ impl PowerDeliveryRequest {
         &mut self,
         profile: &ChargingProfileEntry,
     ) -> Result<&mut Self, AfbError> {
-        if profile.power_max.get_unit() != Isp2PhysicalUnit::Watt {
+        if profile.power_max.get_unit() != PhysicalUnit::Watt {
             return afb_error!(
                 "power-delivery-req",
-                "charging profile require Isp2PhysicalUnit::Watt get {:?}",
+                "charging profile require PhysicalUnit::Watt get {:?}",
                 profile.power_max.get_unit()
             );
         }

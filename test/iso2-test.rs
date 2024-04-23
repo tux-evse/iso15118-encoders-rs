@@ -275,7 +275,7 @@ fn service_detail_response() -> Result<(), AfbError> {
     param_tst0.add_param("prm_2", Iso2ParamValue::Text("snoopy".to_string()))?;
     param_tst0.add_param(
         "prm_3",
-        Iso2ParamValue::PhyValue(PhysicalValue::new(240, 1, Isp2PhysicalUnit::Volt)),
+        Iso2ParamValue::PhyValue(PhysicalValue::new(240, 1, PhysicalUnit::Volt)),
     )?;
 
     let mut param_tst1 = ParamSet::new(2);
@@ -283,7 +283,7 @@ fn service_detail_response() -> Result<(), AfbError> {
     param_tst1.add_param("prm_2", Iso2ParamValue::Text("Mme Kermichu".to_string()))?;
     param_tst1.add_param(
         "prm_3",
-        Iso2ParamValue::PhyValue(PhysicalValue::new(10, 1, Isp2PhysicalUnit::Ampere)),
+        Iso2ParamValue::PhyValue(PhysicalValue::new(10, 1, PhysicalUnit::Ampere)),
     )?;
 
     let id_tst = 56;
@@ -685,9 +685,9 @@ fn current_demand_request() -> Result<(), AfbError> {
     let dc_evresssoc = 1;
 
     let dc_status = DcEvStatusType::new(dc_ready, dc_error, dc_evresssoc);
-    let dc_current = PhysicalValue::new(80, 1, Isp2PhysicalUnit::Ampere);
-    let dc_voltage = PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt);
-    let dc_limit = PhysicalValue::new(800, 1, Isp2PhysicalUnit::Volt);
+    let dc_current = PhysicalValue::new(80, 1, PhysicalUnit::Ampere);
+    let dc_voltage = PhysicalValue::new(400, 1, PhysicalUnit::Volt);
+    let dc_limit = PhysicalValue::new(800, 1, PhysicalUnit::Volt);
     let dc_complete = true;
 
     let payload = CurrentDemandRequest::new(dc_status, &dc_current, &dc_voltage, dc_complete)
@@ -709,11 +709,11 @@ fn current_demand_request() -> Result<(), AfbError> {
     // Decoding API
     assert!(dc_complete == payload.get_charging_complete());
     let current = payload.get_current_target();
-    assert!(current.get_unit() == Isp2PhysicalUnit::Ampere);
+    assert!(current.get_unit() == PhysicalUnit::Ampere);
     assert!(current.get_value() == 80);
     assert!(current.get_multiplier() == 1);
-    let tension = payload.get_voltage_target();
-    assert!(tension.get_value() == 400);
+    let voltage = payload.get_voltage_target();
+    assert!(voltage.get_value() == 400);
     assert!(payload.get_voltage_limit().unwrap().get_value() == 800);
 
     Ok(())
@@ -731,8 +731,8 @@ fn current_demand_response() -> Result<(), AfbError> {
     // Encoding API
     let evse_id = "tux-evse-001";
     let rcode = ResponseCode::Ok;
-    let voltage = PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt);
-    let current = PhysicalValue::new(64, 1, Isp2PhysicalUnit::Ampere);
+    let voltage = PhysicalValue::new(400, 1, PhysicalUnit::Volt);
+    let current = PhysicalValue::new(64, 1, PhysicalUnit::Ampere);
     let current_limit = true;
     let voltage_limit = false;
     let power_limit = true;
@@ -947,10 +947,10 @@ fn ac_param_discovery_request() -> Result<(), AfbError> {
         0x41, 0x81, 0xc2, 0x10, 0x90, 0x20, 0x0, 0x1a, 0x41, 0x21, 0x46, 0x1, 0x40, 0x41, 0x2,
         0x40, 0xc, 0x10, 0x30, 0x40, 0x4, 0xc, 0x2, 0x80,
     ];
-    let ea_mount = PhysicalValue::new(20, 10, Isp2PhysicalUnit::Wh);
-    let ac_max_voltage = PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt);
-    let ac_max_current = PhysicalValue::new(64, 1, Isp2PhysicalUnit::Ampere);
-    let ac_min_current = PhysicalValue::new(10, 1, Isp2PhysicalUnit::Ampere);
+    let ea_mount = PhysicalValue::new(20, 10, PhysicalUnit::Wh);
+    let ac_max_voltage = PhysicalValue::new(400, 1, PhysicalUnit::Volt);
+    let ac_max_current = PhysicalValue::new(64, 1, PhysicalUnit::Ampere);
+    let ac_min_current = PhysicalValue::new(10, 1, PhysicalUnit::Ampere);
     let mut ac_params =
         AcEvChargeParam::new(&ea_mount, &ac_max_voltage, &ac_max_current, &ac_min_current)?;
     ac_params.set_departure_time(1234);
@@ -992,8 +992,8 @@ fn dc_param_discovery_request() -> Result<(), AfbError> {
         0x14, 0x0, 0xc4, 0x0,
     ];
 
-    let dc_max_voltage = PhysicalValue::new(800, 1, Isp2PhysicalUnit::Volt);
-    let dc_max_current = PhysicalValue::new(100, 1, Isp2PhysicalUnit::Ampere);
+    let dc_max_voltage = PhysicalValue::new(800, 1, PhysicalUnit::Volt);
+    let dc_max_current = PhysicalValue::new(100, 1, PhysicalUnit::Ampere);
     let dc_status = DcEvStatusType::new(true, DcEvErrorCode::NoError, 1);
     let dc_params = DcEvChargeParam::new(dc_status, dc_max_current, dc_max_voltage)?;
 
@@ -1034,16 +1034,16 @@ fn ev_param_discovery_request() -> Result<(), AfbError> {
         0x40, 0xc1, 0x0, 0x10, 0x30, 0xa, 0x0,
     ];
 
-    let ea_mount = PhysicalValue::new(20, 10, Isp2PhysicalUnit::Wh);
-    let ac_max_voltage = PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt);
-    let ac_max_current = PhysicalValue::new(64, 1, Isp2PhysicalUnit::Ampere);
-    let ac_min_current = PhysicalValue::new(10, 1, Isp2PhysicalUnit::Ampere);
+    let ea_mount = PhysicalValue::new(20, 10, PhysicalUnit::Wh);
+    let ac_max_voltage = PhysicalValue::new(400, 1, PhysicalUnit::Volt);
+    let ac_max_current = PhysicalValue::new(64, 1, PhysicalUnit::Ampere);
+    let ac_min_current = PhysicalValue::new(10, 1, PhysicalUnit::Ampere);
     let mut ac_params =
         AcEvChargeParam::new(&ea_mount, &ac_max_voltage, &ac_max_current, &ac_min_current)?;
     ac_params.set_departure_time(1234);
 
-    let dc_max_voltage = PhysicalValue::new(800, 1, Isp2PhysicalUnit::Volt);
-    let dc_max_current = PhysicalValue::new(100, 1, Isp2PhysicalUnit::Ampere);
+    let dc_max_voltage = PhysicalValue::new(800, 1, PhysicalUnit::Volt);
+    let dc_max_current = PhysicalValue::new(100, 1, PhysicalUnit::Ampere);
     let dc_status = DcEvStatusType::new(true, DcEvErrorCode::NoError, 1);
     let dc_params = DcEvChargeParam::new(dc_status, dc_max_current, dc_max_voltage)?;
 
@@ -1100,24 +1100,24 @@ fn param_discovery_response() -> Result<(), AfbError> {
     let processing = EvseProcessing::Ongoing;
 
     let pmax_a1 = PMaxScheduleEntry {
-        value: PhysicalValue::new(240, 1, Isp2PhysicalUnit::Volt),
+        value: PhysicalValue::new(240, 1, PhysicalUnit::Volt),
         start: 1,
         duration: 2,
     };
     let pmax_a2 = PMaxScheduleEntry {
-        value: PhysicalValue::new(10, 1, Isp2PhysicalUnit::Ampere),
+        value: PhysicalValue::new(10, 1, PhysicalUnit::Ampere),
         start: 1,
         duration: 2,
     };
     let mut sched_a = SasScheduleTuple::new(1);
     sched_a.add_pmax(&pmax_a1)?.add_pmax(&pmax_a2)?;
     let pmax_b1 = PMaxScheduleEntry {
-        value: PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt),
+        value: PhysicalValue::new(400, 1, PhysicalUnit::Volt),
         start: 1,
         duration: 2,
     };
     let pmax_b2 = PMaxScheduleEntry {
-        value: PhysicalValue::new(100, 1, Isp2PhysicalUnit::Ampere),
+        value: PhysicalValue::new(100, 1, PhysicalUnit::Ampere),
         start: 1,
         duration: 2,
     };
@@ -1128,11 +1128,11 @@ fn param_discovery_response() -> Result<(), AfbError> {
     let dc_notification = EvseNotification::ReNegociation;
     let dc_delay = 160;
     let dc_status = DcEvseStatusType::new(dc_rcode, dc_notification, dc_delay);
-    let max_voltage = PhysicalValue::new(250, 1, Isp2PhysicalUnit::Volt);
-    let min_voltage = PhysicalValue::new(200, 1, Isp2PhysicalUnit::Volt);
-    let max_current = PhysicalValue::new(64, 1, Isp2PhysicalUnit::Ampere);
-    let min_current = PhysicalValue::new(10, 1, Isp2PhysicalUnit::Ampere);
-    let max_power = PhysicalValue::new(6400, 100, Isp2PhysicalUnit::Watt);
+    let max_voltage = PhysicalValue::new(250, 1, PhysicalUnit::Volt);
+    let min_voltage = PhysicalValue::new(200, 1, PhysicalUnit::Volt);
+    let max_current = PhysicalValue::new(64, 1, PhysicalUnit::Ampere);
+    let min_current = PhysicalValue::new(10, 1, PhysicalUnit::Ampere);
+    let max_power = PhysicalValue::new(6400, 100, PhysicalUnit::Watt);
     let charge_param = DcEvseChargeParam::new(
         &dc_status,
         &max_voltage,
@@ -1167,10 +1167,10 @@ fn param_discovery_response() -> Result<(), AfbError> {
     assert!(charge_prm.get_status().get_status() == dc_rcode);
     assert!(charge_prm.get_status().get_notification() == dc_notification);
     assert!(charge_prm.get_status().get_delay() == dc_delay);
-    assert!(charge_param.get_max_voltage().get_value() == 240);
+    assert!(charge_param.get_max_voltage().get_value() == 250);
     assert!(charge_param.get_min_voltage().get_value() == 200);
     assert!(charge_param.get_max_current().get_value() == 64);
-    assert!(charge_param.get_min_voltage().get_value() == 10);
+    assert!(charge_param.get_min_current().get_value() == 10);
     assert!(charge_param.get_max_power().get_value() == 6400);
 
     Ok(())
@@ -1349,12 +1349,12 @@ fn power_delivery_request() -> Result<(), AfbError> {
     let charge_profile_0 = ChargingProfileEntry {
         start: 1234,
         phases_max: Some(3),
-        power_max: PhysicalValue::new(64, 1, Isp2PhysicalUnit::Watt),
+        power_max: PhysicalValue::new(64, 1, PhysicalUnit::Watt),
     };
     let charge_profile_1 = ChargingProfileEntry {
         start: 4567,
         phases_max: Some(2),
-        power_max: PhysicalValue::new(64, 1, Isp2PhysicalUnit::Watt),
+        power_max: PhysicalValue::new(64, 1, PhysicalUnit::Watt),
     };
 
     let dc_status = DcEvStatusType::new(true, DcEvErrorCode::FailVoltOutOfRange, 64);
@@ -1446,8 +1446,8 @@ fn pre_charge_request() -> Result<(), AfbError> {
         0x41, 0x81, 0xc2, 0x11, 0x71, 0x0, 0x0, 0x82, 0x8, 0x12, 0x0, 0x60, 0x81, 0x82, 0x80, 0x0,
     ];
 
-    let target_current = PhysicalValue::new(80, 1, Isp2PhysicalUnit::Ampere);
-    let target_voltage = PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt);
+    let target_current = PhysicalValue::new(80, 1, PhysicalUnit::Ampere);
+    let target_voltage = PhysicalValue::new(400, 1, PhysicalUnit::Volt);
     let ev_status = DcEvStatusType::new(true, DcEvErrorCode::NoError, 1);
 
     // Encoding API
@@ -1491,7 +1491,7 @@ fn pre_charge_response() -> Result<(), AfbError> {
     let notification = EvseNotification::ReNegociation;
     let delay = 160;
     let dc_status = DcEvseErrorCode::Reserve8;
-    let evse_voltage = PhysicalValue::new(400, 1, Isp2PhysicalUnit::Volt);
+    let evse_voltage = PhysicalValue::new(400, 1, PhysicalUnit::Volt);
     let mut evse_status = DcEvseStatusType::new(dc_status, notification, delay);
     evse_status.set_isolation_status(IsolationStatus::Warning);
 
@@ -1517,5 +1517,141 @@ fn pre_charge_response() -> Result<(), AfbError> {
     assert!(payload.get_voltage().get_value() == evse_voltage.get_value());
     assert!(payload.get_voltage().get_multiplier() == evse_voltage.get_multiplier());
 
+    Ok(())
+}
+
+#[test]
+fn session_stop_request() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0xe, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x11, 0xf0, 0x0,
+    ];
+
+    // Encoding API
+    let action = ChargingSessionType::Terminate;
+    let payload = SessionStopRequest::new(action).encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), &stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::SessionStopReq(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_action() == action);
+
+    Ok(())
+}
+
+#[test]
+fn session_stop_response() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0xe, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x12, 0x0, 0x80,
+    ];
+
+    // Encoding API
+    let rcode = ResponseCode::Failed;
+    let payload = iso2::SessionStopResponse::new(rcode)?.encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), &stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::SessionStopRes(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_rcode() == rcode);
+
+    Ok(())
+}
+
+#[test]
+fn welding_detection_request() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x10, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x12, 0x11, 0x0, 0x8, 0x0,
+    ];
+
+    // Encoding API
+    let ready_tst = true;
+    let dc_rcode = DcEvErrorCode::NoError;
+    let evresssoc_tst: i8 = 16;
+    let dc_status = DcEvStatusType::new(ready_tst, dc_rcode, evresssoc_tst);
+
+    let payload = WeldingDetectionRequest::new(&dc_status).encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), &stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::WeldingDetectionReq(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    let status_rec = payload.get_status();
+    assert!(status_rec.get_ready() == ready_tst);
+    assert!(status_rec.get_error() == dc_rcode);
+    assert!(status_rec.get_evresssoc() == evresssoc_tst);
+
+    Ok(())
+}
+
+#[test]
+fn welding_detection_response() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x17, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x12, 0x20, 0x21, 0x40, 0x2, 0x22, 0x10, 0x41, 0x2, 0x40, 0xc, 0x0,
+    ];
+
+    // Encoding API
+    let rcode = ResponseCode::NewSession;
+
+    let dc_rcode = DcEvseErrorCode::Ready;
+    let dc_notification = EvseNotification::ReNegociation;
+    let dc_delay = 160;
+    let dc_status = DcEvseStatusType::new(dc_rcode, dc_notification, dc_delay);
+    let dc_voltage = PhysicalValue::new(400, 1, PhysicalUnit::Volt);
+
+    let payload = iso2::WeldingDetectionResponse::new(rcode, &dc_status, &dc_voltage)?.encode();
+
+    // encode message to stream_exi an compare with expected binary result
+    let exi = ExiStream::new();
+    let stream = encode_to_stream(func_name!(), &exi, payload);
+    assert!(expected_response == stream.get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), &stream)?;
+    let payload = match message.get_payload() {
+        Iso2MessageBody::WeldingDetectionRes(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_rcode() == rcode);
+    let voltage = payload.get_voltage();
+    assert!(voltage.get_value() == 400);
+    assert!(voltage.get_unit() == PhysicalUnit::Volt);
+    let status = payload.get_status();
+    assert!(status.get_status() == dc_rcode);
+    assert!(status.get_delay() == dc_delay);
+    assert!(status.get_notification() == dc_notification);
     Ok(())
 }

@@ -160,7 +160,7 @@ impl IsoController {
                             Iso2ParamValue::PhyValue(PhysicalValue::new(
                                 240,
                                 1,
-                                Isp2PhysicalUnit::Volt,
+                                PhysicalUnit::Volt,
                             )),
                         )?;
 

@@ -21,7 +21,7 @@ use std::fmt;
 
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Isp2PhysicalUnit {
+pub enum PhysicalUnit {
     Hour = cglue::iso2_unitSymbolType_iso2_unitSymbolType_h,
     Minute = cglue::iso2_unitSymbolType_iso2_unitSymbolType_m,
     Second = cglue::iso2_unitSymbolType_iso2_unitSymbolType_s,
@@ -29,9 +29,8 @@ pub enum Isp2PhysicalUnit {
     Volt = cglue::iso2_unitSymbolType_iso2_unitSymbolType_V,
     Watt = cglue::iso2_unitSymbolType_iso2_unitSymbolType_W,
     Wh = cglue::iso2_unitSymbolType_iso2_unitSymbolType_Wh,
-    Percent= 9999,
 }
-impl Isp2PhysicalUnit {
+impl PhysicalUnit {
     pub fn from_u32(value: u32) -> Self {
         unsafe { std::mem::transmute(value) }
     }
@@ -55,7 +54,7 @@ impl fmt::Debug for PhysicalValue {
 }
 
 impl PhysicalValue {
-    pub fn new(value: i16, multiplier: i8, unit: Isp2PhysicalUnit) -> Self {
+    pub fn new(value: i16, multiplier: i8, unit: PhysicalUnit) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_PhysicalValueType>() };
         payload.Multiplier = multiplier;
         payload.Unit = unit as u32;
@@ -63,8 +62,8 @@ impl PhysicalValue {
         Self { payload }
     }
 
-    pub fn get_unit(&self) -> Isp2PhysicalUnit {
-        Isp2PhysicalUnit::from_u32(self.payload.Unit)
+    pub fn get_unit(&self) -> PhysicalUnit {
+        PhysicalUnit::from_u32(self.payload.Unit)
     }
 
     pub fn get_multiplier(&self) -> i8 {
@@ -227,7 +226,7 @@ impl ParamSet {
                 let phys_value = PhysicalValue::new(
                     param.physicalValue.Value,
                     param.physicalValue.Multiplier,
-                    Isp2PhysicalUnit::from_u32(param.physicalValue.Unit),
+                    PhysicalUnit::from_u32(param.physicalValue.Unit),
                 );
                 Iso2ParamValue::PhyValue(phys_value)
             } else {

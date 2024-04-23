@@ -30,18 +30,18 @@ impl DcEvChargeParam {
     ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVChargeParameterType>() };
 
-        if max_current.get_unit() != Isp2PhysicalUnit::Ampere {
+        if max_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "dc-ev-charge-param",
-                "expect: Isp2PhysicalUnit::Ampere get:{:?}",
+                "expect: PhysicalUnit::Ampere get:{:?}",
                 max_current.get_unit()
             );
         }
 
-        if max_voltage.get_unit() != Isp2PhysicalUnit::Volt {
+        if max_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "dc-ev-charge-param",
-                "expect: Isp2PhysicalUnit::Volt get:{:?}",
+                "expect: PhysicalUnit::Volt get:{:?}",
                 max_voltage.get_unit()
             );
         }
@@ -170,26 +170,26 @@ impl AcEvChargeParam {
     ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_AC_EVChargeParameterType>() };
 
-        if max_current.get_unit() != Isp2PhysicalUnit::Ampere {
+        if max_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "ac-ev-charge-param",
-                "expect: Isp2PhysicalUnit::Ampere get:{:?}",
+                "expect: PhysicalUnit::Ampere get:{:?}",
                 max_current.get_unit()
             );
         }
 
-        if min_current.get_unit() != Isp2PhysicalUnit::Ampere {
+        if min_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "ac-ev-charge-param",
-                "expect: Isp2PhysicalUnit::Ampere get:{:?}",
+                "expect: PhysicalUnit::Ampere get:{:?}",
                 max_current.get_unit()
             );
         }
 
-        if max_voltage.get_unit() != Isp2PhysicalUnit::Volt {
+        if max_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "ac-ev-charge-param",
-                "expect: Isp2PhysicalUnit::Volt get:{:?}",
+                "expect: PhysicalUnit::Volt get:{:?}",
                 max_current.get_unit()
             );
         }
