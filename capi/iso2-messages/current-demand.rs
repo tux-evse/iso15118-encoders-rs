@@ -174,7 +174,7 @@ impl CurrentDemandRequest {
         self
     }
 
-    pub fn get_bulk_complete(&mut self) -> Option<bool> {
+    pub fn get_bulk_complete(&self) -> Option<bool> {
         if self.payload.BulkChargingComplete_isUsed() == 0 {
             None
         } else {

@@ -70,7 +70,7 @@ impl DcEvChargeParam {
         self
     }
 
-    pub fn get_max_power(&mut self) -> Option<PhysicalValue> {
+    pub fn get_max_power(&self) -> Option<PhysicalValue> {
         if self.payload.EVMaximumPowerLimit_isUsed() == 0 {
             None
         } else {
@@ -84,7 +84,7 @@ impl DcEvChargeParam {
         self
     }
 
-    pub fn get_energy_capacity(&mut self) -> Option<PhysicalValue> {
+    pub fn get_energy_capacity(&self) -> Option<PhysicalValue> {
         if self.payload.EVEnergyCapacity_isUsed() == 0 {
             None
         } else {
@@ -98,7 +98,7 @@ impl DcEvChargeParam {
         self
     }
 
-    pub fn get_energy_request(&mut self) -> Option<PhysicalValue> {
+    pub fn get_energy_request(&self) -> Option<PhysicalValue> {
         if self.payload.EVEnergyRequest_isUsed() == 0 {
             None
         } else {
@@ -112,7 +112,7 @@ impl DcEvChargeParam {
         self
     }
 
-    pub fn get_departure_time(&mut self) -> Option<u32> {
+    pub fn get_departure_time(&self) -> Option<u32> {
         if self.payload.DepartureTime_isUsed() == 0 {
             None
         } else {
@@ -126,7 +126,7 @@ impl DcEvChargeParam {
         self
     }
 
-    pub fn get_bulk_soc(&mut self) -> Option<i8> {
+    pub fn get_bulk_soc(&self) -> Option<i8> {
         if self.payload.BulkSOC_isUsed() == 0 {
             None
         } else {
@@ -140,7 +140,7 @@ impl DcEvChargeParam {
         self
     }
 
-    pub fn get_full_soc(&mut self) -> Option<i8> {
+    pub fn get_full_soc(&self) -> Option<i8> {
         if self.payload.FullSOC_isUsed() == 0 {
             None
         } else {
@@ -966,7 +966,7 @@ impl ParamDiscoveryResponse {
         self
     }
 
-    pub fn get_schedules(&mut self) -> Option<i32> {
+    pub fn get_schedules(&self) -> Option<i32> {
         if self.payload.SASchedules_isUsed() == 0 {
             None
         } else {
@@ -980,7 +980,7 @@ impl ParamDiscoveryResponse {
         self
     }
 
-    pub fn get_charge_param(&mut self) -> Option<i32> {
+    pub fn get_charge_param(&self) -> Option<i32> {
         if self.payload.EVSEChargeParameter_isUsed() == 0 {
             None
         } else {

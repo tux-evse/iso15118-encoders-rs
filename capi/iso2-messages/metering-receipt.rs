@@ -214,7 +214,7 @@ impl MeteringReceiptResponse {
         self
     }
 
-    pub fn get_ac_evse_status(&mut self) -> Option<AcEvseStatusType>  {
+    pub fn get_ac_evse_status(&self) -> Option<AcEvseStatusType>  {
         if  self.payload.AC_EVSEStatus_isUsed() == 0 {
             None
         } else {
@@ -228,7 +228,7 @@ impl MeteringReceiptResponse {
         self
     }
 
-    pub fn get_dc_evse_status(&mut self) -> Option<DcEvseStatusType>  {
+    pub fn get_dc_evse_status(&self) -> Option<DcEvseStatusType>  {
         if  self.payload.DC_EVSEStatus_isUsed() == 0 {
             None
         } else {
@@ -242,7 +242,7 @@ impl MeteringReceiptResponse {
         self
     }
 
-    pub fn get_evse_status(&mut self) -> Option<EvseStatusType>  {
+    pub fn get_evse_status(&self) -> Option<EvseStatusType>  {
         if  self.payload.EVSEStatus_isUsed() == 0 {
             None
         } else {

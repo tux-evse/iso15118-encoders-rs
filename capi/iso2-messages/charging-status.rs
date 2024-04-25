@@ -121,7 +121,7 @@ impl ChargingStatusResponse {
         self
     }
 
-    pub fn get_meter_info(&mut self) -> Option<MeterInfoType> {
+    pub fn get_meter_info(&self) -> Option<MeterInfoType> {
         if self.payload.MeterInfo_isUsed() == 0 {
             None
         } else {

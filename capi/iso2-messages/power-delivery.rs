@@ -53,7 +53,7 @@ pub struct DcEvPowerDeliveryParam {
 }
 
 impl DcEvPowerDeliveryParam {
-    pub fn new(status: DcEvStatusType, bulk_complete: Option<bool>, charge_complete: bool) -> Self {
+    pub fn new(status: DcEvStatusType, charge_complete: bool, bulk_complete: Option<bool>) -> Self {
         Self {
             status,
             bulk_complete,

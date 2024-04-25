@@ -56,6 +56,21 @@ pub enum ProtocolTagId {
     Din,
     Unknown=255,
 }
+impl ProtocolTagId {
+    pub fn from_u8(code: u8) -> Self {
+        unsafe { mem::transmute(code) }
+    }
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match ProtocolTagId::from_str(json) {
+            Ok(value) => Ok(value),
+            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+        }
+    }
+
+    pub fn to_label(&self) -> &str{
+        self.as_ref()
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Display, EnumString, AsRefStr)]
 #[strum(serialize_all = "snake_case")]
@@ -77,7 +92,7 @@ impl ResponseCode {
         }
     }
 
-    pub fn to_str(&self) -> &str{
+    pub fn to_label(&self) -> &str{
         self.as_ref()
     }
 }
@@ -111,6 +126,14 @@ impl SupportedAppProtocolConf {
 
     pub fn get_schema(&self) -> ProtocolTagId {
         self.tag_id.clone()
+    }
+
+    pub fn get_major(&self) -> u32 {
+        self.major
+    }
+
+    pub fn get_minor(&self) -> u32 {
+        self.minor
     }
 }
 

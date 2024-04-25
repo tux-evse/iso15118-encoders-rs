@@ -1338,7 +1338,7 @@ fn power_delivery_request() -> Result<(), AfbError> {
         ChargingProfileEntry::new(4567, PhysicalValue::new(64, 1, PhysicalUnit::Watt), Some(2));
 
     let dc_status = DcEvStatusType::new(true, DcEvErrorCode::FailVoltOutOfRange, 64);
-    let dc_delivery_param = DcEvPowerDeliveryParam::new(dc_status, Some(true), true);
+    let dc_delivery_param = DcEvPowerDeliveryParam::new(dc_status, true, Some(true));
 
     let payload = PowerDeliveryRequest::new(charge_progress, schedule_id)
         .add_charging_profile(&charge_profile_0)?
