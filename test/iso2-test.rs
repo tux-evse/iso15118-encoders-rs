@@ -41,11 +41,15 @@ pub fn decode_from_stream(
 fn enum_rename() {
     println!(
         "MessageTagId:SessionSetupReq= {}",
-        MessageTagId::SessionSetupReq.to_json().unwrap()
+        MessageTagId::SessionSetupReq.to_label()
     );
     println!(
-        "MessageTagId:SessionSetupReq= {:?}",
-        MessageTagId::from_json("\"session_setup_req\"").unwrap()
+        "MessageTagId:SessionSetupReq= {}",
+        MessageTagId::from_label("session_setup_req").unwrap()
+    );
+    assert!(MessageTagId::SessionSetupReq.to_label() == "session_setup_req");
+    assert!(
+        MessageTagId::from_label("session_setup_req").unwrap() == MessageTagId::SessionSetupReq
     );
 }
 #[test]
@@ -271,19 +275,19 @@ fn service_detail_response() -> Result<(), AfbError> {
     ];
 
     let mut param_tst0 = ParamSet::new(1);
-    param_tst0.add_param("prm_1", Iso2ParamValue::Int16(123))?;
-    param_tst0.add_param("prm_2", Iso2ParamValue::Text("snoopy".to_string()))?;
+    param_tst0.add_param("prm_1", ParamValue::Int16(123))?;
+    param_tst0.add_param("prm_2", ParamValue::Text("snoopy".to_string()))?;
     param_tst0.add_param(
         "prm_3",
-        Iso2ParamValue::PhyValue(PhysicalValue::new(240, 1, PhysicalUnit::Volt)),
+        ParamValue::PhyValue(PhysicalValue::new(240, 1, PhysicalUnit::Volt)),
     )?;
 
     let mut param_tst1 = ParamSet::new(2);
-    param_tst1.add_param("prm_1", Iso2ParamValue::Int16(1234))?;
-    param_tst1.add_param("prm_2", Iso2ParamValue::Text("Mme Kermichu".to_string()))?;
+    param_tst1.add_param("prm_1", ParamValue::Int16(1234))?;
+    param_tst1.add_param("prm_2", ParamValue::Text("Mme Kermichu".to_string()))?;
     param_tst1.add_param(
         "prm_3",
-        Iso2ParamValue::PhyValue(PhysicalValue::new(10, 1, PhysicalUnit::Ampere)),
+        ParamValue::PhyValue(PhysicalValue::new(10, 1, PhysicalUnit::Ampere)),
     )?;
 
     let id_tst = 56;
@@ -333,16 +337,16 @@ fn service_detail_response() -> Result<(), AfbError> {
             let value_tst = prms_tst[jdx].get_value();
 
             match value_rec {
-                Iso2ParamValue::Int16(rec) => match value_tst {
-                    Iso2ParamValue::Int16(tst) => assert!(rec == tst),
+                ParamValue::Int16(rec) => match value_tst {
+                    ParamValue::Int16(tst) => assert!(rec == tst),
                     _ => panic!("unexpected value_tst:{:?} != value_rec:{}", value_tst, rec),
                 },
-                Iso2ParamValue::Text(rec) => match value_tst {
-                    Iso2ParamValue::Text(tst) => assert!(rec == tst),
+                ParamValue::Text(rec) => match value_tst {
+                    ParamValue::Text(tst) => assert!(rec == tst),
                     _ => panic!("unexpected value_tst:{:?} != value_rec:{}", value_tst, rec),
                 },
-                Iso2ParamValue::PhyValue(rec) => match value_tst {
-                    Iso2ParamValue::PhyValue(tst) => {
+                ParamValue::PhyValue(rec) => match value_tst {
+                    ParamValue::PhyValue(tst) => {
                         assert!(rec.get_unit() == tst.get_unit());
                         assert!(rec.get_multiplier() == tst.get_multiplier());
                         assert!(rec.get_value() == tst.get_value());
@@ -503,7 +507,7 @@ fn cable_check_response() -> Result<(), AfbError> {
     };
 
     // Decoding API
-    let code_rec = payload.get_code();
+    let code_rec = payload.get_rcode();
     let status_rec = payload.get_status();
     let processing_rec = payload.get_processing();
 
@@ -512,7 +516,7 @@ fn cable_check_response() -> Result<(), AfbError> {
     assert!(processing_rec == processing_tst);
     assert!(status_rec.get_notification() == notification_tst);
     assert!(status_rec.get_delay() == delay_tst);
-    assert!(status_rec.get_status() == dc_rcode);
+    assert!(status_rec.get_error() == dc_rcode);
 
     Ok(())
 }
@@ -530,9 +534,9 @@ fn certificate_install_request() -> Result<(), AfbError> {
     let serial_tst0 = 1234;
     let issuer_tst1 = "Redpesk.bzh";
     let serial_tst1 = 5678;
-
-    let mut list_tst = CertificateRootList::new(issuer_tst0, serial_tst0)?;
-    list_tst.add_cert(issuer_tst1, serial_tst1)?;
+    let cert0 = CertificateData::new(issuer_tst0, serial_tst0);
+    let mut list_tst = CertificateRootList::new(&cert0)?;
+    list_tst.add_cert(&CertificateData::new(issuer_tst1, serial_tst1))?;
 
     let id_tst = "tux-evse";
     let provisioning_tst = [0x1, 0x2, 0x3, 0x4, 0x5, 0x6];
@@ -777,9 +781,9 @@ fn current_demand_response() -> Result<(), AfbError> {
     assert!(payload.get_voltage_limit_reach() == voltage_limit);
     assert!(payload.get_power_limit_reach() == power_limit);
     assert!(payload.get_tuple_id() == schd_tuple_id);
-    let status = payload.get_dc_status();
+    let status = payload.get_status();
     assert!(status.get_isolation_status().unwrap() == isolation);
-    assert!(status.get_status() == dc_rcode);
+    assert!(status.get_error() == dc_rcode);
     assert!(status.get_notification() == notif);
     assert!(status.get_delay() == delay);
 
@@ -995,7 +999,7 @@ fn dc_param_discovery_request() -> Result<(), AfbError> {
     let dc_max_voltage = PhysicalValue::new(800, 1, PhysicalUnit::Volt);
     let dc_max_current = PhysicalValue::new(100, 1, PhysicalUnit::Ampere);
     let dc_status = DcEvStatusType::new(true, DcEvErrorCode::NoError, 1);
-    let dc_params = DcEvChargeParam::new(dc_status, dc_max_current, dc_max_voltage)?;
+    let dc_params = DcEvChargeParam::new(&dc_status, &dc_max_current, &dc_max_voltage)?;
 
     // Encoding API
     let payload = ParamDiscoveryRequest::new(EngyTransfertMode::DcBasic)
@@ -1045,7 +1049,7 @@ fn ev_param_discovery_request() -> Result<(), AfbError> {
     let dc_max_voltage = PhysicalValue::new(800, 1, PhysicalUnit::Volt);
     let dc_max_current = PhysicalValue::new(100, 1, PhysicalUnit::Ampere);
     let dc_status = DcEvStatusType::new(true, DcEvErrorCode::NoError, 1);
-    let dc_params = DcEvChargeParam::new(dc_status, dc_max_current, dc_max_voltage)?;
+    let dc_params = DcEvChargeParam::new(&dc_status, &dc_max_current, &dc_max_voltage)?;
 
     let mut charge_param = EvChargeParam::new(&ac_params, &dc_params);
     charge_param.set_departure_time(1234);
@@ -1093,34 +1097,19 @@ fn param_discovery_response() -> Result<(), AfbError> {
         0x41, 0x81, 0xc2, 0x10, 0xa0, 0x1, 0x0, 0x0, 0x0, 0x4, 0x88, 0x20, 0x78, 0x0, 0x80, 0x0,
         0x48, 0x81, 0x80, 0x50, 0x50, 0x0, 0x0, 0x2, 0x44, 0x10, 0x24, 0x0, 0xc0, 0x0, 0x24, 0x40,
         0xc1, 0x90, 0x2a, 0x8a, 0x0, 0x11, 0x10, 0x82, 0x6, 0x8, 0x0, 0xe2, 0x84, 0x1, 0x90, 0x20,
-        0x81, 0xf4, 0x2, 0x8, 0x18, 0x5, 0x2, 0x8, 0x19, 0x0, 0x22, 0x30, 0x0, 0x0, 0x40,
+        0x81, 0xf4, 0x2, 0x8, 0x18, 0x5, 0x2, 0x8, 0x19, 0x0, 0x22, 0x41, 0x0, 0x4, 0x40,
     ];
     // Encoding API
     let rcode = ResponseCode::Ok;
     let processing = EvseProcessing::Ongoing;
 
-    let pmax_a1 = PMaxScheduleEntry {
-        value: PhysicalValue::new(240, 1, PhysicalUnit::Volt),
-        start: 1,
-        duration: 2,
-    };
-    let pmax_a2 = PMaxScheduleEntry {
-        value: PhysicalValue::new(10, 1, PhysicalUnit::Ampere),
-        start: 1,
-        duration: 2,
-    };
+    let pmax_a1 = PMaxScheduleEntry::new(PhysicalValue::new(240, 1, PhysicalUnit::Volt), 1, 2);
+    let pmax_a2 = PMaxScheduleEntry::new(PhysicalValue::new(10, 1, PhysicalUnit::Ampere), 1, 2);
     let mut sched_a = SasScheduleTuple::new(1);
     sched_a.add_pmax(&pmax_a1)?.add_pmax(&pmax_a2)?;
-    let pmax_b1 = PMaxScheduleEntry {
-        value: PhysicalValue::new(400, 1, PhysicalUnit::Volt),
-        start: 1,
-        duration: 2,
-    };
-    let pmax_b2 = PMaxScheduleEntry {
-        value: PhysicalValue::new(100, 1, PhysicalUnit::Ampere),
-        start: 1,
-        duration: 2,
-    };
+
+    let pmax_b1 = PMaxScheduleEntry::new(PhysicalValue::new(400, 1, PhysicalUnit::Volt), 1, 2);
+    let pmax_b2 = PMaxScheduleEntry::new(PhysicalValue::new(100, 1, PhysicalUnit::Ampere), 1, 2);
     let mut sched_b = SasScheduleTuple::new(1);
     sched_b.add_pmax(&pmax_b1)?.add_pmax(&pmax_b2)?;
 
@@ -1133,6 +1122,7 @@ fn param_discovery_response() -> Result<(), AfbError> {
     let max_current = PhysicalValue::new(64, 1, PhysicalUnit::Ampere);
     let min_current = PhysicalValue::new(10, 1, PhysicalUnit::Ampere);
     let max_power = PhysicalValue::new(6400, 100, PhysicalUnit::Watt);
+    let current_ripple = PhysicalValue::new(1, 1, PhysicalUnit::Volt);
     let charge_param = DcEvseChargeParam::new(
         &dc_status,
         &max_voltage,
@@ -1140,7 +1130,8 @@ fn param_discovery_response() -> Result<(), AfbError> {
         &max_current,
         &min_current,
         &max_power,
-    );
+        &current_ripple,
+    )?;
 
     let payload = iso2::ParamDiscoveryResponse::new(rcode, processing)
         .add_schedule_tuple(&sched_a)?
@@ -1164,7 +1155,7 @@ fn param_discovery_response() -> Result<(), AfbError> {
     assert!(payload.get_rcode() == rcode);
     assert!(payload.get_processing() == processing);
     let charge_prm = payload.get_evse_dc_charge_param().unwrap();
-    assert!(charge_prm.get_status().get_status() == dc_rcode);
+    assert!(charge_prm.get_status().get_error() == dc_rcode);
     assert!(charge_prm.get_status().get_notification() == dc_notification);
     assert!(charge_prm.get_status().get_delay() == dc_delay);
     assert!(charge_param.get_max_voltage().get_value() == 250);
@@ -1172,6 +1163,7 @@ fn param_discovery_response() -> Result<(), AfbError> {
     assert!(charge_param.get_max_current().get_value() == 64);
     assert!(charge_param.get_min_current().get_value() == 10);
     assert!(charge_param.get_max_power().get_value() == 6400);
+    assert!(charge_param.get_peak_current_ripple().get_value() == 1);
 
     Ok(())
 }
@@ -1264,20 +1256,14 @@ fn payment_detail_response() -> Result<(), AfbError> {
 fn payment_selection_request() -> Result<(), AfbError> {
     let expected_response = [
         0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x19, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
-        0x41, 0x81, 0xc2, 0x11, 0x30, 0xd, 0x20, 0x90, 0x70, 0x90, 0x81, 0xa, 0x6a, 0x9, 0x44,
+        0x41, 0x81, 0xc2, 0x11, 0x30, 0xd, 0x20, 0x90, 0x70, 0x90, 0x81, 0xc2, 0x42, 0x9, 0x44,
         0xd1, 0x0,
     ];
 
     let service_contract = PaymentOption::Contract;
     // Encoding API
-    let service_option_0 = PaymentServiceOpt {
-        service_id: 1234,
-        param_id: Some(4321),
-    };
-    let service_option_1 = PaymentServiceOpt {
-        service_id: 6789,
-        param_id: Some(9876),
-    };
+    let service_option_0 = PaymentServiceOpt::new(1234, Some(4321));
+    let service_option_1 = PaymentServiceOpt::new(4321, Some(9876));
     let payload = PaymentSelectionRequest::new(service_contract)
         .add_service(&service_option_0)?
         .add_service(&service_option_1)?
@@ -1298,10 +1284,10 @@ fn payment_selection_request() -> Result<(), AfbError> {
     // Decoding API
     assert!(payload.get_option() == service_contract);
     let services = payload.get_services();
-    assert!(services[0].service_id == service_option_0.service_id);
-    assert!(services[0].param_id == service_option_0.param_id);
-    assert!(services[1].service_id == service_option_1.service_id);
-    assert!(services[1].param_id == service_option_1.param_id);
+    assert!(services[0].get_service_id() == service_option_0.get_service_id());
+    assert!(services[0].get_param_id() == service_option_0.get_param_id());
+    assert!(services[1].get_service_id() == service_option_1.get_service_id());
+    assert!(services[1].get_param_id() == service_option_1.get_param_id());
 
     Ok(())
 }
@@ -1346,23 +1332,13 @@ fn power_delivery_request() -> Result<(), AfbError> {
     // Encoding API
     let charge_progress = ChargeProgress::Renegotiate;
     let schedule_id = 64;
-    let charge_profile_0 = ChargingProfileEntry {
-        start: 1234,
-        phases_max: Some(3),
-        power_max: PhysicalValue::new(64, 1, PhysicalUnit::Watt),
-    };
-    let charge_profile_1 = ChargingProfileEntry {
-        start: 4567,
-        phases_max: Some(2),
-        power_max: PhysicalValue::new(64, 1, PhysicalUnit::Watt),
-    };
+    let charge_profile_0 =
+        ChargingProfileEntry::new(1234, PhysicalValue::new(64, 1, PhysicalUnit::Watt), Some(3));
+    let charge_profile_1 =
+        ChargingProfileEntry::new(4567, PhysicalValue::new(64, 1, PhysicalUnit::Watt), Some(2));
 
     let dc_status = DcEvStatusType::new(true, DcEvErrorCode::FailVoltOutOfRange, 64);
-    let dc_delivery_param = DcEvPowerDeliveryParam {
-        status: dc_status,
-        bulk_complete: Some(true),
-        charge_complete: true,
-    };
+    let dc_delivery_param = DcEvPowerDeliveryParam::new(dc_status, Some(true), true);
 
     let payload = PowerDeliveryRequest::new(charge_progress, schedule_id)
         .add_charging_profile(&charge_profile_0)?
@@ -1386,14 +1362,19 @@ fn power_delivery_request() -> Result<(), AfbError> {
     assert!(payload.get_progress() == charge_progress);
     assert!(payload.get_schedule_id() == schedule_id);
     let profiles = payload.get_charging_profiles();
-    assert!(profiles[0].start == charge_profile_0.start);
-    assert!(profiles[0].phases_max.unwrap() == charge_profile_0.phases_max.unwrap());
-    assert!(profiles[0].power_max.get_value() == charge_profile_0.power_max.get_value());
-    assert!(profiles[0].power_max.get_multiplier() == charge_profile_0.power_max.get_multiplier());
+    assert!(profiles[0].get_start() == charge_profile_0.get_start());
+    assert!(profiles[0].get_phases_max().unwrap() == charge_profile_0.get_phases_max().unwrap());
+    assert!(
+        profiles[0].get_power_max().get_value() == charge_profile_0.get_power_max().get_value()
+    );
+    assert!(
+        profiles[0].get_power_max().get_multiplier()
+            == charge_profile_0.get_power_max().get_multiplier()
+    );
     let delivery_prm = payload.get_dc_delivery_params().unwrap();
-    assert!(delivery_prm.status.get_error() == DcEvErrorCode::FailVoltOutOfRange);
-    assert!(delivery_prm.status.get_ready() == dc_status.get_ready());
-    assert!(delivery_prm.charge_complete == true);
+    assert!(delivery_prm.get_status().get_error() == DcEvErrorCode::FailVoltOutOfRange);
+    assert!(delivery_prm.get_status().get_ready() == dc_status.get_ready());
+    assert!(delivery_prm.get_charge_complete() == true);
 
     Ok(())
 }
@@ -1511,7 +1492,7 @@ fn pre_charge_response() -> Result<(), AfbError> {
 
     // Decoding API
     assert!(payload.get_rcode() == rcode);
-    assert!(payload.get_status().get_status() == dc_status);
+    assert!(payload.get_status().get_error() == dc_status);
     assert!(payload.get_status().get_isolation_status().unwrap() == IsolationStatus::Warning);
     assert!(payload.get_voltage().get_unit() == evse_voltage.get_unit());
     assert!(payload.get_voltage().get_value() == evse_voltage.get_value());
@@ -1650,7 +1631,7 @@ fn welding_detection_response() -> Result<(), AfbError> {
     assert!(voltage.get_value() == 400);
     assert!(voltage.get_unit() == PhysicalUnit::Volt);
     let status = payload.get_status();
-    assert!(status.get_status() == dc_rcode);
+    assert!(status.get_error() == dc_rcode);
     assert!(status.get_delay() == dc_delay);
     assert!(status.get_notification() == dc_notification);
     Ok(())

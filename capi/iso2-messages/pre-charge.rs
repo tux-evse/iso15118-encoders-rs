@@ -32,7 +32,7 @@ impl PreChargeRequest {
         if target_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "pre-charge-req",
-                "expect: PhysicalUnit::Volt get:{:?}",
+                "expect: PhysicalUnit::Volt get:{}",
                 target_voltage.get_unit()
             );
         }
@@ -40,7 +40,7 @@ impl PreChargeRequest {
         if target_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "pre-charge-req",
-                "expect: PhysicalUnit::Ampere get:{:?}",
+                "expect: PhysicalUnit::Ampere get:{}",
                 target_current.get_unit()
             );
         }
@@ -92,7 +92,7 @@ impl PreChargeResponse {
         if evse_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "pre-charge-res",
-                "expect: PhysicalUnit::Volt get:{:?}",
+                "expect: PhysicalUnit::Volt get:{}",
                 evse_voltage.get_unit()
             );
         }

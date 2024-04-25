@@ -26,8 +26,15 @@ pub struct CertificateData {
 }
 
 impl CertificateData {
-    pub fn get_issuer(&self) -> String {
-        self.issuer_name.clone()
+    pub fn new(issuer_name: &str, serial_number: i32) -> Self {
+        Self {
+            issuer_name: issuer_name.to_string(),
+            serial_number,
+        }
+    }
+
+    pub fn get_issuer(&self) -> &str {
+        self.issuer_name.as_str()
     }
     pub fn get_serial(&self) -> i32 {
         self.serial_number
@@ -39,34 +46,30 @@ pub struct CertificateRootList {
 }
 
 impl CertificateRootList {
-    pub fn new(issuer_name: &str, serial_number: i32) -> Result<Self, AfbError> {
+    pub fn new(cert: &CertificateData) -> Result<Self, AfbError> {
         let payload = unsafe { mem::zeroed::<cglue::iso2_ListOfRootCertificateIDsType>() };
         let mut certificate = payload.RootCertificateID.array[0];
         certificate.X509IssuerName.charactersLen = str_to_array(
-            issuer_name,
+            cert.get_issuer(),
             &mut certificate.X509IssuerName.characters,
             cglue::iso2_X509IssuerName_CHARACTER_SIZE,
         )?;
-        certificate.X509SerialNumber = serial_number;
+        certificate.X509SerialNumber = cert.get_serial();
         Ok(Self { payload })
     }
 
-    pub fn add_cert(
-        &mut self,
-        issuer_name: &str,
-        serial_number: i32,
-    ) -> Result<&mut Self, AfbError> {
+    pub fn add_cert(&mut self, cert: &CertificateData) -> Result<&mut Self, AfbError> {
         let idx = self.payload.RootCertificateID.arrayLen;
         if idx == cglue::iso2_X509IssuerSerialType_5_ARRAY_SIZE as u16 {
             return afb_error!("cert-list-add", "reach max:{} root certificate", idx);
         }
         let mut certificate = self.payload.RootCertificateID.array[idx as usize];
         certificate.X509IssuerName.charactersLen = str_to_array(
-            issuer_name,
+            cert.get_issuer(),
             &mut certificate.X509IssuerName.characters,
             cglue::iso2_X509IssuerName_CHARACTER_SIZE,
         )?;
-        certificate.X509SerialNumber = serial_number;
+        certificate.X509SerialNumber = cert.get_serial();
         self.payload.RootCertificateID.arrayLen = idx + 1;
         Ok(self)
     }
@@ -75,13 +78,11 @@ impl CertificateRootList {
         let mut certs = Vec::new();
         for idx in 0..self.payload.RootCertificateID.arrayLen {
             let data = self.payload.RootCertificateID.array[idx as usize];
-            let cert = CertificateData {
-                issuer_name: array_to_str(
-                    &data.X509IssuerName.characters,
-                    data.X509IssuerName.charactersLen,
-                )?.to_string(),
-                serial_number: data.X509SerialNumber,
-            };
+            let issuer = array_to_str(
+                &data.X509IssuerName.characters,
+                data.X509IssuerName.charactersLen,
+            )?;
+            let cert = CertificateData::new(issuer, data.X509SerialNumber);
             certs.push(cert)
         }
         Ok(certs)
@@ -99,7 +100,6 @@ impl CertificateRootList {
         self.payload
     }
 }
-
 
 pub struct CertificateChainType {
     payload: cglue::iso2_CertificateChainType,
@@ -121,7 +121,7 @@ impl CertificateChainType {
         )?;
         payload.set_Id_isUsed(1);
 
-        Ok(Self{payload})
+        Ok(Self { payload })
     }
 
     pub fn get_id(&self) -> Option<&str> {
@@ -133,7 +133,10 @@ impl CertificateChainType {
     }
 
     pub fn get_cert(&self) -> &[u8] {
-        array_to_bytes(&self.payload.Certificate.bytes, self.payload.Certificate.bytesLen)
+        array_to_bytes(
+            &self.payload.Certificate.bytes,
+            self.payload.Certificate.bytesLen,
+        )
     }
 
     pub fn add_subcert(&mut self, cert: &[u8]) -> Result<&mut Self, AfbError> {
@@ -147,7 +150,7 @@ impl CertificateChainType {
             &mut subcert.bytes,
             cglue::iso2_certificateType_BYTES_SIZE,
         )?;
-        self.payload.SubCertificates.Certificate.arrayLen= idx +1;
+        self.payload.SubCertificates.Certificate.arrayLen = idx + 1;
         self.payload.set_SubCertificates_isUsed(1);
         Ok(self)
     }
@@ -207,7 +210,6 @@ impl PrivateKeyType {
     pub fn encode(&self) -> cglue::iso2_ContractSignatureEncryptedPrivateKeyType {
         self.payload
     }
-
 }
 
 pub struct DhPublicKeyType {
@@ -216,8 +218,7 @@ pub struct DhPublicKeyType {
 
 impl DhPublicKeyType {
     pub fn new(key_id: &str, data: &[u8]) -> Result<Self, AfbError> {
-        let mut payload =
-            unsafe { mem::zeroed::<cglue::iso2_DiffieHellmanPublickeyType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::iso2_DiffieHellmanPublickeyType>() };
         payload.Id.charactersLen = str_to_array(
             key_id,
             &mut payload.Id.characters,
@@ -246,7 +247,6 @@ impl DhPublicKeyType {
     pub fn encode(&self) -> cglue::iso2_DiffieHellmanPublickeyType {
         self.payload
     }
-
 }
 
 pub struct EmaidType {
@@ -255,8 +255,7 @@ pub struct EmaidType {
 
 impl EmaidType {
     pub fn new(key_id: &str, data: &str) -> Result<Self, AfbError> {
-        let mut payload =
-            unsafe { mem::zeroed::<cglue::iso2_EMAIDType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::iso2_EMAIDType>() };
         payload.Id.charactersLen = str_to_array(
             key_id,
             &mut payload.Id.characters,
@@ -274,8 +273,11 @@ impl EmaidType {
         array_to_str(&self.payload.Id.characters, self.payload.Id.charactersLen)
     }
 
-    pub fn get_data(&self) -> Result<&str,AfbError> {
-        array_to_str(&self.payload.CONTENT.characters, self.payload.CONTENT.charactersLen)
+    pub fn get_data(&self) -> Result<&str, AfbError> {
+        array_to_str(
+            &self.payload.CONTENT.characters,
+            self.payload.CONTENT.charactersLen,
+        )
     }
 
     pub fn decode(payload: cglue::iso2_EMAIDType) -> Self {
@@ -285,6 +287,4 @@ impl EmaidType {
     pub fn encode(&self) -> cglue::iso2_EMAIDType {
         self.payload
     }
-
 }
-

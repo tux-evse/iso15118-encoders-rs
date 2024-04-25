@@ -19,22 +19,6 @@ use std::mem;
 use super::*;
 use std::fmt;
 
-#[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum PhysicalUnit {
-    Hour = cglue::iso2_unitSymbolType_iso2_unitSymbolType_h,
-    Minute = cglue::iso2_unitSymbolType_iso2_unitSymbolType_m,
-    Second = cglue::iso2_unitSymbolType_iso2_unitSymbolType_s,
-    Ampere = cglue::iso2_unitSymbolType_iso2_unitSymbolType_A,
-    Volt = cglue::iso2_unitSymbolType_iso2_unitSymbolType_V,
-    Watt = cglue::iso2_unitSymbolType_iso2_unitSymbolType_W,
-    Wh = cglue::iso2_unitSymbolType_iso2_unitSymbolType_Wh,
-}
-impl PhysicalUnit {
-    pub fn from_u32(value: u32) -> Self {
-        unsafe { std::mem::transmute(value) }
-    }
-}
 
 #[derive(Clone, Copy)]
 pub struct PhysicalValue {
@@ -47,7 +31,7 @@ impl fmt::Debug for PhysicalValue {
         let unit = self.get_unit();
         write!(
             f,
-            "(value:{}, multiplier:{} unit:{:?})",
+            "(value:{}, multiplier:{} unit:{})",
             value, multiplier, unit
         )
     }
@@ -86,7 +70,7 @@ impl PhysicalValue {
 }
 
 #[derive(Clone, Debug)]
-pub enum Iso2ParamValue {
+pub enum ParamValue {
     Bool(bool),
     Int8(i8),
     Int16(i16),
@@ -96,16 +80,16 @@ pub enum Iso2ParamValue {
 }
 
 #[derive(Clone, Debug)]
-pub struct Iso2ParamTuple {
+pub struct ParamTuple {
     name: String,
-    value: Iso2ParamValue,
+    value: ParamValue,
 }
 
-impl Iso2ParamTuple {
+impl ParamTuple {
     pub fn get_name(&self) -> &String {
         &self.name
     }
-    pub fn get_value(&self) -> &Iso2ParamValue {
+    pub fn get_value(&self) -> &ParamValue {
         &self.value
     }
 }
@@ -137,7 +121,7 @@ impl ParamSet {
     pub fn add_param(
         &mut self,
         prm_name: &str,
-        prm_value: Iso2ParamValue,
+        prm_value: ParamValue,
     ) -> Result<&mut Self, AfbError> {
         let mut param = unsafe { mem::zeroed::<cglue::iso2_ParameterType>() };
 
@@ -155,7 +139,7 @@ impl ParamSet {
             cglue::iso2_Name_CHARACTER_SIZE,
         )?;
         match prm_value {
-            Iso2ParamValue::Bool(data) => {
+            ParamValue::Bool(data) => {
                 if data {
                     param.byteValue = 1;
                 } else {
@@ -163,19 +147,19 @@ impl ParamSet {
                 }
                 param.set_boolValue_isUsed(1);
             }
-            Iso2ParamValue::Int8(data) => {
+            ParamValue::Int8(data) => {
                 param.byteValue = data;
                 param.set_byteValue_isUsed(1);
             }
-            Iso2ParamValue::Int16(data) => {
+            ParamValue::Int16(data) => {
                 param.shortValue = data;
                 param.set_shortValue_isUsed(1);
             }
-            Iso2ParamValue::Int32(data) => {
+            ParamValue::Int32(data) => {
                 param.intValue = data;
                 param.set_intValue_isUsed(1);
             }
-            Iso2ParamValue::Text(data) => {
+            ParamValue::Text(data) => {
                 let len = str_to_array(
                     data.as_str(),
                     &mut param.stringValue.characters,
@@ -186,7 +170,7 @@ impl ParamSet {
                     param.set_stringValue_isUsed(1);
                 }
             }
-            Iso2ParamValue::PhyValue(data) => {
+            ParamValue::PhyValue(data) => {
                 param.physicalValue = data.payload;
                 param.set_physicalValue_isUsed(1);
             }
@@ -198,7 +182,7 @@ impl ParamSet {
         Ok(self)
     }
 
-    pub fn get_params(&self) -> Result<Vec<Iso2ParamTuple>, AfbError> {
+    pub fn get_params(&self) -> Result<Vec<ParamTuple>, AfbError> {
         let mut params = Vec::new();
 
         for idx in 0..self.payload.Parameter.arrayLen {
@@ -207,15 +191,15 @@ impl ParamSet {
 
             let value = if param.byteValue_isUsed() != 0 {
                 let value = if param.boolValue == 0 { false } else { true };
-                Iso2ParamValue::Bool(value)
+                ParamValue::Bool(value)
             } else if param.byteValue_isUsed() != 0 {
-                Iso2ParamValue::Int8(param.byteValue)
+                ParamValue::Int8(param.byteValue)
             } else if param.shortValue_isUsed() != 0 {
-                Iso2ParamValue::Int16(param.shortValue)
+                ParamValue::Int16(param.shortValue)
             } else if param.intValue_isUsed() != 0 {
-                Iso2ParamValue::Int32(param.intValue)
+                ParamValue::Int32(param.intValue)
             } else if param.stringValue_isUsed() != 0 {
-                Iso2ParamValue::Text(
+                ParamValue::Text(
                     array_to_str(
                         &param.stringValue.characters,
                         param.stringValue.charactersLen,
@@ -228,12 +212,12 @@ impl ParamSet {
                     param.physicalValue.Multiplier,
                     PhysicalUnit::from_u32(param.physicalValue.Unit),
                 );
-                Iso2ParamValue::PhyValue(phys_value)
+                ParamValue::PhyValue(phys_value)
             } else {
                 return afb_error!("param-set-param", "invalid param type");
             };
 
-            params.push(Iso2ParamTuple { name, value });
+            params.push(ParamTuple { name, value });
         }
         Ok(params)
     }

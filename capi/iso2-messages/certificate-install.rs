@@ -100,19 +100,6 @@ impl CertificateInstallResponse {
         Self { payload }
     }
 
-    pub fn decode(payload: cglue::iso2_CertificateInstallationResType) -> Self {
-        Self { payload }
-    }
-
-    pub fn encode(&self) -> Iso2BodyType {
-        let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
-            exi_body.__bindgen_anon_1.CertificateInstallationRes = self.payload;
-            exi_body.set_CertificateInstallationRes_isUsed(1);
-            exi_body
-        };
-        body
-    }
 
     pub fn get_rcode(&self) -> ResponseCode {
         ResponseCode::from_u32(self.payload.ResponseCode)
@@ -136,5 +123,19 @@ impl CertificateInstallResponse {
 
     pub fn get_emaid(&self) -> EmaidType {
         EmaidType::decode(self.payload.eMAID)
+    }
+
+    pub fn decode(payload: cglue::iso2_CertificateInstallationResType) -> Self {
+        Self { payload }
+    }
+
+    pub fn encode(&self) -> Iso2BodyType {
+        let body = unsafe {
+            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            exi_body.__bindgen_anon_1.CertificateInstallationRes = self.payload;
+            exi_body.set_CertificateInstallationRes_isUsed(1);
+            exi_body
+        };
+        body
     }
 }

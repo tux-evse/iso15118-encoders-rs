@@ -24,16 +24,16 @@ pub struct DcEvChargeParam {
 
 impl DcEvChargeParam {
     pub fn new(
-        status: DcEvStatusType,
-        max_current: PhysicalValue,
-        max_voltage: PhysicalValue,
+        status: &DcEvStatusType,
+        max_current: &PhysicalValue,
+        max_voltage: &PhysicalValue,
     ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVChargeParameterType>() };
 
         if max_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "dc-ev-charge-param",
-                "expect: PhysicalUnit::Ampere get:{:?}",
+                "expect: PhysicalUnit::Ampere get:{}",
                 max_current.get_unit()
             );
         }
@@ -41,7 +41,7 @@ impl DcEvChargeParam {
         if max_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "dc-ev-charge-param",
-                "expect: PhysicalUnit::Volt get:{:?}",
+                "expect: PhysicalUnit::Volt get:{}",
                 max_voltage.get_unit()
             );
         }
@@ -64,7 +64,7 @@ impl DcEvChargeParam {
         PhysicalValue::decode(self.payload.EVMaximumCurrentLimit)
     }
 
-    pub fn set_max_power(&mut self, power_limit: PhysicalValue) -> &mut Self {
+    pub fn set_max_power(&mut self, power_limit: &PhysicalValue) -> &mut Self {
         self.payload.EVMaximumPowerLimit = power_limit.encode();
         self.payload.set_EVMaximumPowerLimit_isUsed(1);
         self
@@ -78,7 +78,7 @@ impl DcEvChargeParam {
         }
     }
 
-    pub fn set_energy_capacity(&mut self, power_limit: PhysicalValue) -> &mut Self {
+    pub fn set_energy_capacity(&mut self, power_limit: &PhysicalValue) -> &mut Self {
         self.payload.EVEnergyCapacity = power_limit.encode();
         self.payload.set_EVEnergyCapacity_isUsed(1);
         self
@@ -92,7 +92,7 @@ impl DcEvChargeParam {
         }
     }
 
-    pub fn set_energy_request(&mut self, power_limit: PhysicalValue) -> &mut Self {
+    pub fn set_energy_request(&mut self, power_limit: &PhysicalValue) -> &mut Self {
         self.payload.EVEnergyRequest = power_limit.encode();
         self.payload.set_EVEnergyRequest_isUsed(1);
         self
@@ -140,7 +140,7 @@ impl DcEvChargeParam {
         self
     }
 
-    pub fn get_full_soc_time(&mut self) -> Option<i8> {
+    pub fn get_full_soc(&mut self) -> Option<i8> {
         if self.payload.FullSOC_isUsed() == 0 {
             None
         } else {
@@ -173,7 +173,7 @@ impl AcEvChargeParam {
         if max_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "ac-ev-charge-param",
-                "expect: PhysicalUnit::Ampere get:{:?}",
+                "expect: PhysicalUnit::Ampere get:{}",
                 max_current.get_unit()
             );
         }
@@ -181,7 +181,7 @@ impl AcEvChargeParam {
         if min_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "ac-ev-charge-param",
-                "expect: PhysicalUnit::Ampere get:{:?}",
+                "expect: PhysicalUnit::Ampere get:{}",
                 max_current.get_unit()
             );
         }
@@ -189,7 +189,7 @@ impl AcEvChargeParam {
         if max_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "ac-ev-charge-param",
-                "expect: PhysicalUnit::Volt get:{:?}",
+                "expect: PhysicalUnit::Volt get:{}",
                 max_current.get_unit()
             );
         }
@@ -312,7 +312,6 @@ impl ParamDiscoveryRequest {
         &mut self,
         ac_params: &AcEvChargeParam,
     ) -> Result<&mut Self, AfbError> {
-
         if self.payload.DC_EVChargeParameter_isUsed() != 0
             || self.payload.EVChargeParameter_isUsed() != 0
         {
@@ -322,13 +321,15 @@ impl ParamDiscoveryRequest {
             );
         }
 
-        match EngyTransfertMode::from_u32 (self.payload.RequestedEnergyTransferMode) {
-        EngyTransfertMode::AcSinglePhase => {},
-        EngyTransfertMode::AcTreePhase => {}
-        _ => return afb_error!(
-                "param-discovery-request",
-                "set_ac_charge_param incompatible with current RequestedEnergyTransferMode"
-            )
+        match EngyTransfertMode::from_u32(self.payload.RequestedEnergyTransferMode) {
+            EngyTransfertMode::AcSinglePhase => {}
+            EngyTransfertMode::AcTreePhase => {}
+            _ => {
+                return afb_error!(
+                    "param-discovery-request",
+                    "set_ac_charge_param incompatible with current RequestedEnergyTransferMode"
+                )
+            }
         }
         self.payload.AC_EVChargeParameter = ac_params.encode();
         self.payload.set_AC_EVChargeParameter_isUsed(1);
@@ -347,7 +348,6 @@ impl ParamDiscoveryRequest {
         &mut self,
         dc_params: &DcEvChargeParam,
     ) -> Result<&mut Self, AfbError> {
-
         if self.payload.AC_EVChargeParameter_isUsed() != 0
             || self.payload.EVChargeParameter_isUsed() != 0
         {
@@ -356,15 +356,17 @@ impl ParamDiscoveryRequest {
                 "fail set_dc_charge_param because ac already set"
             );
         }
-        match EngyTransfertMode::from_u32 (self.payload.RequestedEnergyTransferMode) {
-            EngyTransfertMode::DcBasic => {},
-            EngyTransfertMode::DcExtended => {},
-            EngyTransfertMode::DcCombo => {},
-            EngyTransfertMode::DcUnique => {},
-        _ =>    return afb_error!(
-                "param-discovery-request",
-                "set_dc_charge_param incompatible with current RequestedEnergyTransferMode"
-            )
+        match EngyTransfertMode::from_u32(self.payload.RequestedEnergyTransferMode) {
+            EngyTransfertMode::DcBasic => {}
+            EngyTransfertMode::DcExtended => {}
+            EngyTransfertMode::DcCombo => {}
+            EngyTransfertMode::DcUnique => {}
+            _ => {
+                return afb_error!(
+                    "param-discovery-request",
+                    "set_dc_charge_param incompatible with current RequestedEnergyTransferMode"
+                )
+            }
         }
 
         self.payload.DC_EVChargeParameter = dc_params.encode();
@@ -505,6 +507,16 @@ impl SalesTariff {
         Ok(self)
     }
 
+    pub fn get_entries(&self) -> Vec<SaleTariffEntry> {
+        let mut entries = Vec::new();
+        for idx in 0..self.payload.SalesTariffEntry.arrayLen as usize {
+            entries.push(SaleTariffEntry::decode(
+                self.payload.SalesTariffEntry.array[idx],
+            ));
+        }
+        entries
+    }
+
     pub fn decode(payload: cglue::iso2_SalesTariffType) -> Self {
         Self { payload: payload }
     }
@@ -515,9 +527,28 @@ impl SalesTariff {
 }
 
 pub struct PMaxScheduleEntry {
-    pub value: PhysicalValue,
-    pub start: u32,
-    pub duration: u32,
+    value: PhysicalValue,
+    start: u32,
+    duration: u32,
+}
+
+impl PMaxScheduleEntry {
+    pub fn new(value: PhysicalValue, start: u32, duration: u32) -> Self {
+        Self {
+            value,
+            start,
+            duration,
+        }
+    }
+    pub fn get_value(&self) -> &PhysicalValue {
+        &self.value
+    }
+    pub fn get_start(&self) -> u32 {
+        self.start
+    }
+    pub fn get_duration(&self) -> u32 {
+        self.duration
+    }
 }
 
 #[repr(u32)]
@@ -668,6 +699,10 @@ impl SasScheduleTuple {
         Self { payload }
     }
 
+    pub fn get_description(&self) -> u8 {
+        self.payload.SAScheduleTupleID
+    }
+
     pub fn add_pmax(&mut self, pmax: &PMaxScheduleEntry) -> Result<&mut Self, AfbError> {
         let idx = self.payload.PMaxSchedule.PMaxScheduleEntry.arrayLen;
         if idx == cglue::iso2_PMaxScheduleEntryType_12_ARRAY_SIZE as u16 {
@@ -686,7 +721,7 @@ impl SasScheduleTuple {
             slot.set_RelativeTimeInterval_isUsed(1);
             slot.RelativeTimeInterval.duration = pmax.duration;
         }
-        self.payload.PMaxSchedule.PMaxScheduleEntry.arrayLen= idx+1;
+        self.payload.PMaxSchedule.PMaxScheduleEntry.arrayLen = idx + 1;
         Ok(self)
     }
 
@@ -780,8 +815,52 @@ impl DcEvseChargeParam {
         max_current: &PhysicalValue,
         min_current: &PhysicalValue,
         max_power: &PhysicalValue,
-    ) -> Self {
+        current_ripple: &PhysicalValue,
+    ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVSEChargeParameterType>() };
+
+        if max_voltage.get_unit() != PhysicalUnit::Volt {
+            return afb_error!(
+                "dc-charge-param",
+                "expect: PhysicalUnit::Volt get:{}",
+                max_voltage.get_unit()
+            );
+        }
+        if min_voltage.get_unit() != PhysicalUnit::Volt {
+            return afb_error!(
+                "dc-charge-param",
+                "expect: PhysicalUnit::Volt get:{}",
+                min_voltage.get_unit()
+            );
+        }
+        if max_current.get_unit() != PhysicalUnit::Ampere {
+            return afb_error!(
+                "pre-charge-req",
+                "expect: PhysicalUnit::Ampere get:{}",
+                max_current.get_unit()
+            );
+        }
+        if min_current.get_unit() != PhysicalUnit::Ampere {
+            return afb_error!(
+                "pre-charge-req",
+                "expect: PhysicalUnit::Ampere get:{}",
+                min_current.get_unit()
+            );
+        }
+        if max_power.get_unit() != PhysicalUnit::Watt {
+            return afb_error!(
+                "pre-charge-req",
+                "expect: PhysicalUnit::Watt get:{}",
+                max_power.get_unit()
+            );
+        }
+        if current_ripple.get_unit() != PhysicalUnit::Volt {
+            return afb_error!(
+                "pre-charge-req",
+                "expect: PhysicalUnit::Volt get:{}",
+                current_ripple.get_unit()
+            );
+        }
 
         payload.DC_EVSEStatus = status.encode();
         payload.EVSEMaximumCurrentLimit = max_current.encode();
@@ -789,8 +868,9 @@ impl DcEvseChargeParam {
         payload.EVSEMaximumPowerLimit = max_power.encode();
         payload.EVSEMinimumCurrentLimit = min_current.encode();
         payload.EVSEMinimumVoltageLimit = min_voltage.encode();
+        payload.EVSEPeakCurrentRipple = current_ripple.encode();
 
-        Self { payload }
+        Ok(Self { payload })
     }
 
     pub fn get_status(&self) -> DcEvseStatusType {
@@ -846,11 +926,6 @@ impl DcEvseChargeParam {
         }
     }
 
-    pub fn set_peak_current_ripple(&mut self, current_ripple: PhysicalValue) -> &mut Self {
-        self.payload.EVSEPeakCurrentRipple = current_ripple.encode();
-        self
-    }
-
     pub fn get_peak_current_ripple(&self) -> PhysicalValue {
         PhysicalValue::decode(self.payload.EVSEPeakCurrentRipple)
     }
@@ -885,13 +960,13 @@ impl ParamDiscoveryResponse {
         EvseProcessing::from_u32(self.payload.EVSEProcessing)
     }
 
-    pub fn add_schedule(&mut self, unused: i32) -> &mut Self {
+    pub fn add_schedules(&mut self, unused: i32) -> &mut Self {
         self.payload.set_SASchedules_isUsed(1);
         self.payload.SASchedules._unused = unused;
         self
     }
 
-    pub fn get_schedule(&mut self) -> Option<i32> {
+    pub fn get_schedules(&mut self) -> Option<i32> {
         if self.payload.SASchedules_isUsed() == 0 {
             None
         } else {
@@ -925,6 +1000,16 @@ impl ParamDiscoveryResponse {
         self.payload.SAScheduleList.SAScheduleTuple.arrayLen = idx + 1;
         self.payload.set_SAScheduleList_isUsed(1);
         Ok(self)
+    }
+
+    pub fn get_schedule_tuples(&self) -> Vec<SasScheduleTuple> {
+        let mut tuples = Vec::new();
+        for idx in 0..self.payload.SAScheduleList.SAScheduleTuple.arrayLen as usize {
+            tuples.push(SasScheduleTuple::decode(
+                self.payload.SAScheduleList.SAScheduleTuple.array[idx],
+            ));
+        }
+        tuples
     }
 
     pub fn set_evse_dc_charge_param(&mut self, dc_charge_param: &DcEvseChargeParam) -> &mut Self {

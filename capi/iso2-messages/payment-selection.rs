@@ -20,8 +20,20 @@ use super::*;
 use std::mem;
 
 pub struct PaymentServiceOpt {
-    pub service_id: u16,
-    pub param_id: Option<i16>,
+    service_id: u16,
+    param_id: Option<i16>,
+}
+
+impl PaymentServiceOpt {
+    pub fn new (service_id: u16, param_id: Option<i16> ) -> Self {
+        Self {service_id, param_id}
+    }
+    pub fn get_service_id(&self) -> u16 {
+        self.service_id
+    }
+    pub fn get_param_id(&self) -> Option<i16> {
+        self.param_id
+    }
 }
 
 pub struct PaymentSelectionRequest {

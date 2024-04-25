@@ -62,7 +62,7 @@ impl WeldingDetectionResponse {
         if evse_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "welding-detection-response",
-                "expect: PhysicalUnit::Volt get:{:?}",
+                "expect: PhysicalUnit::Volt get:{}",
                 evse_voltage.get_unit()
             );
         }

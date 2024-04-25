@@ -152,12 +152,12 @@ impl IsoController {
                         );
 
                         let mut param_set_1 = ParamSet::new(1);
-                        param_set_1.add_param("prm_1", Iso2ParamValue::Int16(123))?;
+                        param_set_1.add_param("prm_1", ParamValue::Int16(123))?;
                         param_set_1
-                            .add_param("prm_2", Iso2ParamValue::Text("snoopy".to_string()))?;
+                            .add_param("prm_2", ParamValue::Text("snoopy".to_string()))?;
                         param_set_1.add_param(
                             "prm_3",
-                            Iso2ParamValue::PhyValue(PhysicalValue::new(
+                            ParamValue::PhyValue(PhysicalValue::new(
                                 240,
                                 1,
                                 PhysicalUnit::Volt,

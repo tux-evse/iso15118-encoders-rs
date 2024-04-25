@@ -21,16 +21,57 @@ use std::mem;
 
 #[derive(Clone, Copy)]
 pub struct ChargingProfileEntry {
-    pub start: u32,
-    pub power_max: PhysicalValue,
-    pub phases_max: Option<i8>,
+    start: u32,
+    power_max: PhysicalValue,
+    phases_max: Option<i8>,
+}
+
+impl ChargingProfileEntry {
+    pub fn new(start: u32, power_max: PhysicalValue, phases_max: Option<i8>) -> Self {
+        Self {
+            start,
+            power_max,
+            phases_max,
+        }
+    }
+    pub fn get_start(&self) -> u32 {
+        self.start
+    }
+    pub fn get_power_max(&self) -> &PhysicalValue {
+        &self.power_max
+    }
+    pub fn get_phases_max(&self) -> Option<i8> {
+        self.phases_max
+    }
 }
 
 #[derive(Clone, Copy)]
 pub struct DcEvPowerDeliveryParam {
-    pub status: DcEvStatusType,
-    pub bulk_complete: Option<bool>,
-    pub charge_complete: bool,
+    status: DcEvStatusType,
+    bulk_complete: Option<bool>,
+    charge_complete: bool,
+}
+
+impl DcEvPowerDeliveryParam {
+    pub fn new(status: DcEvStatusType, bulk_complete: Option<bool>, charge_complete: bool) -> Self {
+        Self {
+            status,
+            bulk_complete,
+            charge_complete,
+        }
+    }
+
+    pub fn get_status(&self) -> &DcEvStatusType {
+        &self.status
+    }
+
+    pub fn get_bulk_complete(&self) -> Option<bool> {
+        self.bulk_complete
+    }
+
+    pub fn get_charge_complete(&self) -> bool {
+        self.charge_complete
+    }
 }
 
 #[derive(Clone)]
@@ -60,7 +101,7 @@ impl PowerDeliveryRequest {
         if profile.power_max.get_unit() != PhysicalUnit::Watt {
             return afb_error!(
                 "power-delivery-req",
-                "charging profile require PhysicalUnit::Watt get {:?}",
+                "charging profile require PhysicalUnit::Watt get {}",
                 profile.power_max.get_unit()
             );
         }

@@ -19,7 +19,7 @@
 use super::*;
 use std::mem;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ServiceOther {
     id: u16,
     name: String,

@@ -15,13 +15,15 @@
  * limitations under the License.
  *
  */
-use serde::{Deserialize, Serialize};
+use std::convert::AsRef;
+use std::str::FromStr;
+use strum_macros::{Display, EnumString, AsRefStr};
 use std::mem;
 
 use super::*;
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, Debug, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[repr(u32)]
 #[allow(dead_code)]
 pub enum MessageTagId {
@@ -70,18 +72,15 @@ impl MessageTagId {
         unsafe { mem::transmute(code) }
     }
 
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "deserialize({}):{}", json, error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 
     pub fn match_res_id(&self) -> Self {
@@ -110,8 +109,8 @@ impl MessageTagId {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[repr(u32)]
 #[allow(dead_code)]
 pub enum ResponseCode {
@@ -162,23 +161,20 @@ impl ResponseCode {
         unsafe { mem::transmute(code) }
     }
 
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[repr(u32)]
 pub enum ServiceCategory {
     EvCharger = cglue::iso2_serviceCategoryType_iso2_serviceCategoryType_EVCharging,
@@ -192,23 +188,20 @@ impl ServiceCategory {
         unsafe { std::mem::transmute(value) }
     }
 
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
 pub enum PaymentOption {
@@ -221,23 +214,20 @@ impl PaymentOption {
         unsafe { std::mem::transmute(value) }
     }
 
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
 pub enum ChargingSessionType {
@@ -249,24 +239,21 @@ impl ChargingSessionType {
     pub fn from_u32(value: u32) -> Self {
         unsafe { std::mem::transmute(value) }
     }
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str::<Self>(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json)  {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[repr(u32)]
 pub enum ChargeProgress {
     Start = cglue::iso2_chargeProgressType_iso2_chargeProgressType_Start,
@@ -277,24 +264,21 @@ impl ChargeProgress {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[repr(u32)]
 pub enum EvseProcessing {
     Finished = cglue::iso2_EVSEProcessingType_iso2_EVSEProcessingType_Finished,
@@ -305,24 +289,21 @@ impl EvseProcessing {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[repr(u32)]
 pub enum DcEvErrorCode {
     NoError = cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_NO_ERROR,
@@ -348,23 +329,20 @@ impl DcEvErrorCode {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
 pub enum EngyTransfertMode {
@@ -381,23 +359,20 @@ impl EngyTransfertMode {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
 pub enum EvseNotification {
@@ -410,23 +385,20 @@ impl EvseNotification {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
 pub enum IsolationStatus {
@@ -440,23 +412,20 @@ impl IsolationStatus {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
 pub enum DcEvseErrorCode {
@@ -481,33 +450,76 @@ impl DcEvseErrorCode {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
     }
 }
+
+
+
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
+#[allow(dead_code)]
+#[repr(u32)]
+pub enum PhysicalUnit {
+    Hour = cglue::iso2_unitSymbolType_iso2_unitSymbolType_h,
+    Minute = cglue::iso2_unitSymbolType_iso2_unitSymbolType_m,
+    Second = cglue::iso2_unitSymbolType_iso2_unitSymbolType_s,
+    Ampere = cglue::iso2_unitSymbolType_iso2_unitSymbolType_A,
+    Volt = cglue::iso2_unitSymbolType_iso2_unitSymbolType_V,
+    Watt = cglue::iso2_unitSymbolType_iso2_unitSymbolType_W,
+    Wh = cglue::iso2_unitSymbolType_iso2_unitSymbolType_Wh,
+}
+impl PhysicalUnit {
+    pub fn from_u32(code: u32) -> Self {
+        unsafe { mem::transmute(code) }
+    }
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
+            Ok(value) => Ok(value),
+            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+        }
+    }
+
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
+    }
+}
+
 
 pub struct DcEvseStatusType {
     payload: cglue::iso2_DC_EVSEStatusType,
 }
 
 impl DcEvseStatusType {
-    pub fn new(status: DcEvseErrorCode, notification: EvseNotification, delay: u16) -> Self {
+    pub fn new(error: DcEvseErrorCode, notification: EvseNotification, delay: u16) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVSEStatusType>() };
-        payload.EVSEStatusCode = status as u32;
+        payload.EVSEStatusCode = error as u32;
         payload.NotificationMaxDelay = delay;
         payload.EVSENotification = notification as u32;
         Self { payload }
     }
+
+    pub fn get_error(&self) -> DcEvseErrorCode {
+        DcEvseErrorCode::from_u32(self.payload.EVSEStatusCode)
+    }
+
+    pub fn get_notification(&self) -> EvseNotification {
+        EvseNotification::from_u32(self.payload.EVSENotification)
+    }
+
+    pub fn get_delay(&self) -> u16 {
+        self.payload.NotificationMaxDelay
+    }
+
 
     pub fn set_isolation_status(&mut self, isolation: IsolationStatus) -> &mut Self {
         self.payload.EVSEIsolationStatus = isolation as u32;
@@ -521,18 +533,6 @@ impl DcEvseStatusType {
         } else {
             Some(IsolationStatus::from_u32(self.payload.EVSEIsolationStatus))
         }
-    }
-
-    pub fn get_status(&self) -> DcEvseErrorCode {
-        DcEvseErrorCode::from_u32(self.payload.EVSEStatusCode)
-    }
-
-    pub fn get_notification(&self) -> EvseNotification {
-        EvseNotification::from_u32(self.payload.EVSENotification)
-    }
-
-    pub fn get_delay(&self) -> u16 {
-        self.payload.NotificationMaxDelay
     }
 
     pub fn decode(payload: cglue::iso2_DC_EVSEStatusType) -> Self {
@@ -640,7 +640,7 @@ impl EvseStatusType {
         notification: EvseNotification,
         delay: u16,
         ac_status: &AcEvseStatusType,
-        dc_status: DcEvseStatusType,
+        dc_status: &DcEvseStatusType,
     ) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_EVSEStatusType>() };
         payload.NotificationMaxDelay = delay;

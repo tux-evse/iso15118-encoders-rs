@@ -62,7 +62,7 @@ impl CableCheckResponse {
         Self { payload }
     }
 
-    pub fn get_code(&self) -> ResponseCode {
+    pub fn get_rcode(&self) -> ResponseCode {
         ResponseCode::from_u32(self.payload.ResponseCode)
     }
 

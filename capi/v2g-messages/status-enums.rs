@@ -16,7 +16,9 @@
  *
  */
 use super::*;
-use serde::{Deserialize, Serialize};
+use std::convert::AsRef;
+use std::str::FromStr;
+use strum_macros::{Display, EnumString, AsRefStr};
 use std::mem;
 
 #[derive(Debug)]
@@ -45,8 +47,8 @@ impl PayloadMsgId {
         unsafe { mem::transmute(code) }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[repr(u8)]
 pub enum ProtocolTagId {
     Iso20,
@@ -55,8 +57,8 @@ pub enum ProtocolTagId {
     Unknown=255,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, Debug, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
 #[repr(u32)]
 pub enum ResponseCode {
     Success = cglue::appHand_responseCodeType_appHand_responseCodeType_OK_SuccessfulNegotiation,
@@ -68,23 +70,19 @@ impl ResponseCode {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
-    pub fn from_json(json: &str) -> Result<Self, AfbError> {
-        match serde_json::from_str(json) {
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match ResponseCode::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
         }
     }
 
-    pub fn to_json(self) -> Result<String, AfbError> {
-        match serde_json::to_string(&self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
+    pub fn to_str(&self) -> &str{
+        self.as_ref()
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy)]
 pub struct SupportedAppProtocolConf {
     pub tag_id: ProtocolTagId,
     pub name: &'static str,
@@ -105,13 +103,6 @@ impl SupportedAppProtocolConf {
             }
         }
         afb_error!("support-protocol-conf", "Invalid:{} schema_id", schema_id)
-    }
-
-    pub fn to_json(&self) -> Result<String, AfbError> {
-        match serde_json::to_string(self) {
-            Ok(value) => Ok(value),
-            Err(error) => return afb_error!("to-from-json", "fail serializing:{}", error),
-        }
     }
 
     pub fn get_name(&self) -> &'static str {

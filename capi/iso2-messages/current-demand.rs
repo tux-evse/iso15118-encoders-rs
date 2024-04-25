@@ -62,7 +62,7 @@ impl CurrentDemandRequest {
         if voltage_limit.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "current-demand-req",
-                "expect: PhysicalUnit::Volt get:{:?}",
+                "expect: PhysicalUnit::Volt get:{}",
                 voltage_limit.get_unit()
             );
         }
@@ -83,7 +83,7 @@ impl CurrentDemandRequest {
         if current_limit.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "current-demand-req",
-                "expect: PhysicalUnit::Ampere get:{:?}",
+                "expect: PhysicalUnit::Ampere get:{}",
                 current_limit.get_unit()
             );
         }
@@ -104,7 +104,7 @@ impl CurrentDemandRequest {
         if power_limit.get_unit() != PhysicalUnit::Watt {
             return afb_error!(
                 "current-demand-req",
-                "expect: PhysicalUnit::Watt get:{:?}",
+                "expect: PhysicalUnit::Watt get:{}",
                 power_limit.get_unit()
             );
         }
@@ -127,7 +127,7 @@ impl CurrentDemandRequest {
         {
             return afb_error!(
                 "current-demand-req",
-                "expect: PhysicalUnit::(Hour|Minute|Second) got:{:?}",
+                "expect: PhysicalUnit::(Hour|Minute|Second) got:{}",
                 remaining_time.get_unit()
             );
         }
@@ -150,7 +150,7 @@ impl CurrentDemandRequest {
         {
             return afb_error!(
                 "current-demand-req",
-                "expect: PhysicalUnit::Percent get:{:?}",
+                "expect: PhysicalUnit::Percent get:{}",
                 remaining_time.get_unit()
             );
         }
@@ -230,7 +230,7 @@ impl CurrentDemandResponse {
         if current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "current-demand-res",
-                "expect: PhysicalUnit::Ampere get:{:?}",
+                "expect: PhysicalUnit::Ampere get:{}",
                 current.get_unit()
             );
         }
@@ -238,7 +238,7 @@ impl CurrentDemandResponse {
         if voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "current-demand-res",
-                "expect: PhysicalUnit::Volt get:{:?}",
+                "expect: PhysicalUnit::Volt get:{}",
                 voltage.get_unit()
             );
         }
@@ -265,7 +265,7 @@ impl CurrentDemandResponse {
         )
     }
 
-    pub fn get_dc_status(&self) -> DcEvseStatusType {
+    pub fn get_status(&self) -> DcEvseStatusType {
         DcEvseStatusType::decode(self.payload.DC_EVSEStatus)
     }
 
