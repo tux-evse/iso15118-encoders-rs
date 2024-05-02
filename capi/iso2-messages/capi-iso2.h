@@ -21,3 +21,4 @@
 #include <iso15118/iso2_msgDefDatatypes.h>
 #include <iso15118/iso2_msgDefDecoder.h>
 #include <iso15118/iso2_msgDefEncoder.h>
+#include <iso15118/iso2_sign.h>
