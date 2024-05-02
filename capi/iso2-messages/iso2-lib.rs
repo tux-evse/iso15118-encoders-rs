@@ -134,7 +134,6 @@ pub enum Iso2MessageBody {
     CableCheckRes(CableCheckResponse),
     CertificateInstallReq(CertificateInstallRequest),
     CertificateInstallRes(CertificateInstallResponse),
-
     CertificateUpdateReq(CertificateUpdateRequest),
     CertificateUpdateRes(CertificateUpdateResponse),
     ParamDiscoveryReq(ParamDiscoveryRequest),
@@ -201,199 +200,199 @@ impl Iso2MessageBody {
             Iso2MessageBody::Unsupported => MessageTagId::Unsupported
         }
     }
-    pub fn decode(v2g_body: &cglue::iso2_BodyType) -> Result<Self, AfbError> {
+    pub fn decode(payload: &cglue::iso2_BodyType) -> Result<Self, AfbError> {
         // SessionSetup
-        let body = if v2g_body.SessionSetupReq_isUsed() == 1 {
+        let body = if payload.SessionSetupReq_isUsed() == 1 {
             let body =
-                SessionSetupRequest::decode(unsafe { v2g_body.__bindgen_anon_1.SessionSetupReq });
+                SessionSetupRequest::decode(unsafe { payload.__bindgen_anon_1.SessionSetupReq });
             Iso2MessageBody::SessionSetupReq(body)
-        } else if v2g_body.SessionSetupRes_isUsed() == 1 {
+        } else if payload.SessionSetupRes_isUsed() == 1 {
             let body =
-                SessionSetupResponse::decode(unsafe { v2g_body.__bindgen_anon_1.SessionSetupRes });
+                SessionSetupResponse::decode(unsafe { payload.__bindgen_anon_1.SessionSetupRes });
             Iso2MessageBody::SessionSetupRes(body)
 
         // ServiceDiscovery
-        } else if v2g_body.ServiceDiscoveryReq_isUsed() == 1 {
+        } else if payload.ServiceDiscoveryReq_isUsed() == 1 {
             let body = ServiceDiscoveryRequest::decode(unsafe {
-                v2g_body.__bindgen_anon_1.ServiceDiscoveryReq
+                payload.__bindgen_anon_1.ServiceDiscoveryReq
             });
             Iso2MessageBody::ServiceDiscoveryReq(body)
-        } else if v2g_body.ServiceDiscoveryRes_isUsed() == 1 {
+        } else if payload.ServiceDiscoveryRes_isUsed() == 1 {
             let body = ServiceDiscoveryResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.ServiceDiscoveryRes
+                payload.__bindgen_anon_1.ServiceDiscoveryRes
             });
             Iso2MessageBody::ServiceDiscoveryRes(body)
 
         // ServiceDetail
-        } else if v2g_body.ServiceDetailReq_isUsed() == 1 {
+        } else if payload.ServiceDetailReq_isUsed() == 1 {
             let body =
-                ServiceDetailRequest::decode(unsafe { v2g_body.__bindgen_anon_1.ServiceDetailReq });
+                ServiceDetailRequest::decode(unsafe { payload.__bindgen_anon_1.ServiceDetailReq });
             Iso2MessageBody::ServiceDetailReq(body)
-        } else if v2g_body.ServiceDetailRes_isUsed() == 1 {
+        } else if payload.ServiceDetailRes_isUsed() == 1 {
             let body = ServiceDetailResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.ServiceDetailRes
+                payload.__bindgen_anon_1.ServiceDetailRes
             });
             Iso2MessageBody::ServiceDetailRes(body)
 
         // Authorization
-        } else if v2g_body.AuthorizationReq_isUsed() == 1 {
+        } else if payload.AuthorizationReq_isUsed() == 1 {
             let body =
-                AuthorizationRequest::decode(unsafe { v2g_body.__bindgen_anon_1.AuthorizationReq });
+                AuthorizationRequest::decode(unsafe { payload.__bindgen_anon_1.AuthorizationReq });
             Iso2MessageBody::AuthorizationReq(body)
-        } else if v2g_body.AuthorizationRes_isUsed() == 1 {
+        } else if payload.AuthorizationRes_isUsed() == 1 {
             let body = AuthorizationResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.AuthorizationRes
+                payload.__bindgen_anon_1.AuthorizationRes
             });
             Iso2MessageBody::AuthorizationRes(body)
 
         // ElementBody
-        } else if v2g_body.BodyElement_isUsed() == 1 {
-            let body = BodyBaseElement::decode(unsafe { v2g_body.__bindgen_anon_1.BodyElement });
+        } else if payload.BodyElement_isUsed() == 1 {
+            let body = BodyBaseElement::decode(unsafe { payload.__bindgen_anon_1.BodyElement });
             Iso2MessageBody::BodyElement(body)
 
         // CableCheck
-        } else if v2g_body.CableCheckReq_isUsed() == 1 {
+        } else if payload.CableCheckReq_isUsed() == 1 {
             let body =
-                CableCheckRequest::decode(unsafe { v2g_body.__bindgen_anon_1.CableCheckReq });
+                CableCheckRequest::decode(unsafe { payload.__bindgen_anon_1.CableCheckReq });
             Iso2MessageBody::CableCheckReq(body)
-        } else if v2g_body.CableCheckRes_isUsed() == 1 {
+        } else if payload.CableCheckRes_isUsed() == 1 {
             let body =
-                CableCheckResponse::decode(unsafe { v2g_body.__bindgen_anon_1.CableCheckRes });
+                CableCheckResponse::decode(unsafe { payload.__bindgen_anon_1.CableCheckRes });
             Iso2MessageBody::CableCheckRes(body)
 
         // CertificateInstallation
-        } else if v2g_body.CertificateInstallationReq_isUsed() == 1 {
+        } else if payload.CertificateInstallationReq_isUsed() == 1 {
             let body = CertificateInstallRequest::decode(unsafe {
-                v2g_body.__bindgen_anon_1.CertificateInstallationReq
+                payload.__bindgen_anon_1.CertificateInstallationReq
             });
             Iso2MessageBody::CertificateInstallReq(body)
-        } else if v2g_body.CertificateInstallationRes_isUsed() == 1 {
+        } else if payload.CertificateInstallationRes_isUsed() == 1 {
             let body = CertificateInstallResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.CertificateInstallationRes
+                payload.__bindgen_anon_1.CertificateInstallationRes
             });
             Iso2MessageBody::CertificateInstallRes(body)
 
         // CertifcateUpdate
-        } else if v2g_body.CertificateUpdateReq_isUsed() == 1 {
+        } else if payload.CertificateUpdateReq_isUsed() == 1 {
             let body = CertificateUpdateRequest::decode(unsafe {
-                v2g_body.__bindgen_anon_1.CertificateUpdateReq
+                payload.__bindgen_anon_1.CertificateUpdateReq
             });
             Iso2MessageBody::CertificateUpdateReq(body)
-        } else if v2g_body.CertificateUpdateRes_isUsed() == 1 {
+        } else if payload.CertificateUpdateRes_isUsed() == 1 {
             let body = CertificateUpdateResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.CertificateUpdateRes
+                payload.__bindgen_anon_1.CertificateUpdateRes
             });
             Iso2MessageBody::CertificateUpdateRes(body)
 
         // ParamDicovery
-        } else if v2g_body.ChargeParameterDiscoveryReq_isUsed() == 1 {
+        } else if payload.ChargeParameterDiscoveryReq_isUsed() == 1 {
             let body = ParamDiscoveryRequest::decode(unsafe {
-                v2g_body.__bindgen_anon_1.ChargeParameterDiscoveryReq
+                payload.__bindgen_anon_1.ChargeParameterDiscoveryReq
             });
             Iso2MessageBody::ParamDiscoveryReq(body)
-        } else if v2g_body.ChargeParameterDiscoveryRes_isUsed() == 1 {
+        } else if payload.ChargeParameterDiscoveryRes_isUsed() == 1 {
             let body = ParamDiscoveryResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.ChargeParameterDiscoveryRes
+                payload.__bindgen_anon_1.ChargeParameterDiscoveryRes
             });
             Iso2MessageBody::ParamDiscoveryRes(body)
 
         // ChargingSatus
-        } else if v2g_body.ChargingStatusReq_isUsed() == 1 {
+        } else if payload.ChargingStatusReq_isUsed() == 1 {
             let body = ChargingStatusRequest::decode(unsafe {
-                v2g_body.__bindgen_anon_1.ChargingStatusReq
+                payload.__bindgen_anon_1.ChargingStatusReq
             });
             Iso2MessageBody::ChargingStatusReq(body)
-        } else if v2g_body.ChargingStatusRes_isUsed() == 1 {
+        } else if payload.ChargingStatusRes_isUsed() == 1 {
             let body = ChargingStatusResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.ChargingStatusRes
+                payload.__bindgen_anon_1.ChargingStatusRes
             });
             Iso2MessageBody::ChargingStatusRes(body)
 
         // CurrentDemand
-        } else if v2g_body.CurrentDemandReq_isUsed() == 1 {
+        } else if payload.CurrentDemandReq_isUsed() == 1 {
             let body =
-                CurrentDemandRequest::decode(unsafe { v2g_body.__bindgen_anon_1.CurrentDemandReq });
+                CurrentDemandRequest::decode(unsafe { payload.__bindgen_anon_1.CurrentDemandReq });
             Iso2MessageBody::CurrentDemandReq(body)
-        } else if v2g_body.CurrentDemandRes_isUsed() == 1 {
+        } else if payload.CurrentDemandRes_isUsed() == 1 {
             let body = CurrentDemandResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.CurrentDemandRes
+                payload.__bindgen_anon_1.CurrentDemandRes
             });
             Iso2MessageBody::CurrentDemandRes(body)
 
         // MeteringReceipt
-        } else if v2g_body.MeteringReceiptReq_isUsed() == 1 {
+        } else if payload.MeteringReceiptReq_isUsed() == 1 {
             let body = MeteringReceiptRequest::decode(unsafe {
-                v2g_body.__bindgen_anon_1.MeteringReceiptReq
+                payload.__bindgen_anon_1.MeteringReceiptReq
             });
             Iso2MessageBody::MeteringReceiptReq(body)
-        } else if v2g_body.MeteringReceiptRes_isUsed() == 1 {
+        } else if payload.MeteringReceiptRes_isUsed() == 1 {
             let body = MeteringReceiptResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.MeteringReceiptRes
+                payload.__bindgen_anon_1.MeteringReceiptRes
             });
             Iso2MessageBody::MeteringReceiptRes(body)
 
         // PaymentDetails
-        } else if v2g_body.PaymentDetailsReq_isUsed() == 1 {
+        } else if payload.PaymentDetailsReq_isUsed() == 1 {
             let body = PaymentDetailsRequest::decode(unsafe {
-                v2g_body.__bindgen_anon_1.PaymentDetailsReq
+                payload.__bindgen_anon_1.PaymentDetailsReq
             });
             Iso2MessageBody::PaymentDetailsReq(body)
-        } else if v2g_body.PaymentDetailsRes_isUsed() == 1 {
+        } else if payload.PaymentDetailsRes_isUsed() == 1 {
             let body = PaymentDetailsResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.PaymentDetailsRes
+                payload.__bindgen_anon_1.PaymentDetailsRes
             });
             Iso2MessageBody::PaymentDetailsRes(body)
 
         // PaymentServiceSelection
-        } else if v2g_body.PaymentServiceSelectionReq_isUsed() == 1 {
+        } else if payload.PaymentServiceSelectionReq_isUsed() == 1 {
             let body = PaymentSelectionRequest::decode(unsafe {
-                v2g_body.__bindgen_anon_1.PaymentServiceSelectionReq
+                payload.__bindgen_anon_1.PaymentServiceSelectionReq
             });
             Iso2MessageBody::PaymentSelectionReq(body)
-        } else if v2g_body.PaymentServiceSelectionRes_isUsed() == 1 {
+        } else if payload.PaymentServiceSelectionRes_isUsed() == 1 {
             let body = PaymentSelectionResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.PaymentServiceSelectionRes
+                payload.__bindgen_anon_1.PaymentServiceSelectionRes
             });
             Iso2MessageBody::PaymentSelectionRes(body)
 
         // PowerDelivery
-        } else if v2g_body.PowerDeliveryReq_isUsed() == 1 {
+        } else if payload.PowerDeliveryReq_isUsed() == 1 {
             let body =
-                PowerDeliveryRequest::decode(unsafe { v2g_body.__bindgen_anon_1.PowerDeliveryReq });
+                PowerDeliveryRequest::decode(unsafe { payload.__bindgen_anon_1.PowerDeliveryReq });
             Iso2MessageBody::PowerDeliveryReq(body)
-        } else if v2g_body.PowerDeliveryRes_isUsed() == 1 {
+        } else if payload.PowerDeliveryRes_isUsed() == 1 {
             let body = PowerDeliveryResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.PowerDeliveryRes
+                payload.__bindgen_anon_1.PowerDeliveryRes
             });
             Iso2MessageBody::PowerDeliveryRes(body)
 
         // PreCharge
-        } else if v2g_body.PreChargeReq_isUsed() == 1 {
-            let body = PreChargeRequest::decode(unsafe { v2g_body.__bindgen_anon_1.PreChargeReq });
+        } else if payload.PreChargeReq_isUsed() == 1 {
+            let body = PreChargeRequest::decode(unsafe { payload.__bindgen_anon_1.PreChargeReq });
             Iso2MessageBody::PreChargeReq(body)
-        } else if v2g_body.PreChargeRes_isUsed() == 1 {
-            let body = PreChargeResponse::decode(unsafe { v2g_body.__bindgen_anon_1.PreChargeRes });
+        } else if payload.PreChargeRes_isUsed() == 1 {
+            let body = PreChargeResponse::decode(unsafe { payload.__bindgen_anon_1.PreChargeRes });
             Iso2MessageBody::PreChargeRes(body)
 
         // SessionStop
-        } else if v2g_body.SessionStopReq_isUsed() == 1 {
+        } else if payload.SessionStopReq_isUsed() == 1 {
             let body =
-                SessionStopRequest::decode(unsafe { v2g_body.__bindgen_anon_1.SessionStopReq });
+                SessionStopRequest::decode(unsafe { payload.__bindgen_anon_1.SessionStopReq });
             Iso2MessageBody::SessionStopReq(body)
-        } else if v2g_body.SessionStopRes_isUsed() == 1 {
+        } else if payload.SessionStopRes_isUsed() == 1 {
             let body =
-                SessionStopResponse::decode(unsafe { v2g_body.__bindgen_anon_1.SessionStopRes });
+                SessionStopResponse::decode(unsafe { payload.__bindgen_anon_1.SessionStopRes });
             Iso2MessageBody::SessionStopRes(body)
 
         // WeldingDetection
-        } else if v2g_body.WeldingDetectionReq_isUsed() == 1 {
+        } else if payload.WeldingDetectionReq_isUsed() == 1 {
             let body = WeldingDetectionRequest::decode(unsafe {
-                v2g_body.__bindgen_anon_1.WeldingDetectionReq
+                payload.__bindgen_anon_1.WeldingDetectionReq
             });
             Iso2MessageBody::WeldingDetectionReq(body)
-        } else if v2g_body.WeldingDetectionRes_isUsed() == 1 {
+        } else if payload.WeldingDetectionRes_isUsed() == 1 {
             let body = WeldingDetectionResponse::decode(unsafe {
-                v2g_body.__bindgen_anon_1.WeldingDetectionRes
+                payload.__bindgen_anon_1.WeldingDetectionRes
             });
             Iso2MessageBody::WeldingDetectionRes(body)
         } else {
@@ -401,29 +400,4 @@ impl Iso2MessageBody {
         };
         Ok(body)
     }
-}
-
-pub struct Iso2Payload {
-    payload: Iso2MessageExi,
-}
-
-impl Iso2Payload {
-    pub fn decode_from_stream(stream_lock: &RawStream) -> Result<Self, AfbError> {
-        let payload = Iso2MessageExi::decode_from_stream(stream_lock)?;
-        stream_lock.reset();
-        Ok(Iso2Payload { payload })
-    }
-
-    pub fn get_payload(&self) -> &Iso2MessageBody {
-        &self.payload.body
-    }
-
-    pub fn get_session(&self) -> &SessionId {
-        &self.payload.get_session()
-    }
-
-    // Fulup TBD
-    // get notification
-    // get signature
-
 }

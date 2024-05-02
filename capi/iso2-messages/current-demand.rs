@@ -25,7 +25,7 @@ pub struct CurrentDemandRequest {
 }
 impl CurrentDemandRequest {
     pub fn new(
-        dc_status: DcEvStatusType,
+        dc_status: &DcEvStatusType,
         current_target: &PhysicalValue,
         voltage_target: &PhysicalValue,
         charging_complete: bool,
@@ -208,9 +208,9 @@ pub struct CurrentDemandResponse {
 
 impl CurrentDemandResponse {
     pub fn new(
+        rcode: ResponseCode,
         evse_id: &str,
-        code: ResponseCode,
-        dc_status: DcEvseStatusType,
+        dc_status: &DcEvseStatusType,
         current: &PhysicalValue,
         current_limit: bool,
         voltage: &PhysicalValue,
@@ -220,7 +220,7 @@ impl CurrentDemandResponse {
     ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_CurrentDemandResType>() };
 
-        payload.ResponseCode = code as u32;
+        payload.ResponseCode = rcode as u32;
         payload.EVSEID.charactersLen = str_to_array(
             evse_id,
             &mut payload.EVSEID.characters,

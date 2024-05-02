@@ -84,8 +84,8 @@ pub struct CertificateInstallResponse {
 impl CertificateInstallResponse {
     pub fn new(
         code: ResponseCode,
-        provisioning_chain: &CertificateChainType,
         contract_chain: &CertificateChainType,
+        provisioning_chain: &CertificateChainType,
         private_key: &PrivateKeyType,
         public_key: &DhPublicKeyType,
         emaid: &EmaidType,

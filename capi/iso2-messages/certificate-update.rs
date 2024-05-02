@@ -24,7 +24,7 @@ pub struct CertificateUpdateRequest {
 }
 
 impl CertificateUpdateRequest {
-    pub fn new(id: &str, contract_chain: CertificateChainType,  emaid: &str, root_certs: CertificateRootList) -> Result<Self, AfbError> {
+    pub fn new(id: &str, contract_chain: &CertificateChainType,  emaid: &str, root_certs: &CertificateRootList) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_CertificateUpdateReqType>() };
 
         payload.Id.charactersLen = str_to_array(
@@ -84,11 +84,11 @@ pub struct CertificateUpdateResponse {
 impl CertificateUpdateResponse {
     pub fn new(
         code: ResponseCode,
-        provisioning_chain: CertificateChainType,
-        contract_chain: CertificateChainType,
-        private_key: PrivateKeyType,
-        public_key: DhPublicKeyType,
-        emaid: EmaidType,
+        contract_chain: &CertificateChainType,
+        provisioning_chain: &CertificateChainType,
+        private_key: &PrivateKeyType,
+        public_key: &DhPublicKeyType,
+        emaid: &EmaidType,
     ) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_CertificateUpdateResType>() };
         payload.ResponseCode = code as u32;

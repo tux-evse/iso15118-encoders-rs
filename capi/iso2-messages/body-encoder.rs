@@ -16,99 +16,99 @@
  *
  */
 
+use super::*;
 use crate::prelude::v2g::*;
 use std::mem;
-use super::*;
 
 // export body type to other crate modules
 pub type Iso2BodyType = cglue::iso2_BodyType;
 
-// session ID is an anonymous function
-#[derive(Clone)]
-pub struct SessionId {
-    handle: ExiByteArray<[u8; cglue::iso2_sessionIDType_BYTES_SIZE as usize]>,
+
+pub struct Iso2MessageHeader {
+    payload: cglue::iso2_MessageHeaderType,
 }
 
-impl SessionId {
-    pub fn new(id: &[u8; cglue::iso2_sessionIDType_BYTES_SIZE as usize], len: u16) -> Self {
-        SessionId {
-            handle: ExiByteArray::new(id.clone(), len),
+impl Iso2MessageHeader {
+    pub fn new(session_id: &[u8]) -> Result<Self, AfbError> {
+        let mut payload = unsafe { mem::zeroed::<cglue::iso2_MessageHeaderType>() };
+        payload.SessionID.bytesLen = bytes_to_array(
+            session_id,
+            &mut payload.SessionID.bytes,
+            cglue::iso2_sessionIDType_BYTES_SIZE,
+        )?;
+        Ok(Self { payload })
+    }
+
+    pub fn set_notification_used(&mut self) -> &mut Self {
+        self.payload.set_Notification_isUsed(1);
+        self
+    }
+
+    pub fn get_notification_used(&self) -> bool {
+        if self.payload.Notification_isUsed() == 0 {
+            false
+        } else {
+            true
         }
     }
 
-    pub fn null() -> Self {
+    pub fn set_signature_used(&mut self) -> &mut Self {
+        self.payload.set_Notification_isUsed(1);
+        self
+    }
+
+    pub fn get_signature_used(&self) -> bool {
+        if self.payload.Notification_isUsed() == 0 {
+            false
+        } else {
+            true
+        }
+    }
+
+    pub fn get_session_id(&self) -> &[u8] {
+        let session = array_to_bytes(
+            &self.payload.SessionID.bytes,
+            self.payload.SessionID.bytesLen,
+        );
+        session
+    }
+
+    pub fn decode(payload: cglue::iso2_MessageHeaderType) -> Self {
         Self {
-            handle: ExiByteArray::new([0x0; cglue::iso2_sessionIDType_BYTES_SIZE as usize], 0),
+            payload: payload.clone(),
         }
     }
 
-    pub fn to_bytes(&self) -> &[u8] {
-        self.handle.to_bytes()
-    }
-
-    pub fn equal(&self, session: &Self) -> bool {
-        self.handle.equal(session.handle.to_bytes())
+    pub fn encode(&self) -> cglue::iso2_MessageHeaderType {
+        self.payload
     }
 }
-pub struct Iso2MessageExi {
-    pub session_id: SessionId,
-    pub notification: Option<cglue::iso2_NotificationType>,
-    pub signature: Option<cglue::iso2_SignatureType>,
-    pub body: Iso2MessageBody,
+
+pub struct Iso2MessageDoc {
+    payload: cglue::iso2_exiDocument,
 }
 
-impl Iso2MessageExi {
+impl Iso2MessageDoc {
     #[track_caller]
-    pub fn decode_from_stream(locked: &RawStream) -> Result<Iso2MessageExi, AfbError> {
-        let exi_raw = unsafe {
-            let mut exi_raw = mem::MaybeUninit::<cglue::iso2_exiDocument>::uninit();
-            let status = cglue::decode_iso2_exiDocument(locked.stream, exi_raw.as_mut_ptr());
-            let exi_raw = exi_raw.assume_init();
+    pub fn decode_from_stream(locked: &RawStream) -> Result<Iso2MessageDoc, AfbError> {
+        let payload = unsafe {
+            let mut buffer = mem::MaybeUninit::<cglue::iso2_exiDocument>::uninit();
+            let status = cglue::decode_iso2_exiDocument(locked.stream, buffer.as_mut_ptr());
+            let exi_raw = buffer.assume_init();
             if status < 0 {
                 return afb_error!(
                     "iso2-exi-decode",
                     "fail to decode iso-2 (ExiDocument) from stream"
                 );
             }
+            locked.reset();
             exi_raw
         };
-
-        let v2g_message = exi_raw.V2G_Message;
-        let v2g_header = v2g_message.Header;
-        let v2g_body = v2g_message.Body;
-
-        let session_id = SessionId::new(&v2g_header.SessionID.bytes, v2g_header.SessionID.bytesLen);
-        let signature = if v2g_header.Signature_isUsed() == 1 {
-            Some(v2g_header.Signature)
-        } else {
-            None
-        };
-
-        let notification = if v2g_header.Notification_isUsed() == 1 {
-            Some(v2g_header.Notification)
-        } else {
-            None
-        };
-
-        // decode message payload body
-        let body = Iso2MessageBody::decode(&v2g_body)?;
-
-        let response = Iso2MessageExi {
-            session_id: session_id,
-            notification,
-            signature,
-            body,
-        };
-
-        Ok(response)
+        Ok(Self { payload })
     }
 
     #[track_caller]
-    pub fn encode_to_stream(
-        locked: &mut RawStream,
-        iso2_body: &Iso2BodyType,
-        session_id: &SessionId,
-    ) -> Result<(), AfbError> {
+    pub fn encode_to_stream(&self, locked: &mut RawStream) -> Result<(), AfbError> {
         locked.reset(); // cleanup stream before encoding
 
         // reserve space for v2g header
@@ -124,26 +124,7 @@ impl Iso2MessageExi {
             }
         };
 
-        // build iso2 message header
-        let iso2_header = unsafe {
-            let mut header = mem::zeroed::<cglue::iso2_MessageHeaderType>();
-            header.set_Notification_isUsed(0);
-            header.set_Signature_isUsed(0);
-
-            header.SessionID.bytes = session_id.handle.get_array().clone();
-            header.SessionID.bytesLen = session_id.handle.get_len();
-
-            header
-        };
-
-        let exi_doc = cglue::iso2_exiDocument {
-            V2G_Message: cglue::iso2_V2G_Message {
-                Header: iso2_header,
-                Body: iso2_body.clone(),
-            },
-        };
-
-        let status = unsafe { cglue::encode_iso2_exiDocument(locked.stream, &exi_doc) };
+        let status = unsafe { cglue::encode_iso2_exiDocument(locked.stream, &self.payload) };
         if status < 0 {
             return afb_error!(
                 "exi-iso-encode",
@@ -165,7 +146,18 @@ impl Iso2MessageExi {
         Ok(())
     }
 
-    pub fn get_session(&self) -> &SessionId {
-        &self.session_id
+    pub fn new(header: &Iso2MessageHeader, body: &Iso2BodyType) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::iso2_exiDocument>() };
+        payload.V2G_Message.Header = header.encode();
+        payload.V2G_Message.Body = *body;
+        Self { payload }
+    }
+
+    pub fn get_header(&self) -> Iso2MessageHeader {
+        Iso2MessageHeader::decode(self.payload.V2G_Message.Header)
+    }
+
+    pub fn get_body(&self) -> Result<Iso2MessageBody, AfbError> {
+        Iso2MessageBody::decode(&self.payload.V2G_Message.Body)
     }
 }

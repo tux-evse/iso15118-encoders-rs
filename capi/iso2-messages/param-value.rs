@@ -15,10 +15,9 @@
  * limitations under the License.
  *
  */
-use std::mem;
 use super::*;
 use std::fmt;
-
+use std::mem;
 
 #[derive(Clone, Copy)]
 pub struct PhysicalValue {
@@ -86,6 +85,10 @@ pub struct ParamTuple {
 }
 
 impl ParamTuple {
+    pub fn new(name: String, value: ParamValue) -> Self {
+        ParamTuple { name, value }
+    }
+
     pub fn get_name(&self) -> &String {
         &self.name
     }
@@ -121,7 +124,7 @@ impl ParamSet {
     pub fn add_param(
         &mut self,
         prm_name: &str,
-        prm_value: ParamValue,
+        prm_value: &ParamValue,
     ) -> Result<&mut Self, AfbError> {
         let mut param = unsafe { mem::zeroed::<cglue::iso2_ParameterType>() };
 
@@ -140,7 +143,7 @@ impl ParamSet {
         )?;
         match prm_value {
             ParamValue::Bool(data) => {
-                if data {
+                if *data {
                     param.byteValue = 1;
                 } else {
                     param.byteValue = 0;
@@ -148,15 +151,15 @@ impl ParamSet {
                 param.set_boolValue_isUsed(1);
             }
             ParamValue::Int8(data) => {
-                param.byteValue = data;
+                param.byteValue = *data;
                 param.set_byteValue_isUsed(1);
             }
             ParamValue::Int16(data) => {
-                param.shortValue = data;
+                param.shortValue = *data;
                 param.set_shortValue_isUsed(1);
             }
             ParamValue::Int32(data) => {
-                param.intValue = data;
+                param.intValue = *data;
                 param.set_intValue_isUsed(1);
             }
             ParamValue::Text(data) => {

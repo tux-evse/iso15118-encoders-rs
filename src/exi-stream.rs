@@ -54,61 +54,6 @@ pub fn array_to_string(array: &[raw::c_char], len: u16) -> Result<String, AfbErr
     Ok(text.to_string())
 }
 
-#[derive(Clone)]
-pub struct ExiByteArray<T>
-where
-    T: Sized,
-{
-    array: T,
-    len: usize,
-}
-
-impl<T> ExiByteArray<T> {
-    pub fn new(array: T, len: u16) -> Self
-    where
-        T: Sized,
-    {
-        Self {
-            array: array,
-            len: len as usize,
-        }
-    }
-
-    pub fn get_array(&self) -> &T {
-        &self.array
-    }
-
-    pub fn get_len(&self) -> u16 {
-        self.len as u16
-    }
-
-    pub fn to_string(&self) -> Result<String, AfbError> {
-        let ptr = &self.array as *const _ as *const u8;
-        let slice = unsafe { slice::from_raw_parts(ptr, self.len) };
-        let text = match str::from_utf8(slice) {
-            Ok(value) => value,
-            Err(_) => {
-                return afb_error!("iso2-array-tostring", "invalid UFT8 data");
-            }
-        };
-        Ok(text.to_string())
-    }
-
-    pub fn to_bytes(&self) -> &[u8] {
-        let ptr = &self.array as *const _ as *const u8;
-        let slice = unsafe { slice::from_raw_parts(ptr, self.len) };
-        slice
-    }
-
-    pub fn dump_buffer(&self) -> String {
-        dump_buffer(self.to_bytes())
-    }
-
-    pub fn equal(&self, array: &[u8]) -> bool {
-        self.to_bytes() == array
-    }
-}
-
 pub enum ExiDump {
     V2gHeader,
     IsoPayload,

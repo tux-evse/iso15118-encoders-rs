@@ -20,14 +20,14 @@ use super::*;
 use std::mem;
 
 #[derive(Clone)]
-pub struct ServiceOther {
+pub struct ServiceOtherx {
     id: u16,
     name: String,
     scope: String,
     category: ServiceCategory,
     isfree: bool,
 }
-impl ServiceOther {
+impl ServiceOtherx {
     pub fn new(id: u16, name: &str, scope: &str, category: ServiceCategory, isfree: bool) -> Self {
         Self {
             id,
@@ -54,33 +54,184 @@ impl ServiceOther {
         self.category.clone()
     }
 }
+#[derive(Clone)]
+pub struct ServiceOther {
+    payload: cglue::iso2_ServiceType,
+}
 
-#[derive(Debug, Clone)]
+impl ServiceOther {
+    pub fn new(id: u16, category: ServiceCategory, isfree: bool) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::iso2_ServiceType>() };
+        payload.ServiceID = id;
+        payload.ServiceCategory = category as u32;
+
+        if isfree {
+            payload.FreeService = 1;
+        }
+        Self { payload }
+    }
+
+    pub fn get_id(&self) -> u16 {
+        self.payload.ServiceID
+    }
+
+    pub fn get_category(&self) -> ServiceCategory {
+        ServiceCategory::from_u32(self.payload.ServiceCategory)
+    }
+
+    pub fn get_isfree(&self) -> bool {
+        if self.payload.FreeService != 0 {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn set_name(&mut self, name: &str) -> Result<&mut Self, AfbError> {
+        let len = str_to_array(
+            name,
+            &mut self.payload.ServiceName.characters,
+            cglue::iso2_ServiceName_CHARACTER_SIZE,
+        )?;
+        self.payload.ServiceName.charactersLen = len;
+        self.payload.set_ServiceName_isUsed(1);
+
+        Ok(self)
+    }
+
+    pub fn get_name(&self) -> Option<&str> {
+        let name = if self.payload.ServiceName_isUsed() == 0 {
+            None
+        } else {
+            array_to_str(
+                &self.payload.ServiceName.characters,
+                self.payload.ServiceName.charactersLen,
+            ).ok()
+        };
+        name
+    }
+
+    pub fn set_scope(&mut self, scope: &str) -> Result<&mut Self, AfbError> {
+        let len = str_to_array(
+            scope,
+            &mut self.payload.ServiceScope.characters,
+            cglue::iso2_ServiceScope_CHARACTER_SIZE,
+        )?;
+        self.payload.ServiceScope.charactersLen = len;
+        self.payload.set_ServiceScope_isUsed(1);
+
+        Ok(self)
+    }
+
+    pub fn get_scope(&self) -> Option<&str> {
+        let scope = if self.payload.ServiceScope_isUsed() == 0 {
+            None
+        } else {
+            array_to_str(
+                &self.payload.ServiceScope.characters,
+                self.payload.ServiceScope.charactersLen,
+            ).ok()
+        };
+        scope
+    }
+
+    pub fn decode(payload: cglue::iso2_ServiceType) -> Self {
+        Self {
+            payload: payload.clone(),
+        }
+    }
+
+    pub fn encode(&self) -> cglue::iso2_ServiceType {
+        self.payload
+    }
+}
+
+
+#[derive(Clone)]
 pub struct ServiceCharging {
-    name: String,
-    scope: String,
-    isfree: bool,
+    payload: cglue::iso2_ChargeServiceType,
 }
 
 impl ServiceCharging {
-    pub fn new(name: &str, scope: &str, isfree: bool) -> Self {
-        Self {
-            name: name.to_string(),
-            scope: scope.to_string(),
-            isfree,
+    pub fn new(id: u16, isfree: bool) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::iso2_ChargeServiceType>() };
+        payload.ServiceID = id;
+
+        if isfree {
+            payload.FreeService = 1;
+        }
+        Self { payload }
+    }
+    pub fn get_id(&self) -> u16 {
+        self.payload.ServiceID
+    }
+
+    pub fn get_isfree(&self) -> bool {
+        if self.payload.FreeService != 0 {
+            true
+        } else {
+            false
         }
     }
-    pub fn get_name(&self) -> String {
-        self.name.clone()
+
+    pub fn set_name(&mut self, name: &str) -> Result<&mut Self, AfbError> {
+        let len = str_to_array(
+            name,
+            &mut self.payload.ServiceName.characters,
+            cglue::iso2_ServiceName_CHARACTER_SIZE,
+        )?;
+        self.payload.ServiceName.charactersLen = len;
+        self.payload.set_ServiceName_isUsed(1);
+
+        Ok(self)
     }
-    pub fn get_scope(&self) -> String {
-        self.scope.clone()
+
+    pub fn get_name(&self) -> Option<&str> {
+        let name = if self.payload.ServiceName_isUsed() == 0 {
+            None
+        } else {
+            array_to_str(
+                &self.payload.ServiceName.characters,
+                self.payload.ServiceName.charactersLen,
+            ).ok()
+        };
+        name
     }
-    pub fn get_isfree(&self) -> bool {
-        self.isfree
+
+    pub fn set_scope(&mut self, scope: &str) -> Result<&mut Self, AfbError> {
+        let len = str_to_array(
+            scope,
+            &mut self.payload.ServiceScope.characters,
+            cglue::iso2_ServiceScope_CHARACTER_SIZE,
+        )?;
+        self.payload.ServiceScope.charactersLen = len;
+        self.payload.set_ServiceScope_isUsed(1);
+
+        Ok(self)
+    }
+
+    pub fn get_scope(&self) -> Option<&str> {
+        let scope = if self.payload.ServiceScope_isUsed() == 0 {
+            None
+        } else {
+            array_to_str(
+                &self.payload.ServiceScope.characters,
+                self.payload.ServiceScope.charactersLen,
+            ).ok()
+        };
+        scope
+    }
+
+    pub fn decode(payload: cglue::iso2_ChargeServiceType) -> Self {
+        Self {
+            payload: payload.clone(),
+        }
+    }
+
+    pub fn encode(&self) -> cglue::iso2_ChargeServiceType {
+        self.payload
     }
 }
-
 
 pub struct ServiceDiscoveryRequest {
     payload: cglue::iso2_ServiceDiscoveryReqType,
@@ -154,9 +305,9 @@ pub struct ServiceDiscoveryResponse {
 }
 
 impl ServiceDiscoveryResponse {
-    pub fn new(code: ResponseCode) -> Self {
+    pub fn new(rcode: ResponseCode) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_ServiceDiscoveryResType>() };
-        payload.ResponseCode = code as u32;
+        payload.ResponseCode = rcode as u32;
         Self { payload }
     }
 
@@ -199,63 +350,18 @@ impl ServiceDiscoveryResponse {
         Ok(response)
     }
 
-    pub fn set_charging(&mut self, charging: &ServiceCharging) -> Result<&mut Self, AfbError> {
-        let len = str_to_array(
-            charging.name.as_str(),
-            &mut self.payload.ChargeService.ServiceName.characters,
-            cglue::iso2_ServiceName_CHARACTER_SIZE,
-        )?;
-        if len > 0 {
-            self.payload.ChargeService.ServiceName.charactersLen = len;
-            self.payload.ChargeService.set_ServiceName_isUsed(1)
-        };
-
-        let len = str_to_array(
-            charging.scope.as_str(),
-            &mut self.payload.ChargeService.ServiceScope.characters,
-            cglue::iso2_ServiceScope_CHARACTER_SIZE,
-        )?;
-        if len > 0 {
-            self.payload.ChargeService.ServiceScope.charactersLen = len;
-            self.payload.ChargeService.set_ServiceScope_isUsed(1)
-        };
-
-        if charging.isfree {
-            self.payload.ChargeService.FreeService = 1;
-        }
-        Ok(self)
+    pub fn set_charging(&mut self, charging: &ServiceCharging) -> &mut Self {
+        self.payload.ChargeService = charging.encode();
+        self.payload.ChargeService.set_ServiceName_isUsed(1);
+        self
     }
 
-    pub fn get_charging(&self) -> Result<ServiceCharging, AfbError> {
-        let name = if self.payload.ChargeService.ServiceName_isUsed() == 0 {
-            ""
+    pub fn get_charging(&self) -> Option<ServiceCharging> {
+        if self.payload.ChargeService.ServiceName_isUsed() == 0 {
+            None
         } else {
-            array_to_str(
-                &self.payload.ChargeService.ServiceName.characters,
-                self.payload.ChargeService.ServiceName.charactersLen,
-            )?
-        };
-
-        let scope = if self.payload.ChargeService.ServiceScope_isUsed() == 0 {
-            ""
-        } else {
-            array_to_str(
-                &self.payload.ChargeService.ServiceScope.characters,
-                self.payload.ChargeService.ServiceScope.charactersLen,
-            )?
-        };
-
-        let isfree = if self.payload.ChargeService.FreeService == 0 {
-            false
-        } else {
-            true
-        };
-
-        Ok(ServiceCharging {
-            name: name.to_string(),
-            scope: scope.to_string(),
-            isfree,
-        })
+            Some(ServiceCharging::decode(self.payload.ChargeService))
+        }
     }
 
     pub fn add_payment(&mut self, payment: PaymentOption) -> Result<&mut Self, AfbError> {
@@ -286,34 +392,7 @@ impl ServiceDiscoveryResponse {
         }
 
         // update service directly into payload
-        let svc = &mut self.payload.ServiceList.Service.array[idx as usize];
-        svc.ServiceID = service.id;
-        svc.ServiceCategory = service.category.clone() as u32;
-        let len = str_to_array(
-            service.name.as_str(),
-            &mut svc.ServiceName.characters,
-            cglue::iso2_ServiceName_CHARACTER_SIZE,
-        )?;
-        if len > 0 {
-            svc.ServiceName.charactersLen = len;
-            svc.set_ServiceName_isUsed(1)
-        };
-
-        let len = str_to_array(
-            service.scope.as_str(),
-            &mut svc.ServiceScope.characters,
-            cglue::iso2_ServiceScope_CHARACTER_SIZE,
-        )?;
-        if len > 0 {
-            svc.ServiceScope.charactersLen = len;
-            svc.set_ServiceScope_isUsed(1)
-        };
-
-        if service.isfree {
-            svc.FreeService = 1;
-        }
-
-        // add service in list service array
+        self.payload.ServiceList.Service.array[idx as usize] = service.encode();
         self.payload.ServiceList.Service.arrayLen = idx + 1;
         self.payload.set_ServiceList_isUsed(1);
 
@@ -324,43 +403,9 @@ impl ServiceDiscoveryResponse {
         let mut services = Vec::new();
         if self.payload.ServiceList_isUsed() != 0 {
             for idx in 0..self.payload.ServiceList.Service.arrayLen {
-                let service = &self.payload.ServiceList.Service.array[idx as usize];
+                let service = self.payload.ServiceList.Service.array[idx as usize];
+                services.push(ServiceOther::decode(service))
 
-                let id = service.ServiceID;
-
-                let name = if service.ServiceName_isUsed() == 0 {
-                    ""
-                } else {
-                    array_to_str(
-                        &service.ServiceName.characters,
-                        service.ServiceName.charactersLen,
-                    )?
-                };
-
-                let scope = if service.ServiceScope_isUsed() == 0 {
-                    ""
-                } else {
-                    array_to_str(
-                        &service.ServiceScope.characters,
-                        service.ServiceScope.charactersLen,
-                    )?
-                };
-
-                let category = ServiceCategory::from_u32(service.ServiceCategory);
-
-                let isfree = if service.FreeService == 0 {
-                    false
-                } else {
-                    true
-                };
-
-                services.push(ServiceOther {
-                    id,
-                    name: name.to_string(),
-                    scope: scope.to_string(),
-                    category,
-                    isfree,
-                })
             }
         }
         Ok(services)

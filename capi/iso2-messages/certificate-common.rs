@@ -106,7 +106,7 @@ pub struct CertificateChainType {
 }
 
 impl CertificateChainType {
-    pub fn new(cert_id: &str, cert_data: &[u8]) -> Result<Self, AfbError> {
+    pub fn new( cert_data: &[u8]) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_CertificateChainType>() };
         payload.Certificate.bytesLen = bytes_to_array(
             cert_data,
@@ -114,14 +114,17 @@ impl CertificateChainType {
             cglue::iso2_certificateType_BYTES_SIZE,
         )?;
 
-        payload.Id.charactersLen = str_to_array(
+        Ok(Self { payload })
+    }
+
+    pub fn set_id(&mut self, cert_id: &str) -> Result<&mut Self, AfbError> {
+        self.payload.Id.charactersLen = str_to_array(
             cert_id,
-            &mut payload.Id.characters,
+            &mut self.payload.Id.characters,
             cglue::iso2_Id_CHARACTER_SIZE,
         )?;
-        payload.set_Id_isUsed(1);
-
-        Ok(Self { payload })
+        self.payload.set_Id_isUsed(1);
+        Ok(self)
     }
 
     pub fn get_id(&self) -> Option<&str> {

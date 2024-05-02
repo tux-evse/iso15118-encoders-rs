@@ -49,10 +49,10 @@ pub struct ChargingStatusResponse {
 }
 
 impl ChargingStatusResponse {
-    pub fn new(code: ResponseCode, evse_id: &str, tuple_id: u8, status: &AcEvseStatusType) -> Result<Self, AfbError> {
+    pub fn new(rcode: ResponseCode, evse_id: &str, tuple_id: u8, status: &AcEvseStatusType) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_ChargingStatusResType>() };
 
-        payload.ResponseCode = code as u32;
+        payload.ResponseCode = rcode as u32;
         payload.EVSEID.charactersLen = str_to_array(
             evse_id,
             &mut payload.EVSEID.characters,

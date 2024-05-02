@@ -55,7 +55,7 @@ pub struct WeldingDetectionResponse {
 
 impl WeldingDetectionResponse {
     pub fn new(
-        code: ResponseCode,
+        rcode: ResponseCode,
         evse_status: &DcEvseStatusType,
         evse_voltage: &PhysicalValue,
     ) -> Result<Self, AfbError> {
@@ -68,7 +68,7 @@ impl WeldingDetectionResponse {
         }
 
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_WeldingDetectionResType>() };
-        payload.ResponseCode = code as u32;
+        payload.ResponseCode = rcode as u32;
         payload.DC_EVSEStatus = evse_status.encode();
         payload.EVSEPresentVoltage = evse_voltage.encode();
 

@@ -54,11 +54,11 @@ pub struct SessionStopResponse {
 }
 
 impl SessionStopResponse {
-    pub fn new(code: ResponseCode) -> Result<Self, AfbError> {
+    pub fn new(code: ResponseCode) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_SessionStopResType>() };
 
         payload.ResponseCode = code as u32;
-        Ok(Self { payload })
+        Self { payload }
     }
 
     pub fn get_rcode(&self) -> ResponseCode {

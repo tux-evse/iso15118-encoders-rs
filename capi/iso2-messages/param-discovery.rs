@@ -294,6 +294,10 @@ impl ParamDiscoveryRequest {
         Self { payload }
     }
 
+    pub fn get_transfert_energy_mode(&self) -> EngyTransfertMode {
+        EngyTransfertMode::from_u32(self.payload.RequestedEnergyTransferMode)
+    }
+
     pub fn set_max_schedule_tuple(&mut self, max_entries: u16) -> &mut Self {
         self.payload.MaxEntriesSAScheduleTuple = max_entries;
         self.payload.set_MaxEntriesSAScheduleTuple_isUsed(1);
@@ -382,7 +386,7 @@ impl ParamDiscoveryRequest {
         }
     }
 
-    pub fn get_charge_param(&self) -> Option<EvChargeParam> {
+    pub fn get_ev_charge_param(&self) -> Option<EvChargeParam> {
         if self.payload.EVChargeParameter_isUsed() == 0 {
             None
         } else {
@@ -390,7 +394,7 @@ impl ParamDiscoveryRequest {
         }
     }
 
-    pub fn set_charge_param(
+    pub fn set_ev_charge_param(
         &mut self,
         charge_params: &EvChargeParam,
     ) -> Result<&mut Self, AfbError> {
@@ -427,13 +431,13 @@ pub struct SalesTariff {
 }
 
 impl SalesTariff {
-    pub fn new(sales_id: u8) -> Self {
+    pub fn new(tariff_id: u8) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_SalesTariffType>() };
-        payload.SalesTariffID = sales_id;
+        payload.SalesTariffID = tariff_id;
         Self { payload }
     }
 
-    pub fn get_sales_id(&self) -> u8 {
+    pub fn get_tariff_id(&self) -> u8 {
         self.payload.SalesTariffID
     }
 
@@ -483,13 +487,13 @@ impl SalesTariff {
         }
     }
 
-    pub fn set_price_level(&mut self, level: u8) -> &mut Self {
+    pub fn set_tariff_level(&mut self, level: u8) -> &mut Self {
         self.payload.NumEPriceLevels = level;
         self.payload.set_NumEPriceLevels_isUsed(1);
         self
     }
 
-    pub fn get_price_level(&self) -> Option<u8> {
+    pub fn get_tariff_level(&self) -> Option<u8> {
         if self.payload.SalesTariffDescription_isUsed() == 0 {
             None
         } else {
@@ -497,7 +501,7 @@ impl SalesTariff {
         }
     }
 
-    pub fn add_entry(&mut self, entry: SaleTariffEntry) -> Result<&mut Self, AfbError> {
+    pub fn add_entry(&mut self, entry: &SaleTariffEntry) -> Result<&mut Self, AfbError> {
         let idx = self.payload.SalesTariffEntry.arrayLen;
         if idx == cglue::iso2_SalesTariffEntryType_12_ARRAY_SIZE as u16 {
             return afb_error!("iso2-tarrif-entry", "fail to add tariff entry (array full)");
@@ -533,7 +537,7 @@ pub struct PMaxScheduleEntry {
 }
 
 impl PMaxScheduleEntry {
-    pub fn new(value: PhysicalValue, start: u32, duration: u32) -> Self {
+    pub fn new(start: u32, duration: u32, value: PhysicalValue) -> Self {
         Self {
             value,
             start,
@@ -625,21 +629,15 @@ pub struct SaleTariffEntry {
 }
 
 impl SaleTariffEntry {
-    pub fn new(start: u32, duration: u32, price: u8) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_SalesTariffEntryType>() };
-        if start > 0 {
-            payload.set_RelativeTimeInterval_isUsed(1);
-            payload.RelativeTimeInterval.start = start;
-        }
-        if duration > 0 {
-            payload.set_RelativeTimeInterval_isUsed(1);
-            payload.RelativeTimeInterval.duration = duration;
-        }
-        if price > 0 {
-            payload.set_EPriceLevel_isUsed(1);
-            payload.EPriceLevel = price;
-        }
+    pub fn new() -> Self {
+        let payload = unsafe { mem::zeroed::<cglue::iso2_SalesTariffEntryType>() };
         Self { payload }
+    }
+
+    pub fn set_start(&mut self,start: u32) -> &mut Self {
+        self.payload.set_RelativeTimeInterval_isUsed(1);
+        self.payload.RelativeTimeInterval.start = start;
+        self
     }
 
     pub fn get_start(&self) -> Option<u32> {
@@ -650,19 +648,31 @@ impl SaleTariffEntry {
         }
     }
 
+    pub fn set_price_level(&mut self, tariff_level: u8) -> &mut Self {
+        self.payload.set_EPriceLevel_isUsed(1);
+        self.payload.EPriceLevel = tariff_level;
+        self
+    }
+
+    pub fn get_price_level(&self) -> Option<u8> {
+        if self.payload.EPriceLevel_isUsed() == 0 {
+            None
+        } else {
+            Some(self.payload.EPriceLevel)
+        }
+    }
+
+    pub fn set_duration(&mut self, duration: u32) -> &mut Self {
+        self.payload.set_RelativeTimeInterval_isUsed(1);
+        self.payload.RelativeTimeInterval.duration = duration;
+        self
+    }
+
     pub fn get_duration(&self) -> Option<u32> {
         if self.payload.RelativeTimeInterval_isUsed() == 0 {
             None
         } else {
             Some(self.payload.RelativeTimeInterval.duration)
-        }
-    }
-
-    pub fn get_price(&self) -> Option<u8> {
-        if self.payload.EPriceLevel_isUsed() == 0 {
-            None
-        } else {
-            Some(self.payload.EPriceLevel)
         }
     }
 
@@ -740,7 +750,7 @@ impl SasScheduleTuple {
         response
     }
 
-    pub fn set_tariff(&mut self, tariff: SalesTariff) -> &mut Self {
+    pub fn set_tariff(&mut self, tariff: &SalesTariff) -> &mut Self {
         self.payload.SalesTariff = tariff.encode();
         self.payload.set_SalesTariff_isUsed(1);
         self
@@ -960,7 +970,7 @@ impl ParamDiscoveryResponse {
         EvseProcessing::from_u32(self.payload.EVSEProcessing)
     }
 
-    pub fn add_schedules(&mut self, unused: i32) -> &mut Self {
+    pub fn set_schedules(&mut self, unused: i32) -> &mut Self {
         self.payload.set_SASchedules_isUsed(1);
         self.payload.SASchedules._unused = unused;
         self
@@ -974,13 +984,13 @@ impl ParamDiscoveryResponse {
         }
     }
 
-    pub fn add_charge_param(&mut self, unused: i32) -> &mut Self {
+    pub fn set_evse_charge_param(&mut self, unused: i32) -> &mut Self {
         self.payload.set_EVSEChargeParameter_isUsed(1);
         self.payload.SASchedules._unused = unused;
         self
     }
 
-    pub fn get_charge_param(&self) -> Option<i32> {
+    pub fn get_evse_charge_param(&self) -> Option<i32> {
         if self.payload.EVSEChargeParameter_isUsed() == 0 {
             None
         } else {

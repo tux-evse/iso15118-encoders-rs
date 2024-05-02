@@ -208,7 +208,7 @@ impl MeteringReceiptResponse {
         ResponseCode::from_u32(self.payload.ResponseCode)
     }
 
-    pub fn set_ac_evse_status(&mut self, status: AcEvseStatusType) -> &mut Self {
+    pub fn set_ac_evse_status(&mut self, status: &AcEvseStatusType) -> &mut Self {
         self.payload.AC_EVSEStatus = status.encode();
         self.payload.set_AC_EVSEStatus_isUsed(1);
         self
@@ -222,7 +222,7 @@ impl MeteringReceiptResponse {
         }
     }
 
-    pub fn set_dc_evse_status(&mut self, status: DcEvseStatusType) -> &mut Self {
+    pub fn set_dc_evse_status(&mut self, status: &DcEvseStatusType) -> &mut Self {
         self.payload.DC_EVSEStatus = status.encode();
         self.payload.set_DC_EVSEStatus_isUsed(1);
         self
@@ -236,7 +236,7 @@ impl MeteringReceiptResponse {
         }
     }
 
-    pub fn set_evse_status(&mut self, status: EvseStatusType) -> &mut Self {
+    pub fn set_evse_status(&mut self, status: &EvseStatusType) -> &mut Self {
         self.payload.EVSEStatus = status.encode();
         self.payload.set_EVSEStatus_isUsed(1);
         self

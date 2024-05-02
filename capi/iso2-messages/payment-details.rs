@@ -36,7 +36,7 @@ impl PaymentDetailsRequest {
         Ok(Self { payload })
     }
 
-    pub fn get_contract_chain(&self) -> CertificateChainType {
+    pub fn get_contract(&self) -> CertificateChainType {
         CertificateChainType::decode(self.payload.ContractSignatureCertChain)
     }
 
@@ -67,9 +67,9 @@ pub struct PaymentDetailsResponse {
 }
 
 impl PaymentDetailsResponse {
-    pub fn new(code: ResponseCode, challenge: &[u8]) -> Result<Self, AfbError> {
+    pub fn new(rcode: ResponseCode, challenge: &[u8]) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_PaymentDetailsResType>() };
-        payload.ResponseCode = code as u32;
+        payload.ResponseCode = rcode as u32;
         payload.GenChallenge.bytesLen = bytes_to_array(
             challenge,
             &mut payload.GenChallenge.bytes,
@@ -88,9 +88,8 @@ impl PaymentDetailsResponse {
         Ok(Self { payload })
     }
 
-    pub fn set_timestamp(&mut self, epoch: i64) -> &mut Self {
-        self.payload.EVSETimeStamp = epoch;
-        self
+    pub fn get_rcode(&self) -> ResponseCode {
+        ResponseCode::from_u32(self.payload.ResponseCode)
     }
 
     pub fn get_challenge(&self) -> &[u8] {
@@ -98,6 +97,12 @@ impl PaymentDetailsResponse {
             &self.payload.GenChallenge.bytes,
             self.payload.GenChallenge.bytesLen,
         )
+    }
+
+    // to test with a fix exi binary timestamp should be overloaded with to a fix value
+    pub fn set_timestamp(&mut self, epoch: i64) -> &mut Self {
+        self.payload.EVSETimeStamp = epoch;
+        self
     }
 
     pub fn get_time_stamp(&self) -> i64 {
@@ -116,10 +121,6 @@ impl PaymentDetailsResponse {
             exi_body
         };
         body
-    }
-
-    pub fn get_rcode(&self) -> ResponseCode {
-        ResponseCode::from_u32(self.payload.ResponseCode)
     }
 
 }

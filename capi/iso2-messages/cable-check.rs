@@ -54,9 +54,9 @@ pub struct CableCheckResponse {
 }
 
 impl CableCheckResponse {
-    pub fn new(code: ResponseCode, status: &DcEvseStatusType, processing: EvseProcessing) -> Self {
+    pub fn new(rcode: ResponseCode, status: &DcEvseStatusType, processing: EvseProcessing) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_CableCheckResType>() };
-        payload.ResponseCode = code as u32;
+        payload.ResponseCode = rcode as u32;
         payload.EVSEProcessing = processing as u32;
         payload.DC_EVSEStatus = status.encode();
         Self { payload }

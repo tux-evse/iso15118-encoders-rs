@@ -107,7 +107,7 @@ Example of decoding request, encoding response. Stream input contain a full enco
 
 ```Rust
 use iso2::*;
-let message = Iso2Payload::decode(stream_in)?;
+let message = Iso2MessageDoc::decode(lock_stream)?;
 match message.get_payload() {
     Iso2MessageBody::ServiceDiscoveryReq(request) => {
         let scope = match request.get_scope() {

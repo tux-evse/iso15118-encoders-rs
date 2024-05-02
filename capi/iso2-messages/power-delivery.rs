@@ -202,9 +202,10 @@ impl PowerDeliveryRequest {
         Some(response)
     }
 
-    pub fn set_ev_delivery_params(&mut self) -> &mut Self {
+    pub fn set_ev_delivery_params(&mut self, unused: i32) -> &mut Self {
         // unused attached data iso2_EVPowerDeliveryParameterType
         self.payload.set_EVPowerDeliveryParameter_isUsed(1);
+        self.payload.EVPowerDeliveryParameter._unused = unused;
         self
     }
 
@@ -236,10 +237,10 @@ pub struct PowerDeliveryResponse {
 }
 
 impl PowerDeliveryResponse {
-    pub fn new(code: ResponseCode) -> Self {
+    pub fn new(rcode: ResponseCode) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_PowerDeliveryResType>() };
 
-        payload.ResponseCode = code as u32;
+        payload.ResponseCode = rcode as u32;
         Self { payload }
     }
 
