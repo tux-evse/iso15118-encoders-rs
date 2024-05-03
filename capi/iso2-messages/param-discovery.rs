@@ -23,10 +23,11 @@ pub struct DcEvChargeParam {
 }
 
 impl DcEvChargeParam {
+    #[track_caller]
     pub fn new(
         status: &DcEvStatusType,
-        max_current: &PhysicalValue,
         max_voltage: &PhysicalValue,
+        max_current: &PhysicalValue,
     ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVChargeParameterType>() };
 
@@ -64,10 +65,18 @@ impl DcEvChargeParam {
         PhysicalValue::decode(self.payload.EVMaximumCurrentLimit)
     }
 
-    pub fn set_max_power(&mut self, power_limit: &PhysicalValue) -> &mut Self {
+    #[track_caller]
+    pub fn set_max_power(&mut self, power_limit: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if power_limit.get_unit() != PhysicalUnit::Watt {
+            return afb_error!(
+                "dc-ev-charge-param",
+                "expect: PhysicalUnit::Watt get:{}",
+                power_limit.get_unit()
+            );
+        }
         self.payload.EVMaximumPowerLimit = power_limit.encode();
         self.payload.set_EVMaximumPowerLimit_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_max_power(&self) -> Option<PhysicalValue> {
@@ -78,10 +87,21 @@ impl DcEvChargeParam {
         }
     }
 
-    pub fn set_energy_capacity(&mut self, power_limit: &PhysicalValue) -> &mut Self {
+    #[track_caller]
+    pub fn set_energy_capacity(
+        &mut self,
+        power_limit: &PhysicalValue,
+    ) -> Result<&mut Self, AfbError> {
+        if power_limit.get_unit() != PhysicalUnit::Wh {
+            return afb_error!(
+                "dc-ev-charge-param",
+                "expect: PhysicalUnit::Wh get:{}",
+                power_limit.get_unit()
+            );
+        }
         self.payload.EVEnergyCapacity = power_limit.encode();
         self.payload.set_EVEnergyCapacity_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_energy_capacity(&self) -> Option<PhysicalValue> {
@@ -162,6 +182,7 @@ pub struct AcEvChargeParam {
 }
 
 impl AcEvChargeParam {
+    #[track_caller]
     pub fn new(
         ea_mount: &PhysicalValue,
         max_voltage: &PhysicalValue,
@@ -245,6 +266,7 @@ pub struct EvChargeParam {
 }
 
 impl EvChargeParam {
+    #[track_caller]
     pub fn new(ac_param: &AcEvChargeParam, dc_param: &DcEvChargeParam) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_EVChargeParameterType>() };
         payload.AC_EVChargeParameter = ac_param.encode();
@@ -312,6 +334,7 @@ impl ParamDiscoveryRequest {
         }
     }
 
+    #[track_caller]
     pub fn set_ac_charge_param(
         &mut self,
         ac_params: &AcEvChargeParam,
@@ -348,6 +371,7 @@ impl ParamDiscoveryRequest {
         }
     }
 
+    #[track_caller]
     pub fn set_dc_charge_param(
         &mut self,
         dc_params: &DcEvChargeParam,
@@ -394,6 +418,7 @@ impl ParamDiscoveryRequest {
         }
     }
 
+    #[track_caller]
     pub fn set_ev_charge_param(
         &mut self,
         charge_params: &EvChargeParam,
@@ -441,6 +466,7 @@ impl SalesTariff {
         self.payload.SalesTariffID
     }
 
+    #[track_caller]
     pub fn set_id(&mut self, text: &str) -> Result<&mut Self, AfbError> {
         self.payload.Id.charactersLen = str_to_array(
             text,
@@ -462,6 +488,7 @@ impl SalesTariff {
         }
     }
 
+    #[track_caller]
     pub fn set_description(&mut self, text: &str) -> Result<&mut Self, AfbError> {
         self.payload.SalesTariffDescription.charactersLen = str_to_array(
             text,
@@ -501,6 +528,7 @@ impl SalesTariff {
         }
     }
 
+    #[track_caller]
     pub fn add_entry(&mut self, entry: &SaleTariffEntry) -> Result<&mut Self, AfbError> {
         let idx = self.payload.SalesTariffEntry.arrayLen;
         if idx == cglue::iso2_SalesTariffEntryType_12_ARRAY_SIZE as u16 {
@@ -584,6 +612,7 @@ impl ConsumptionCost {
         Self { payload }
     }
 
+    #[track_caller]
     pub fn add_cost(&mut self, cost: CostType) -> Result<&mut Self, AfbError> {
         let idx = self.payload.Cost.arrayLen;
         if idx == cglue::iso2_CostType_3_ARRAY_SIZE as u16 {
@@ -634,7 +663,7 @@ impl SaleTariffEntry {
         Self { payload }
     }
 
-    pub fn set_start(&mut self,start: u32) -> &mut Self {
+    pub fn set_start(&mut self, start: u32) -> &mut Self {
         self.payload.set_RelativeTimeInterval_isUsed(1);
         self.payload.RelativeTimeInterval.start = start;
         self
@@ -676,6 +705,7 @@ impl SaleTariffEntry {
         }
     }
 
+    #[track_caller]
     pub fn add_comsumption_cost(&mut self, cost: ConsumptionCost) -> Result<&mut Self, AfbError> {
         let idx = self.payload.ConsumptionCost.arrayLen;
         if idx == cglue::iso2_ConsumptionCostType_3_ARRAY_SIZE as u16 {
@@ -713,6 +743,7 @@ impl SasScheduleTuple {
         self.payload.SAScheduleTupleID
     }
 
+    #[track_caller]
     pub fn add_pmax(&mut self, pmax: &PMaxScheduleEntry) -> Result<&mut Self, AfbError> {
         let idx = self.payload.PMaxSchedule.PMaxScheduleEntry.arrayLen;
         if idx == cglue::iso2_PMaxScheduleEntryType_12_ARRAY_SIZE as u16 {
@@ -818,6 +849,7 @@ pub struct DcEvseChargeParam {
 }
 
 impl DcEvseChargeParam {
+    #[track_caller]
     pub fn new(
         status: &DcEvseStatusType,
         max_voltage: &PhysicalValue,
@@ -998,6 +1030,7 @@ impl ParamDiscoveryResponse {
         }
     }
 
+    #[track_caller]
     pub fn add_schedule_tuple(&mut self, tuple: &SasScheduleTuple) -> Result<&mut Self, AfbError> {
         let idx = self.payload.SAScheduleList.SAScheduleTuple.arrayLen;
         if idx == cglue::iso2_SAScheduleTupleType_3_ARRAY_SIZE as u16 {

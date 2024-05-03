@@ -16,9 +16,9 @@
  *
  */
 use std::convert::AsRef;
-use std::str::FromStr;
-use strum_macros::{Display, EnumString, AsRefStr};
 use std::mem;
+use std::str::FromStr;
+use strum_macros::{AsRefStr, Display, EnumString};
 
 use super::*;
 
@@ -72,10 +72,18 @@ impl MessageTagId {
         unsafe { mem::transmute(code) }
     }
 
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "deserialize({}):{}", json, error),
+            Err(error) => {
+                return afb_error!(
+                    "message_tagid_from_label",
+                    "deserialize({}):{}",
+                    json,
+                    error
+                )
+            }
         }
     }
 
@@ -161,10 +169,13 @@ impl ResponseCode {
         unsafe { mem::transmute(code) }
     }
 
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!("response-code-from-label", "fail deserialize:{}", error)
+            }
         }
     }
 
@@ -187,11 +198,13 @@ impl ServiceCategory {
     pub fn from_u32(value: u32) -> Self {
         unsafe { std::mem::transmute(value) }
     }
-
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!("service-category-from_label", "fail deserialize:{}", error)
+            }
         }
     }
 
@@ -213,11 +226,13 @@ impl PaymentOption {
     pub fn from_u32(value: u32) -> Self {
         unsafe { std::mem::transmute(value) }
     }
-
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!("payment-option-from-label", "fail deserialize:{}", error)
+            }
         }
     }
 
@@ -239,10 +254,13 @@ impl ChargingSessionType {
     pub fn from_u32(value: u32) -> Self {
         unsafe { std::mem::transmute(value) }
     }
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
-        match Self::from_str(json)  {
+        match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!("charging-session-from-label", "fail deserialize:{}", error)
+            }
         }
     }
 
@@ -264,10 +282,13 @@ impl ChargeProgress {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!("charge-progress-from-label", "fail deserialize:{}", error)
+            }
         }
     }
 
@@ -289,10 +310,13 @@ impl EvseProcessing {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!("evse-processing-from-label", "fail deserialize:{}", error)
+            }
         }
     }
 
@@ -329,10 +353,13 @@ impl DcEvErrorCode {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!("dc-error-code-from-label", "fail deserialize:{}", error)
+            }
         }
     }
 
@@ -359,10 +386,17 @@ impl EngyTransfertMode {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!(
+                    "engy-transfert-mode-from-label",
+                    "fail deserialize:{}",
+                    error
+                )
+            }
         }
     }
 
@@ -385,10 +419,13 @@ impl EvseNotification {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!("evse-notification-from-label", "fail deserialize:{}", error)
+            }
         }
     }
 
@@ -412,10 +449,13 @@ impl IsolationStatus {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!("isolation-status-from-label", "fail deserialize:{}", error)
+            }
         }
     }
 
@@ -450,11 +490,17 @@ impl DcEvseErrorCode {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
-
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!(
+                    "dc-evse-error-code-from-label",
+                    "fail deserialize:{}",
+                    error
+                )
+            }
         }
     }
 
@@ -462,8 +508,6 @@ impl DcEvseErrorCode {
         self.as_ref()
     }
 }
-
-
 
 #[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
 #[strum(serialize_all = "snake_case")]
@@ -482,10 +526,13 @@ impl PhysicalUnit {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => {
+                return afb_error!("physical-unit-from-label", "fail deserialize:{}", error)
+            }
         }
     }
 
@@ -493,7 +540,6 @@ impl PhysicalUnit {
         self.as_ref()
     }
 }
-
 
 pub struct DcEvseStatusType {
     payload: cglue::iso2_DC_EVSEStatusType,
@@ -519,7 +565,6 @@ impl DcEvseStatusType {
     pub fn get_delay(&self) -> u16 {
         self.payload.NotificationMaxDelay
     }
-
 
     pub fn set_isolation_status(&mut self, isolation: IsolationStatus) -> &mut Self {
         self.payload.EVSEIsolationStatus = isolation as u32;
@@ -594,10 +639,10 @@ pub struct AcEvseStatusType {
 impl AcEvseStatusType {
     pub fn new(notification: EvseNotification, delay: u16, rcd: bool) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_AC_EVSEStatusType>() };
-        if rcd  {
-            payload.RCD=1;
+        if rcd {
+            payload.RCD = 1;
         } else {
-            payload.RCD=0;
+            payload.RCD = 0;
         }
         payload.NotificationMaxDelay = delay;
         payload.EVSENotification = notification as u32;

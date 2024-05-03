@@ -47,14 +47,15 @@ pub struct CertificateRootList {
 
 impl CertificateRootList {
     pub fn new(cert: &CertificateData) -> Result<Self, AfbError> {
-        let payload = unsafe { mem::zeroed::<cglue::iso2_ListOfRootCertificateIDsType>() };
-        let mut certificate = payload.RootCertificateID.array[0];
+        let mut payload = unsafe { mem::zeroed::<cglue::iso2_ListOfRootCertificateIDsType>() };
+        let certificate = &mut payload.RootCertificateID.array[0];
         certificate.X509IssuerName.charactersLen = str_to_array(
             cert.get_issuer(),
             &mut certificate.X509IssuerName.characters,
             cglue::iso2_X509IssuerName_CHARACTER_SIZE,
         )?;
         certificate.X509SerialNumber = cert.get_serial();
+        payload.RootCertificateID.arrayLen = 1;
         Ok(Self { payload })
     }
 
@@ -63,7 +64,7 @@ impl CertificateRootList {
         if idx == cglue::iso2_X509IssuerSerialType_5_ARRAY_SIZE as u16 {
             return afb_error!("cert-list-add", "reach max:{} root certificate", idx);
         }
-        let mut certificate = self.payload.RootCertificateID.array[idx as usize];
+        let certificate = &mut self.payload.RootCertificateID.array[idx as usize];
         certificate.X509IssuerName.charactersLen = str_to_array(
             cert.get_issuer(),
             &mut certificate.X509IssuerName.characters,

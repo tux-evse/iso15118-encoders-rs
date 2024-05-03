@@ -58,7 +58,10 @@ impl CurrentDemandRequest {
         }
     }
 
-    pub fn set_voltage_limit(&mut self, voltage_limit: &PhysicalValue) -> Result<&mut Self, AfbError> {
+    pub fn set_voltage_limit(
+        &mut self,
+        voltage_limit: &PhysicalValue,
+    ) -> Result<&mut Self, AfbError> {
         if voltage_limit.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "current-demand-req",
@@ -79,7 +82,10 @@ impl CurrentDemandRequest {
         }
     }
 
-    pub fn set_current_limit(&mut self, current_limit: &PhysicalValue) -> Result<&mut Self, AfbError> {
+    pub fn set_current_limit(
+        &mut self,
+        current_limit: &PhysicalValue,
+    ) -> Result<&mut Self, AfbError> {
         if current_limit.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "current-demand-req",
@@ -121,9 +127,14 @@ impl CurrentDemandRequest {
         }
     }
 
-    pub fn set_time_to_full_sock(&mut self, remaining_time: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        let unit= remaining_time.get_unit();
-        if unit != PhysicalUnit::Hour && unit != PhysicalUnit::Minute && unit != PhysicalUnit::Second
+    pub fn set_time_to_full_sock(
+        &mut self,
+        remaining_time: &PhysicalValue,
+    ) -> Result<&mut Self, AfbError> {
+        let unit = remaining_time.get_unit();
+        if unit != PhysicalUnit::Hour
+            && unit != PhysicalUnit::Minute
+            && unit != PhysicalUnit::Second
         {
             return afb_error!(
                 "current-demand-req",
@@ -144,9 +155,14 @@ impl CurrentDemandRequest {
         }
     }
 
-    pub fn set_time_to_bulk_sock(&mut self, remaining_time: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        let unit= remaining_time.get_unit();
-        if unit != PhysicalUnit::Hour && unit != PhysicalUnit::Minute && unit != PhysicalUnit::Second
+    pub fn set_time_to_bulk_sock(
+        &mut self,
+        remaining_time: &PhysicalValue,
+    ) -> Result<&mut Self, AfbError> {
+        let unit = remaining_time.get_unit();
+        if unit != PhysicalUnit::Hour
+            && unit != PhysicalUnit::Minute
+            && unit != PhysicalUnit::Second
         {
             return afb_error!(
                 "current-demand-req",
@@ -305,10 +321,18 @@ impl CurrentDemandResponse {
         self.payload.SAScheduleTupleID
     }
 
-    pub fn set_voltage_limit(&mut self, voltage: &PhysicalValue) -> &mut Self {
+    pub fn set_voltage_limit(&mut self, voltage: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if voltage.get_unit() != PhysicalUnit::Volt {
+            return afb_error!(
+                "current-demand-res",
+                "expect: PhysicalUnit::Volt get:{}",
+                voltage.get_unit()
+            );
+        }
+
         self.payload.EVSEMaximumVoltageLimit = voltage.encode();
         self.payload.set_EVSEMaximumVoltageLimit_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_voltage_limit(&self) -> Option<PhysicalValue> {
@@ -319,10 +343,17 @@ impl CurrentDemandResponse {
         }
     }
 
-    pub fn set_current_limit(&mut self, current: &PhysicalValue) -> &mut Self {
+    pub fn set_current_limit(&mut self, current: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if current.get_unit() != PhysicalUnit::Ampere {
+            return afb_error!(
+                "current-demand-res",
+                "expect: PhysicalUnit::Volt get:{}",
+                current.get_unit()
+            );
+        }
         self.payload.EVSEMaximumCurrentLimit = current.encode();
         self.payload.set_EVSEMaximumCurrentLimit_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_current_limit(&self) -> Option<PhysicalValue> {
@@ -333,10 +364,17 @@ impl CurrentDemandResponse {
         }
     }
 
-    pub fn set_power_limit(&mut self, power: &PhysicalValue) -> &mut Self {
+    pub fn set_power_limit(&mut self, power: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if power.get_unit() != PhysicalUnit::Watt {
+            return afb_error!(
+                "current-demand-res",
+                "expect: PhysicalUnit::Volt get:{}",
+                power.get_unit()
+            );
+        }
         self.payload.EVSEMaximumPowerLimit = power.encode();
         self.payload.set_EVSEMaximumPowerLimit_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_power_limit(&self) -> Option<PhysicalValue> {
@@ -365,13 +403,13 @@ impl CurrentDemandResponse {
         }
     }
 
-    pub fn set_meter_info(&mut self, meter: MeterInfoType) -> &mut Self {
+    pub fn set_meter_info(&mut self, meter: &MeterInfoType) -> &mut Self {
         self.payload.MeterInfo = meter.encode();
         self.payload.set_MeterInfo_isUsed(1);
         self
     }
 
-    pub fn get_meter_info(&mut self) -> Option<MeterInfoType> {
+    pub fn get_meter_info(&self) -> Option<MeterInfoType> {
         if self.payload.MeterInfo_isUsed() == 0 {
             None
         } else {
