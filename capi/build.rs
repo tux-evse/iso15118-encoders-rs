@@ -116,4 +116,33 @@ fn main() {
     libcapi
         .write_to_file("capi/iso2-messages/_iso2-capi.rs")
         .expect("Couldn't write capi/iso2-messages/_iso2-capi.rs!");
+
+
+            let header = "
+    // -----------------------------------------------------------------------
+    //         <- private 'lib-iso15118' Rust/C unsafe binding ->
+    // -----------------------------------------------------------------------
+    //   Do not exit this file it will be regenerated automatically by cargo.
+    //   Check:
+    //     - build.rs for C/Rust glue options
+    //     - src/capi/capi-din.h for C prototype inputs
+    // -----------------------------------------------------------------------
+    ";
+    println!("cargo:rerun-if-changed=capi/din-messages/capi-din.h");
+    let libcapi = bindgen::Builder::default()
+        .header("capi/din-messages/capi-din.h") // Chargebyte C prototype wrapper input
+        .raw_line(header)
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        .derive_debug(false)
+        .layout_tests(false)
+        .allowlist_item("din_.*")
+        .allowlist_function("decode_din_.*")
+        .allowlist_function("encode_din_.*")
+        .blocklist_item("exi.*")
+        .generate()
+        .expect("Unable to generate _din-capi.rs");
+
+    libcapi
+        .write_to_file("capi/din-messages/_din-capi.rs")
+        .expect("Couldn't write capi/din-messages/_din-capi.rs!");
 }

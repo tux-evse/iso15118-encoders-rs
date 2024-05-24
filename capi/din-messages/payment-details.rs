@@ -21,16 +21,16 @@ use std::mem;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct PaymentDetailsRequest {
-    payload: cglue::iso2_PaymentDetailsReqType,
+    payload: cglue::din_PaymentDetailsReqType,
 }
 
 impl PaymentDetailsRequest {
-    pub fn new(emaid: &str, contract_chain: &CertificateChainType) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_PaymentDetailsReqType>() };
-        payload.eMAID.charactersLen = str_to_array(
-            emaid,
-            &mut payload.eMAID.characters,
-            cglue::iso2_eMAID_CHARACTER_SIZE,
+    pub fn new(contract_id: &str, contract_chain: &CertificateChainType) -> Result<Self, AfbError> {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_PaymentDetailsReqType>() };
+        payload.ContractID.charactersLen = str_to_array(
+            contract_id,
+            &mut payload.ContractID.characters,
+            cglue::din_ContractID_CHARACTER_SIZE,
         )?;
         payload.ContractSignatureCertChain = contract_chain.encode();
         Ok(Self { payload })
@@ -40,20 +40,20 @@ impl PaymentDetailsRequest {
         CertificateChainType::decode(self.payload.ContractSignatureCertChain)
     }
 
-    pub fn get_emaid(&self) -> Result<&str, AfbError> {
+    pub fn get_contract_id(&self) -> Result<&str, AfbError> {
         array_to_str(
-            &self.payload.eMAID.characters,
-            self.payload.eMAID.charactersLen,
+            &self.payload.ContractID.characters,
+            self.payload.ContractID.charactersLen,
         )
     }
 
-    pub fn decode(payload: cglue::iso2_PaymentDetailsReqType) -> Self {
+    pub fn decode(payload: cglue::din_PaymentDetailsReqType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.PaymentDetailsReq = self.payload;
             exi_body.set_PaymentDetailsReq_isUsed(1);
             exi_body
@@ -63,26 +63,26 @@ impl PaymentDetailsRequest {
 }
 
 pub struct PaymentDetailsResponse {
-    payload: cglue::iso2_PaymentDetailsResType,
+    payload: cglue::din_PaymentDetailsResType,
 }
 
 impl PaymentDetailsResponse {
-    pub fn new(rcode: ResponseCode, challenge: &[u8]) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_PaymentDetailsResType>() };
+    pub fn new(rcode: ResponseCode, challenge: &str) -> Result<Self, AfbError> {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_PaymentDetailsResType>() };
         payload.ResponseCode = rcode as u32;
-        payload.GenChallenge.bytesLen = bytes_to_array(
+        payload.GenChallenge.charactersLen = str_to_array(
             challenge,
-            &mut payload.GenChallenge.bytes,
-            cglue::iso2_genChallengeType_BYTES_SIZE,
+            &mut payload.GenChallenge.characters,
+            cglue::din_GenChallenge_CHARACTER_SIZE,
         )?;
 
         match SystemTime::now().duration_since(UNIX_EPOCH) {
             Ok(time) => {
                 let epoch = time.as_secs();
-                payload.EVSETimeStamp = epoch as i64;
+                payload.DateTimeNow = epoch as i64;
             }
             Err(_) => {
-                return afb_error!("iso2-Session-rsp", "Invalid system time (should be fixed)")
+                return afb_error!("din-Session-rsp", "Invalid system time (should be fixed)")
             }
         };
         Ok(Self { payload })
@@ -92,30 +92,30 @@ impl PaymentDetailsResponse {
         ResponseCode::from_u32(self.payload.ResponseCode)
     }
 
-    pub fn get_challenge(&self) -> &[u8] {
-        array_to_bytes(
-            &self.payload.GenChallenge.bytes,
-            self.payload.GenChallenge.bytesLen,
+    pub fn get_challenge(&self) -> Result<&str, AfbError> {
+        array_to_str(
+            &self.payload.GenChallenge.characters,
+            self.payload.GenChallenge.charactersLen,
         )
     }
 
     // to test with a fix exi binary timestamp should be overloaded with to a fix value
     pub fn set_timestamp(&mut self, epoch: i64) -> &mut Self {
-        self.payload.EVSETimeStamp = epoch;
+        self.payload.DateTimeNow = epoch;
         self
     }
 
     pub fn get_time_stamp(&self) -> i64 {
-        self.payload.EVSETimeStamp
+        self.payload.DateTimeNow
     }
 
-    pub fn decode(payload: cglue::iso2_PaymentDetailsResType) -> Self {
+    pub fn decode(payload: cglue::din_PaymentDetailsResType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.PaymentDetailsRes = self.payload;
             exi_body.set_PaymentDetailsRes_isUsed(1);
             exi_body

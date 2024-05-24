@@ -21,7 +21,7 @@ use std::mem;
 
 #[derive(Clone)]
 pub struct CurrentDemandRequest {
-    payload: cglue::iso2_CurrentDemandReqType,
+    payload: cglue::din_CurrentDemandReqType,
 }
 impl CurrentDemandRequest {
     pub fn new(
@@ -30,7 +30,7 @@ impl CurrentDemandRequest {
         voltage_target: &PhysicalValue,
         charging_complete: bool,
     ) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_CurrentDemandReqType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_CurrentDemandReqType>() };
         payload.DC_EVStatus = dc_status.encode();
         payload.EVTargetCurrent = current_target.encode();
         payload.EVTargetVoltage = voltage_target.encode();
@@ -203,13 +203,13 @@ impl CurrentDemandRequest {
         }
     }
 
-    pub fn decode(payload: cglue::iso2_CurrentDemandReqType) -> Self {
+    pub fn decode(payload: cglue::din_CurrentDemandReqType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.CurrentDemandReq = self.payload;
             exi_body.set_CurrentDemandReq_isUsed(1);
             exi_body
@@ -219,66 +219,51 @@ impl CurrentDemandRequest {
 }
 
 pub struct CurrentDemandResponse {
-    payload: cglue::iso2_CurrentDemandResType,
+    payload: cglue::din_CurrentDemandResType,
 }
 
 impl CurrentDemandResponse {
     pub fn new(
         rcode: ResponseCode,
-        evse_id: &str,
         dc_status: &DcEvseStatusType,
-        current: &PhysicalValue,
-        current_limit: bool,
-        voltage: &PhysicalValue,
-        voltage_limit: bool,
-        power_limit: bool,
-        schd_tuple_id: u8,
+        voltage_present: &PhysicalValue,
+        current_present: &PhysicalValue,
+        voltage_limit_reach: bool,
+        current_limit_reach: bool,
+        power_limit_reach: bool,
     ) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_CurrentDemandResType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_CurrentDemandResType>() };
 
         payload.ResponseCode = rcode as u32;
-        payload.EVSEID.charactersLen = str_to_array(
-            evse_id,
-            &mut payload.EVSEID.characters,
-            cglue::iso2_EVSEID_CHARACTER_SIZE,
-        )?;
 
-        if current.get_unit() != PhysicalUnit::Ampere {
+        if current_present.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "current-demand-res",
                 "expect: PhysicalUnit::Ampere get:{}",
-                current.get_unit()
+                current_present.get_unit()
             );
         }
 
-        if voltage.get_unit() != PhysicalUnit::Volt {
+        if voltage_present.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "current-demand-res",
                 "expect: PhysicalUnit::Volt get:{}",
-                voltage.get_unit()
+                voltage_present.get_unit()
             );
         }
 
         payload.DC_EVSEStatus = dc_status.encode();
-        payload.EVSEPresentVoltage = voltage.encode();
-        payload.EVSEPresentCurrent = current.encode();
-        payload.EVSECurrentLimitAchieved = if current_limit { 1 } else { 0 };
-        payload.EVSEVoltageLimitAchieved = if voltage_limit { 1 } else { 0 };
-        payload.EVSEPowerLimitAchieved = if power_limit { 1 } else { 0 };
-        payload.SAScheduleTupleID = schd_tuple_id;
+        payload.EVSEPresentVoltage = voltage_present.encode();
+        payload.EVSEPresentCurrent = current_present.encode();
+        payload.EVSECurrentLimitAchieved = if current_limit_reach { 1 } else { 0 };
+        payload.EVSEVoltageLimitAchieved = if voltage_limit_reach { 1 } else { 0 };
+        payload.EVSEPowerLimitAchieved = if power_limit_reach { 1 } else { 0 };
 
         Ok(Self { payload })
     }
 
     pub fn get_rcode(&self) -> ResponseCode {
         ResponseCode::from_u32(self.payload.ResponseCode)
-    }
-
-    pub fn get_evse_id(&self) -> Result<&str, AfbError> {
-        array_to_str(
-            &self.payload.EVSEID.characters,
-            self.payload.EVSEID.charactersLen,
-        )
     }
 
     pub fn get_status(&self) -> DcEvseStatusType {
@@ -315,10 +300,6 @@ impl CurrentDemandResponse {
         } else {
             true
         }
-    }
-
-    pub fn get_tuple_id(&self) -> u8 {
-        self.payload.SAScheduleTupleID
     }
 
     pub fn set_voltage_limit(&mut self, voltage: &PhysicalValue) -> Result<&mut Self, AfbError> {
@@ -385,44 +366,12 @@ impl CurrentDemandResponse {
         }
     }
 
-    pub fn set_receipt_require(&mut self, require: bool) -> &mut Self {
-        self.payload.ReceiptRequired = if require { 1 } else { 0 };
-        self.payload.set_ReceiptRequired_isUsed(1);
-        self
-    }
-
-    pub fn get_receipt_require(&self) -> Option<bool> {
-        if self.payload.ReceiptRequired_isUsed() == 0 {
-            None
-        } else {
-            Some(if self.payload.ReceiptRequired == 0 {
-                false
-            } else {
-                true
-            })
-        }
-    }
-
-    pub fn set_meter_info(&mut self, meter: &MeterInfo) -> &mut Self {
-        self.payload.MeterInfo = meter.encode();
-        self.payload.set_MeterInfo_isUsed(1);
-        self
-    }
-
-    pub fn get_meter_info(&self) -> Option<MeterInfo> {
-        if self.payload.MeterInfo_isUsed() == 0 {
-            None
-        } else {
-            Some(MeterInfo::decode(self.payload.MeterInfo))
-        }
-    }
-
-    pub fn decode(payload: cglue::iso2_CurrentDemandResType) -> Self {
+    pub fn decode(payload: cglue::din_CurrentDemandResType) -> Self {
         Self { payload }
     }
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.CurrentDemandRes = self.payload;
             exi_body.set_CurrentDemandRes_isUsed(1);
             exi_body

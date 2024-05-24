@@ -22,15 +22,15 @@ use std::mem;
 
 #[derive(Clone)]
 pub struct SessionSetupRequest {
-    payload: cglue::iso2_SessionSetupReqType,
+    payload: cglue::din_SessionSetupReqType,
 }
 impl SessionSetupRequest {
     pub fn new(evcc_id: &[u8]) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_SessionSetupReqType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_SessionSetupReqType>() };
         payload.EVCCID.bytesLen = bytes_to_array(
             evcc_id,
             &mut payload.EVCCID.bytes,
-            cglue::iso2_evccIDType_BYTES_SIZE,
+            cglue::din_evccIDType_BYTES_SIZE,
         )?;
         if payload.EVCCID.bytesLen  == 0 {
             return afb_error!("session-setup-new", "session-id: should not be null");
@@ -43,7 +43,7 @@ impl SessionSetupRequest {
     }
 
     pub fn empty() -> Self {
-        let payload = unsafe { mem::zeroed::<cglue::iso2_SessionSetupReqType>() };
+        let payload = unsafe { mem::zeroed::<cglue::din_SessionSetupReqType>() };
         Self { payload }
     }
 
@@ -55,13 +55,13 @@ impl SessionSetupRequest {
         )
     }
 
-    pub fn decode(payload: cglue::iso2_SessionSetupReqType) -> Self {
+    pub fn decode(payload: cglue::din_SessionSetupReqType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.SessionSetupReq = self.payload;
             exi_body.set_SessionSetupReq_isUsed(1);
             exi_body
@@ -72,38 +72,38 @@ impl SessionSetupRequest {
 }
 
 pub struct SessionSetupResponse {
-    payload: cglue::iso2_SessionSetupResType,
+    payload: cglue::din_SessionSetupResType,
 }
 
 impl SessionSetupResponse {
-    pub fn new(id: &str, code: ResponseCode) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_SessionSetupResType>() };
+    pub fn new(id: &[u8], code: ResponseCode) -> Result<Self, AfbError> {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_SessionSetupResType>() };
 
         match SystemTime::now().duration_since(UNIX_EPOCH) {
             Ok(time) => {
                 let epoch = time.as_secs();
-                payload.EVSETimeStamp = epoch as i64;
-                payload.set_EVSETimeStamp_isUsed(1);
+                payload.DateTimeNow = epoch as i64;
+                payload.set_DateTimeNow_isUsed(1);
             }
             Err(_) => {
-                return afb_error!("iso2-Session-rsp", "Invalid system time (should be fixed)")
+                return afb_error!("din-Session-rsp", "Invalid system time (should be fixed)")
             }
         };
 
         payload.ResponseCode = code as u32;
-        payload.EVSEID.charactersLen = str_to_array(
+        payload.EVSEID.bytesLen = bytes_to_array(
             id,
-            &mut payload.EVSEID.characters,
-            cglue::iso2_EVSEID_CHARACTER_SIZE,
+            &mut payload.EVSEID.bytes,
+            cglue::din_evseIDType_BYTES_SIZE,
         )?;
 
         Ok(Self { payload })
     }
 
-    pub fn get_id(&self) -> Result<&str, AfbError> {
-        array_to_str(
-            &self.payload.EVSEID.characters,
-            self.payload.EVSEID.charactersLen,
+    pub fn get_id(&self) ->&[u8] {
+        array_to_bytes(
+            &self.payload.EVSEID.bytes,
+            self.payload.EVSEID.bytesLen,
         )
     }
 
@@ -112,22 +112,22 @@ impl SessionSetupResponse {
     }
 
     pub fn set_time_stamp(&mut self, timestamp: i64) -> &mut Self {
-        self.payload.EVSETimeStamp= timestamp;
-        self.payload.set_EVSETimeStamp_isUsed(1);
+        self.payload.DateTimeNow= timestamp;
+        self.payload.set_DateTimeNow_isUsed(1);
         self
     }
 
     pub fn get_time_stamp(&self) -> i64 {
-        self.payload.EVSETimeStamp
+        self.payload.DateTimeNow
     }
 
-    pub fn decode(payload: cglue::iso2_SessionSetupResType) -> Self {
+    pub fn decode(payload: cglue::din_SessionSetupResType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.SessionSetupRes = self.payload;
             exi_body.set_SessionSetupRes_isUsed(1);
             exi_body

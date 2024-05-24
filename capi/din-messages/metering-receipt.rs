@@ -19,16 +19,16 @@ use std::mem;
 use super::*;
 
 pub struct MeterInfo {
-    payload: cglue::iso2_MeterInfoType,
+    payload: cglue::din_MeterInfoType,
 }
 
 impl MeterInfo {
     pub fn new(meter_id: &str) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_MeterInfoType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_MeterInfoType>() };
         payload.MeterID.charactersLen = str_to_array(
             meter_id,
             &mut payload.MeterID.characters,
-            cglue::iso2_MeterID_CHARACTER_SIZE,
+            cglue::din_MeterID_CHARACTER_SIZE,
         )?;
         Ok(MeterInfo { payload })
     }
@@ -41,17 +41,17 @@ impl MeterInfo {
         Ok(text)
     }
 
-    pub fn set_reading(&mut self, reading: u64) -> &mut Self {
-        self.payload.MeterReading = reading;
+    pub fn set_reading(&mut self, reading: &PhysicalValue) -> &mut Self {
+        self.payload.MeterReading = reading.encode();
         self.payload.set_MeterReading_isUsed(1);
         self
     }
 
-    pub fn get_reading(&self) -> Option<u64> {
+    pub fn get_reading(&self) -> Option<PhysicalValue> {
         if self.payload.MeterReading_isUsed() == 0 {
             None
         } else {
-            Some(self.payload.MeterReading)
+            Some(PhysicalValue::decode(self.payload.MeterReading))
         }
     }
 
@@ -59,7 +59,7 @@ impl MeterInfo {
         self.payload.SigMeterReading.bytesLen = bytes_to_array(
             sig_meter,
             &mut self.payload.SigMeterReading.bytes,
-            cglue::iso2_sigMeterReadingType_BYTES_SIZE,
+            cglue::din_sigMeterReadingType_BYTES_SIZE,
         )?;
 
         if self.payload.SigMeterReading.bytesLen > 0 {
@@ -107,27 +107,27 @@ impl MeterInfo {
             Some(self.payload.TMeter)
         }
     }
-    pub fn decode(payload: cglue::iso2_MeterInfoType) -> Self {
+    pub fn decode(payload: cglue::din_MeterInfoType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_MeterInfoType {
+    pub fn encode(&self) -> cglue::din_MeterInfoType {
         self.payload
     }
 }
 
 #[derive(Clone)]
 pub struct MeteringReceiptRequest {
-    payload: cglue::iso2_MeteringReceiptReqType,
+    payload: cglue::din_MeteringReceiptReqType,
 }
 impl MeteringReceiptRequest {
     pub fn new(session_id: &[u8], info: &MeterInfo) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_MeteringReceiptReqType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_MeteringReceiptReqType>() };
 
         payload.SessionID.bytesLen = bytes_to_array(
             session_id,
             &mut payload.SessionID.bytes,
-            cglue::iso2_sessionIDType_BYTES_SIZE,
+            cglue::din_sessionIDType_BYTES_SIZE,
         )?;
         payload.MeterInfo = info.encode();
         Ok(Self { payload })
@@ -148,7 +148,7 @@ impl MeteringReceiptRequest {
         self.payload.Id.charactersLen = str_to_array(
             id,
             &mut self.payload.Id.characters,
-            cglue::iso2_Id_CHARACTER_SIZE,
+            cglue::din_Id_CHARACTER_SIZE,
         )?;
         self.payload.set_Id_isUsed(1);
 
@@ -163,13 +163,13 @@ impl MeteringReceiptRequest {
         }
     }
 
-    pub fn set_tupple_id(&mut self, tuple_id: u8) -> &mut Self {
+    pub fn set_tupple_id(&mut self, tuple_id: i16) -> &mut Self {
         self.payload.set_SAScheduleTupleID_isUsed(1);
         self.payload.SAScheduleTupleID= tuple_id;
         self
     }
 
-    pub fn get_tuple_id(&self) -> Option<u8> {
+    pub fn get_tuple_id(&self) -> Option<i16> {
         if self.payload.SAScheduleTupleID_isUsed() == 0 {
             None
         } else {
@@ -177,13 +177,13 @@ impl MeteringReceiptRequest {
         }
     }
 
-    pub fn decode(payload: cglue::iso2_MeteringReceiptReqType) -> Self {
+    pub fn decode(payload: cglue::din_MeteringReceiptReqType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.MeteringReceiptReq = self.payload;
             exi_body.set_MeteringReceiptReq_isUsed(1);
             exi_body
@@ -193,14 +193,15 @@ impl MeteringReceiptRequest {
 }
 
 pub struct MeteringReceiptResponse {
-    payload: cglue::iso2_MeteringReceiptResType,
+    payload: cglue::din_MeteringReceiptResType,
 }
 
 impl MeteringReceiptResponse {
-    pub fn new(code: ResponseCode) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_MeteringReceiptResType>() };
+    pub fn new(code: ResponseCode, ac_status: &AcEvseStatusType) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_MeteringReceiptResType>() };
 
         payload.ResponseCode = code as u32;
+        payload.AC_EVSEStatus= ac_status.encode();
         Self { payload }
     }
 
@@ -208,55 +209,18 @@ impl MeteringReceiptResponse {
         ResponseCode::from_u32(self.payload.ResponseCode)
     }
 
-    pub fn set_ac_evse_status(&mut self, status: &AcEvseStatusType) -> &mut Self {
-        self.payload.AC_EVSEStatus = status.encode();
-        self.payload.set_AC_EVSEStatus_isUsed(1);
-        self
+
+    pub fn get_ac_evse_status(&self) -> AcEvseStatusType  {
+            AcEvseStatusType::decode (self.payload.AC_EVSEStatus)
     }
 
-    pub fn get_ac_evse_status(&self) -> Option<AcEvseStatusType>  {
-        if  self.payload.AC_EVSEStatus_isUsed() == 0 {
-            None
-        } else {
-            Some(AcEvseStatusType::decode (self.payload.AC_EVSEStatus))
-        }
-    }
-
-    pub fn set_dc_evse_status(&mut self, status: &DcEvseStatusType) -> &mut Self {
-        self.payload.DC_EVSEStatus = status.encode();
-        self.payload.set_DC_EVSEStatus_isUsed(1);
-        self
-    }
-
-    pub fn get_dc_evse_status(&self) -> Option<DcEvseStatusType>  {
-        if  self.payload.DC_EVSEStatus_isUsed() == 0 {
-            None
-        } else {
-            Some(DcEvseStatusType::decode (self.payload.DC_EVSEStatus))
-        }
-    }
-
-    pub fn set_evse_status(&mut self, status: &EvseStatusType) -> &mut Self {
-        self.payload.EVSEStatus = status.encode();
-        self.payload.set_EVSEStatus_isUsed(1);
-        self
-    }
-
-    pub fn get_evse_status(&self) -> Option<EvseStatusType>  {
-        if  self.payload.EVSEStatus_isUsed() == 0 {
-            None
-        } else {
-            Some(EvseStatusType::decode (self.payload.EVSEStatus))
-        }
-    }
-
-    pub fn decode(payload: cglue::iso2_MeteringReceiptResType) -> Self {
+    pub fn decode(payload: cglue::din_MeteringReceiptResType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.MeteringReceiptRes = self.payload;
             exi_body.set_MeteringReceiptRes_isUsed(1);
             exi_body

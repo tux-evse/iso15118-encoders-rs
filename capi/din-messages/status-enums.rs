@@ -44,6 +44,8 @@ pub enum MessageTagId {
     CertificateInstallRes,
     CertificateUpdateReq,
     CertificateUpdateRes,
+    ContractAuthenticationReq,
+    ContractAuthenticationRes,
     ParamDiscoveryReq,
     ParamDiscoveryRes,
     ChargingStatusReq,
@@ -117,84 +119,45 @@ impl MessageTagId {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Display, EnumString, AsRefStr)]
-#[strum(serialize_all = "snake_case")]
-#[repr(u32)]
-pub enum CostKind {
-    PricePercent = cglue::iso2_costKindType_iso2_costKindType_relativePricePercentage,
-    RenewGenPercent = cglue::iso2_costKindType_iso2_costKindType_RenewableGenerationPercentage,
-    CarbonEmission = cglue::iso2_costKindType_iso2_costKindType_CarbonDioxideEmission,
-}
-impl CostKind {
-    pub fn from_u32(value: u32) -> Self {
-        unsafe { std::mem::transmute(value) }
-    }
-
-    #[track_caller]
-    pub fn from_label(json: &str) -> Result<Self, AfbError> {
-        match Self::from_str(json) {
-            Ok(value) => Ok(value),
-            Err(error) => {
-                return afb_error!(
-                    "cost_kind_from_label",
-                    "deserialize({}):{}",
-                    json,
-                    error
-                )
-            }
-        }
-    }
-
-    pub fn to_label(&self) -> &str {
-        self.as_ref()
-    }
-}
-
 #[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
 #[strum(serialize_all = "snake_case")]
 #[repr(u32)]
 #[allow(dead_code)]
 pub enum ResponseCode {
-    Ok = cglue::iso2_responseCodeType_iso2_responseCodeType_OK,
-    Failed = cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED,
-    NewSession = cglue::iso2_responseCodeType_iso2_responseCodeType_OK_NewSessionEstablished,
-    OldSessionJoin = cglue::iso2_responseCodeType_iso2_responseCodeType_OK_OldSessionJoined,
+    Ok = cglue::din_responseCodeType_din_responseCodeType_OK,
+    Failed = cglue::din_responseCodeType_din_responseCodeType_FAILED,
+    NewSession = cglue::din_responseCodeType_din_responseCodeType_OK_NewSessionEstablished,
+    OldSessionJoin = cglue::din_responseCodeType_din_responseCodeType_OK_OldSessionJoined,
     CertificateExpiresSoon =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_OK_CertificateExpiresSoon,
-    SequenceError = cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_SequenceError,
-    ServiceIDInvalid = cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_ServiceIDInvalid,
-    UnknownSession = cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_UnknownSession,
+        cglue::din_responseCodeType_din_responseCodeType_OK_CertificateExpiresSoon,
+    SequenceError = cglue::din_responseCodeType_din_responseCodeType_FAILED_SequenceError,
+    ServiceIDInvalid = cglue::din_responseCodeType_din_responseCodeType_FAILED_ServiceIDInvalid,
+    UnknownSession = cglue::din_responseCodeType_din_responseCodeType_FAILED_UnknownSession,
     ServiceSelectionInvalid =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_ServiceSelectionInvalid,
+        cglue::din_responseCodeType_din_responseCodeType_FAILED_ServiceSelectionInvalid,
     PaymentSelectionInvalid =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_PaymentSelectionInvalid,
-    CertificateExpired =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_CertificateExpired,
-    SignatureError = cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_SignatureError,
+        cglue::din_responseCodeType_din_responseCodeType_FAILED_PaymentSelectionInvalid,
+    CertificateExpired = cglue::din_responseCodeType_din_responseCodeType_FAILED_CertificateExpired,
+    SignatureError = cglue::din_responseCodeType_din_responseCodeType_FAILED_SignatureError,
     NoCertificateAvailable =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_NoCertificateAvailable,
-    CertChainError = cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_CertChainError,
-    ChallengeInvalid = cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_ChallengeInvalid,
-    ContractCanceled = cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_ContractCanceled,
+        cglue::din_responseCodeType_din_responseCodeType_FAILED_NoCertificateAvailable,
+    CertChainError = cglue::din_responseCodeType_din_responseCodeType_FAILED_CertChainError,
+    ChallengeInvalid = cglue::din_responseCodeType_din_responseCodeType_FAILED_ChallengeInvalid,
+    ContractCanceled = cglue::din_responseCodeType_din_responseCodeType_FAILED_ContractCanceled,
     WrongChargeParameter =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_WrongChargeParameter,
+        cglue::din_responseCodeType_din_responseCodeType_FAILED_WrongChargeParameter,
     PowerDeliveryNotApplied =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_PowerDeliveryNotApplied,
+        cglue::din_responseCodeType_din_responseCodeType_FAILED_PowerDeliveryNotApplied,
     TariffSelectionInvalid =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_TariffSelectionInvalid,
+        cglue::din_responseCodeType_din_responseCodeType_FAILED_TariffSelectionInvalid,
     ChargingProfileInvalid =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_ChargingProfileInvalid,
+        cglue::din_responseCodeType_din_responseCodeType_FAILED_ChargingProfileInvalid,
     MeteringSignatureNotValid =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_MeteringSignatureNotValid,
-    NoChargeServiceSelected =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_NoChargeServiceSelected,
-    WrongEnergyTransferMode =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_WrongEnergyTransferMode,
-    ContactorError = cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_ContactorError,
-    CertificateNotAllowedAtThisEVSE =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_CertificateNotAllowedAtThisEVSE,
-    CertificateRevoked =
-        cglue::iso2_responseCodeType_iso2_responseCodeType_FAILED_CertificateRevoked,
+        cglue::din_responseCodeType_din_responseCodeType_FAILED_MeteringSignatureNotValid,
+    EVSEPresentVoltageToLow =
+        cglue::din_responseCodeType_din_responseCodeType_FAILED_EVSEPresentVoltageToLow,
+    WrongEnergyTransferType =
+        cglue::din_responseCodeType_din_responseCodeType_FAILED_WrongEnergyTransferType,
 }
 
 impl ResponseCode {
@@ -221,10 +184,10 @@ impl ResponseCode {
 #[strum(serialize_all = "snake_case")]
 #[repr(u32)]
 pub enum ServiceCategory {
-    EvCharger = cglue::iso2_serviceCategoryType_iso2_serviceCategoryType_EVCharging,
-    Internet = cglue::iso2_serviceCategoryType_iso2_serviceCategoryType_Internet,
-    Certificate = cglue::iso2_serviceCategoryType_iso2_serviceCategoryType_ContractCertificate,
-    Other = cglue::iso2_serviceCategoryType_iso2_serviceCategoryType_OtherCustom,
+    EvCharger = cglue::din_serviceCategoryType_din_serviceCategoryType_EVCharging,
+    Internet = cglue::din_serviceCategoryType_din_serviceCategoryType_Internet,
+    Certificate = cglue::din_serviceCategoryType_din_serviceCategoryType_ContractCertificate,
+    Other = cglue::din_serviceCategoryType_din_serviceCategoryType_OtherCustom,
 }
 
 impl ServiceCategory {
@@ -251,8 +214,8 @@ impl ServiceCategory {
 #[allow(dead_code)]
 #[repr(u32)]
 pub enum PaymentOption {
-    Contract = cglue::iso2_paymentOptionType_iso2_paymentOptionType_Contract,
-    External = cglue::iso2_paymentOptionType_iso2_paymentOptionType_ExternalPayment,
+    Contract = cglue::din_paymentOptionType_din_paymentOptionType_Contract,
+    External = cglue::din_paymentOptionType_din_paymentOptionType_ExternalPayment,
 }
 
 impl PaymentOption {
@@ -274,70 +237,13 @@ impl PaymentOption {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
-#[strum(serialize_all = "snake_case")]
-#[allow(dead_code)]
-#[repr(u32)]
-pub enum ChargingSessionType {
-    Terminate = cglue::iso2_chargingSessionType_iso2_chargingSessionType_Terminate,
-    Pause = cglue::iso2_chargingSessionType_iso2_chargingSessionType_Pause,
-}
-
-impl ChargingSessionType {
-    pub fn from_u32(value: u32) -> Self {
-        unsafe { std::mem::transmute(value) }
-    }
-    #[track_caller]
-    pub fn from_label(json: &str) -> Result<Self, AfbError> {
-        match Self::from_str(json) {
-            Ok(value) => Ok(value),
-            Err(error) => {
-                return afb_error!("charging-session-from-label", "fail deserialize:{}", error)
-            }
-        }
-    }
-
-    pub fn to_label(&self) -> &str {
-        self.as_ref()
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
-#[strum(serialize_all = "snake_case")]
-#[repr(u32)]
-pub enum ChargeProgress {
-    Start = cglue::iso2_chargeProgressType_iso2_chargeProgressType_Start,
-    Stop = cglue::iso2_chargeProgressType_iso2_chargeProgressType_Stop,
-    Renegotiate = cglue::iso2_chargeProgressType_iso2_chargeProgressType_Renegotiate,
-}
-impl ChargeProgress {
-    pub fn from_u32(code: u32) -> Self {
-        unsafe { mem::transmute(code) }
-    }
-    #[track_caller]
-    pub fn from_label(json: &str) -> Result<Self, AfbError> {
-        match Self::from_str(json) {
-            Ok(value) => Ok(value),
-            Err(error) => {
-                return afb_error!("charge-progress-from-label", "fail deserialize:{}", error)
-            }
-        }
-    }
-
-    pub fn to_label(&self) -> &str {
-        self.as_ref()
-    }
-}
-
 #[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
 #[strum(serialize_all = "snake_case")]
 #[repr(u32)]
 pub enum EvseProcessing {
-    Finished = cglue::iso2_EVSEProcessingType_iso2_EVSEProcessingType_Finished,
-    Ongoing = cglue::iso2_EVSEProcessingType_iso2_EVSEProcessingType_Ongoing,
-    CustomerInteraction = cglue::iso2_EVSEProcessingType_iso2_EVSEProcessingType_Ongoing_WaitingForCustomerInteraction,
+    Finished = cglue::din_EVSEProcessingType_din_EVSEProcessingType_Finished,
+    Ongoing = cglue::din_EVSEProcessingType_din_EVSEProcessingType_Ongoing,
 }
 impl EvseProcessing {
     pub fn from_u32(code: u32) -> Self {
@@ -363,24 +269,23 @@ impl EvseProcessing {
 #[strum(serialize_all = "snake_case")]
 #[repr(u32)]
 pub enum DcEvErrorCode {
-    NoError = cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_NO_ERROR,
+    NoError = cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_NO_ERROR,
     FailRessTempInhibit =
-        cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_FAILED_RESSTemperatureInhibit,
-    FailEvShiftPos = cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_FAILED_EVShiftPosition,
+        cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_FAILED_RESSTemperatureInhibit,
+    FailEvShiftPos = cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_FAILED_EVShiftPosition,
     FailChargeConnectLock =
-        cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_FAILED_ChargerConnectorLockFault,
-    FailEvresFault =
-        cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_FAILED_EVRESSMalfunction,
+        cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_FAILED_ChargerConnectorLockFault,
+    FailEvresFault = cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_FAILED_EVRESSMalfunction,
     FailCurrentDifferential =
-        cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_FAILED_ChargingCurrentdifferential,
+        cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_FAILED_ChargingCurrentdifferential,
     FailVoltOutOfRange =
-        cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_FAILED_ChargingVoltageOutOfRange,
-    FailReserveA = cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_Reserved_A,
-    FailReserveB = cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_Reserved_B,
-    FailReserveC = cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_Reserved_C,
+        cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_FAILED_ChargingVoltageOutOfRange,
+    FailReserveA = cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_Reserved_A,
+    FailReserveB = cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_Reserved_B,
+    FailReserveC = cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_Reserved_C,
     FailIncompatible =
-        cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_FAILED_ChargingSystemIncompatibility,
-    FailCodeNoData = cglue::iso2_DC_EVErrorCodeType_iso2_DC_EVErrorCodeType_NoData,
+        cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_FAILED_ChargingSystemIncompatibility,
+    FailCodeNoData = cglue::din_DC_EVErrorCodeType_din_DC_EVErrorCodeType_NoData,
 }
 impl DcEvErrorCode {
     pub fn from_u32(code: u32) -> Self {
@@ -405,17 +310,17 @@ impl DcEvErrorCode {
 #[strum(serialize_all = "snake_case")]
 #[allow(dead_code)]
 #[repr(u32)]
-pub enum EngyTransfertMode {
-    AcSinglePhase =
-        cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_AC_single_phase_core,
-    AcTreePhase =
-        cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_AC_three_phase_core,
-    DcBasic = cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_core,
-    DcExtended = cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_extended,
-    DcCombo = cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_combo_core,
-    DcUnique = cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_unique,
+pub enum EvRequestTransfertMode {
+    AcSinglePhase = cglue::din_EVRequestedEnergyTransferType_din_EVRequestedEnergyTransferType_AC_single_phase_core,
+    AcTreePhase = cglue::din_EVRequestedEnergyTransferType_din_EVRequestedEnergyTransferType_AC_three_phase_core,
+    DcBasic = cglue::din_EVRequestedEnergyTransferType_din_EVRequestedEnergyTransferType_DC_core,
+    DcExtended =
+        cglue::din_EVRequestedEnergyTransferType_din_EVRequestedEnergyTransferType_DC_extended,
+    DcCombo =
+        cglue::din_EVRequestedEnergyTransferType_din_EVRequestedEnergyTransferType_DC_combo_core,
+    DcUnique = cglue::din_EVRequestedEnergyTransferType_din_EVRequestedEnergyTransferType_DC_unique,
 }
-impl EngyTransfertMode {
+impl EvRequestTransfertMode {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
@@ -443,10 +348,10 @@ impl EngyTransfertMode {
 #[allow(dead_code)]
 #[repr(u32)]
 pub enum EvseNotification {
-    // cglue::iso2_EVSENotificationType
-    None = cglue::iso2_EVSENotificationType_iso2_EVSENotificationType_None,
-    StopCharging = cglue::iso2_EVSENotificationType_iso2_EVSENotificationType_StopCharging,
-    ReNegotiation = cglue::iso2_EVSENotificationType_iso2_EVSENotificationType_ReNegotiation,
+    // cglue::din_EVSENotificationType
+    None = cglue::din_EVSENotificationType_din_EVSENotificationType_None,
+    StopCharging = cglue::din_EVSENotificationType_din_EVSENotificationType_StopCharging,
+    ReNegotiation = cglue::din_EVSENotificationType_din_EVSENotificationType_ReNegotiation,
 }
 impl EvseNotification {
     pub fn from_u32(code: u32) -> Self {
@@ -472,11 +377,10 @@ impl EvseNotification {
 #[allow(dead_code)]
 #[repr(u32)]
 pub enum IsolationStatus {
-    Invalid = cglue::iso2_isolationLevelType_iso2_isolationLevelType_Invalid,
-    Valid = cglue::iso2_isolationLevelType_iso2_isolationLevelType_Valid,
-    Warning = cglue::iso2_isolationLevelType_iso2_isolationLevelType_Warning,
-    Fault = cglue::iso2_isolationLevelType_iso2_isolationLevelType_Fault,
-    NoImd = cglue::iso2_isolationLevelType_iso2_isolationLevelType_No_IMD,
+    Invalid = cglue::din_isolationLevelType_din_isolationLevelType_Invalid,
+    Safe = cglue::din_isolationLevelType_din_isolationLevelType_Safe,
+    Warning = cglue::din_isolationLevelType_din_isolationLevelType_Warning,
+    Fault = cglue::din_isolationLevelType_din_isolationLevelType_Fault,
 }
 impl IsolationStatus {
     pub fn from_u32(code: u32) -> Self {
@@ -502,21 +406,21 @@ impl IsolationStatus {
 #[allow(dead_code)]
 #[repr(u32)]
 pub enum DcEvseErrorCode {
-    NotReady = cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_EVSE_NotReady,
-    Ready = cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_EVSE_Ready,
-    Shutdown = cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_EVSE_Shutdown,
+    NotReady = cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_EVSE_NotReady,
+    Ready = cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_EVSE_Ready,
+    Shutdown = cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_EVSE_Shutdown,
     UtilInteruptEvt =
-        cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_EVSE_UtilityInterruptEvent,
+        cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_EVSE_UtilityInterruptEvent,
     MonitoringActive =
-        cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_EVSE_IsolationMonitoringActive,
+        cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_EVSE_IsolationMonitoringActive,
     EmergencyShutdown =
-        cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_EVSE_EmergencyShutdown,
-    EvseMalfunction = cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_EVSE_Malfunction,
-    Reserve8 = cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_Reserved_8,
-    Reserve9 = cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_Reserved_9,
-    ReserveA = cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_Reserved_A,
-    ReserveB = cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_Reserved_B,
-    ReserveC = cglue::iso2_DC_EVSEStatusCodeType_iso2_DC_EVSEStatusCodeType_Reserved_C,
+        cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_EVSE_EmergencyShutdown,
+    EvseMalfunction = cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_EVSE_Malfunction,
+    Reserve8 = cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_Reserved_8,
+    Reserve9 = cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_Reserved_9,
+    ReserveA = cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_Reserved_A,
+    ReserveB = cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_Reserved_B,
+    ReserveC = cglue::din_DC_EVSEStatusCodeType_din_DC_EVSEStatusCodeType_Reserved_C,
 }
 
 impl DcEvseErrorCode {
@@ -547,13 +451,16 @@ impl DcEvseErrorCode {
 #[allow(dead_code)]
 #[repr(u32)]
 pub enum PhysicalUnit {
-    Hour = cglue::iso2_unitSymbolType_iso2_unitSymbolType_h,
-    Minute = cglue::iso2_unitSymbolType_iso2_unitSymbolType_m,
-    Second = cglue::iso2_unitSymbolType_iso2_unitSymbolType_s,
-    Ampere = cglue::iso2_unitSymbolType_iso2_unitSymbolType_A,
-    Volt = cglue::iso2_unitSymbolType_iso2_unitSymbolType_V,
-    Watt = cglue::iso2_unitSymbolType_iso2_unitSymbolType_W,
-    Wh = cglue::iso2_unitSymbolType_iso2_unitSymbolType_Wh,
+    Hour = cglue::din_unitSymbolType_din_unitSymbolType_h,
+    Minute = cglue::din_unitSymbolType_din_unitSymbolType_m,
+    Second = cglue::din_unitSymbolType_din_unitSymbolType_s,
+    Ampere = cglue::din_unitSymbolType_din_unitSymbolType_A,
+    Volt = cglue::din_unitSymbolType_din_unitSymbolType_V,
+    Watt = cglue::din_unitSymbolType_din_unitSymbolType_W,
+    Wh = cglue::din_unitSymbolType_din_unitSymbolType_Wh,
+    VolAmp = cglue::din_unitSymbolType_din_unitSymbolType_VA,
+    AmpHour = cglue::din_unitSymbolType_din_unitSymbolType_Ah,
+    WattSecond = cglue::din_unitSymbolType_din_unitSymbolType_W_s,
 }
 impl PhysicalUnit {
     pub fn from_u32(code: u32) -> Self {
@@ -575,12 +482,12 @@ impl PhysicalUnit {
 }
 
 pub struct DcEvseStatusType {
-    payload: cglue::iso2_DC_EVSEStatusType,
+    payload: cglue::din_DC_EVSEStatusType,
 }
 
 impl DcEvseStatusType {
-    pub fn new(error: DcEvseErrorCode, notification: EvseNotification, delay: u16) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVSEStatusType>() };
+    pub fn new(error: DcEvseErrorCode, notification: EvseNotification, delay: u32) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_DC_EVSEStatusType>() };
         payload.EVSEStatusCode = error as u32;
         payload.NotificationMaxDelay = delay;
         payload.EVSENotification = notification as u32;
@@ -595,7 +502,7 @@ impl DcEvseStatusType {
         EvseNotification::from_u32(self.payload.EVSENotification)
     }
 
-    pub fn get_delay(&self) -> u16 {
+    pub fn get_delay(&self) -> u32 {
         self.payload.NotificationMaxDelay
     }
 
@@ -613,42 +520,31 @@ impl DcEvseStatusType {
         }
     }
 
-    pub fn decode(payload: cglue::iso2_DC_EVSEStatusType) -> Self {
+    pub fn decode(payload: cglue::din_DC_EVSEStatusType) -> Self {
         Self {
             payload: payload.clone(),
         }
     }
 
-    pub fn encode(&self) -> cglue::iso2_DC_EVSEStatusType {
+    pub fn encode(&self) -> cglue::din_DC_EVSEStatusType {
         self.payload
     }
 }
 
 #[derive(Clone, Copy)]
 pub struct DcEvStatusType {
-    payload: cglue::iso2_DC_EVStatusType,
+    payload: cglue::din_DC_EVStatusType,
 }
 
 impl DcEvStatusType {
-    pub fn new(ready: bool, error: DcEvErrorCode, evresssoc: i8) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVStatusType>() };
+    pub fn new(ready: bool, error: DcEvErrorCode, evress_soc: i8) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_DC_EVStatusType>() };
         payload.EVReady = if ready { 1 } else { 0 };
-        payload.EVRESSSOC = evresssoc;
+        payload.EVRESSSOC = evress_soc;
         payload.EVErrorCode = error as u32;
         Self { payload }
     }
-
-    pub fn decode(payload: cglue::iso2_DC_EVStatusType) -> Self {
-        Self {
-            payload: payload.clone(),
-        }
-    }
-
-    pub fn encode(&self) -> cglue::iso2_DC_EVStatusType {
-        self.payload
-    }
-
-    pub fn get_ready(&self) -> bool {
+        pub fn get_ready(&self) -> bool {
         if self.payload.EVReady == 0 {
             false
         } else {
@@ -660,18 +556,58 @@ impl DcEvStatusType {
         DcEvErrorCode::from_u32(self.payload.EVErrorCode)
     }
 
-    pub fn get_evresssoc(&self) -> i8 {
+    pub fn get_evress_soc(&self) -> i8 {
         self.payload.EVRESSSOC
     }
+
+    pub fn set_evcabin_conditioning(&mut self, value: i32) -> &mut Self {
+        self.payload.EVCabinConditioning = value;
+        self.payload.set_EVCabinConditioning_isUsed(1);
+        self
+    }
+
+    pub fn get_evcabin_conditioning(&self) -> Option<i32> {
+        if self.payload.EVCabinConditioning_isUsed() == 0 {
+            None
+        } else {
+            Some(self.payload.EVCabinConditioning)
+        }
+    }
+
+    pub fn set_evress_conditioning(&mut self, value: i32) -> &mut Self {
+        self.payload.EVCabinConditioning = value;
+        self.payload.set_EVRESSConditioning_isUsed(1);
+        self
+    }
+
+    pub fn get_evress_conditioning(&self) -> Option<i32> {
+        if self.payload.EVRESSConditioning_isUsed() == 0 {
+            None
+        } else {
+            Some(self.payload.EVCabinConditioning)
+        }
+    }
+
+    pub fn decode(payload: cglue::din_DC_EVStatusType) -> Self {
+        Self {
+            payload: payload.clone(),
+        }
+    }
+
+    pub fn encode(&self) -> cglue::din_DC_EVStatusType {
+        self.payload
+    }
+
+
 }
 
 pub struct AcEvseStatusType {
-    payload: cglue::iso2_AC_EVSEStatusType,
+    payload: cglue::din_AC_EVSEStatusType,
 }
 
 impl AcEvseStatusType {
-    pub fn new(notification: EvseNotification, delay: u16, rcd: bool) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_AC_EVSEStatusType>() };
+    pub fn new(notification: EvseNotification, delay: u32, rcd: bool) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_AC_EVSEStatusType>() };
         if rcd {
             payload.RCD = 1;
         } else {
@@ -686,7 +622,7 @@ impl AcEvseStatusType {
         EvseNotification::from_u32(self.payload.EVSENotification)
     }
 
-    pub fn get_delay(&self) -> u16 {
+    pub fn get_delay(&self) -> u32 {
         self.payload.NotificationMaxDelay
     }
 
@@ -698,58 +634,35 @@ impl AcEvseStatusType {
         }
     }
 
-    pub fn decode(payload: cglue::iso2_AC_EVSEStatusType) -> Self {
+    pub fn decode(payload: cglue::din_AC_EVSEStatusType) -> Self {
         Self {
             payload: payload.clone(),
         }
     }
 
-    pub fn encode(&self) -> cglue::iso2_AC_EVSEStatusType {
+    pub fn encode(&self) -> cglue::din_AC_EVSEStatusType {
         self.payload
     }
 }
 
 pub struct EvseStatusType {
-    payload: cglue::iso2_EVSEStatusType,
+    payload: cglue::din_EVSEStatusType,
 }
 
 impl EvseStatusType {
-    pub fn new(
-        notification: EvseNotification,
-        delay: u16,
-        ac_status: &AcEvseStatusType,
-        dc_status: &DcEvseStatusType,
-    ) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_EVSEStatusType>() };
-        payload.NotificationMaxDelay = delay;
-        payload.EVSENotification = notification as u32;
-        payload.AC_EVSEStatus = ac_status.encode();
-        payload.DC_EVSEStatus = dc_status.encode();
+    pub fn new(unused: i32) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_EVSEStatusType>() };
+        payload._unused = unused;
         Self { payload }
     }
 
-    pub fn get_notification(&self) -> EvseNotification {
-        EvseNotification::from_u32(self.payload.EVSENotification)
-    }
-
-    pub fn get_delay(&self) -> u16 {
-        self.payload.NotificationMaxDelay
-    }
-
-    pub fn get_ac_status(&self) -> AcEvseStatusType {
-        AcEvseStatusType::decode(self.payload.AC_EVSEStatus)
-    }
-    pub fn get_dc_status(&self) -> DcEvseStatusType {
-        DcEvseStatusType::decode(self.payload.DC_EVSEStatus)
-    }
-
-    pub fn decode(payload: cglue::iso2_EVSEStatusType) -> Self {
+    pub fn decode(payload: cglue::din_EVSEStatusType) -> Self {
         Self {
             payload: payload.clone(),
         }
     }
 
-    pub fn encode(&self) -> cglue::iso2_EVSEStatusType {
+    pub fn encode(&self) -> cglue::din_EVSEStatusType {
         self.payload
     }
 }

@@ -60,10 +60,24 @@ impl ProtocolTagId {
     pub fn from_u8(code: u8) -> Self {
         unsafe { mem::transmute(code) }
     }
+
+    #[track_caller]
+    pub fn from_urn(urn: &str) -> Result<Self, AfbError> {
+        let proto= match urn {
+           "urn:din:70121:2012:MsgDef" =>  ProtocolTagId::Din,
+           "urn:iso:15118:2:2013:MsgDef"=> ProtocolTagId::Iso2,
+           "urn:iso:15118:20:2018:MsgDef"=> ProtocolTagId::Iso20,
+           _ => return afb_error!("get-from-urn", "fail deserialize:{}", urn)
+        };
+
+        Ok(proto)
+    }
+
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match ProtocolTagId::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => return afb_error!("get-from-label", "fail deserialize:{}", error),
         }
     }
 
@@ -85,10 +99,11 @@ impl ResponseCode {
     pub fn from_u32(code: u32) -> Self {
         unsafe { mem::transmute(code) }
     }
+    #[track_caller]
     pub fn from_label(json: &str) -> Result<Self, AfbError> {
         match ResponseCode::from_str(json) {
             Ok(value) => Ok(value),
-            Err(error) => return afb_error!("get-from-json", "fail deserialize:{}", error),
+            Err(error) => return afb_error!("get-from-label", "fail deserialize:{}", error),
         }
     }
 

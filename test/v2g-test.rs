@@ -52,7 +52,7 @@ fn supported_app_protocol_req() -> Result<(), AfbError> {
 
     // assert add protocol build correctly message
     let protocols = request.get_protocols();
-    assert!(protocols[0].get_name()?.as_str() == proto_0.name);
+    assert!(protocols[0].get_name()? == proto_0.name);
 
     // encode message to stream_exi an compare with expected binary result
     let exi = ExiStream::new();
@@ -67,10 +67,10 @@ fn supported_app_protocol_req() -> Result<(), AfbError> {
     };
 
     let protocols = message.get_protocols();
-    assert!(protocols[0].get_name()?.as_str() == proto_0.name);
+    assert!(protocols[0].get_name()? == proto_0.name);
     assert!(protocols[0].get_major() == proto_0.major);
     assert!(protocols[0].get_minor() == proto_0.minor);
-    assert!(protocols[1].get_name()?.as_str() == proto_1.name);
+    assert!(protocols[1].get_name()? == proto_1.name);
     assert!(protocols[1].get_major() == proto_1.major);
     assert!(protocols[1].get_minor() == proto_1.minor);
     Ok(())

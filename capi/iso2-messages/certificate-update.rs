@@ -24,7 +24,12 @@ pub struct CertificateUpdateRequest {
 }
 
 impl CertificateUpdateRequest {
-    pub fn new(id: &str, contract_chain: &CertificateChainType,  emaid: &str, root_certs: &CertificateRootList) -> Result<Self, AfbError> {
+    pub fn new(
+        id: &str,
+        contract_chain: &CertificateChainType,
+        emaid: &str,
+        root_certs: &CertificateRootList,
+    ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_CertificateUpdateReqType>() };
 
         payload.Id.charactersLen = str_to_array(
@@ -63,19 +68,21 @@ impl CertificateUpdateRequest {
         array_to_str(&self.payload.Id.characters, self.payload.Id.charactersLen)
     }
 
-    pub fn get_contract_chain(&self) -> CertificateChainType{
+    pub fn get_contract_chain(&self) -> CertificateChainType {
         CertificateChainType::decode(self.payload.ContractSignatureCertChain)
     }
 
     pub fn get_emaid(&self) -> Result<&str, AfbError> {
-        array_to_str(&self.payload.eMAID.characters, self.payload.eMAID.charactersLen)
+        array_to_str(
+            &self.payload.eMAID.characters,
+            self.payload.eMAID.charactersLen,
+        )
     }
 
     pub fn get_root_certs(&self) -> CertificateRootList {
         CertificateRootList::decode(self.payload.ListOfRootCertificateIDs)
     }
 }
-
 
 pub struct CertificateUpdateResponse {
     payload: cglue::iso2_CertificateUpdateResType,
@@ -95,34 +102,35 @@ impl CertificateUpdateResponse {
         payload.SAProvisioningCertificateChain = provisioning_chain.encode();
         payload.ContractSignatureCertChain = contract_chain.encode();
         payload.ContractSignatureEncryptedPrivateKey = private_key.encode();
-        payload.DHpublickey= public_key.encode();
-        payload.eMAID= emaid.encode();
+        payload.DHpublickey = public_key.encode();
+        payload.eMAID = emaid.encode();
         Self { payload }
     }
 
-    pub fn decode(payload: cglue::iso2_CertificateUpdateResType) -> Self {
-        Self { payload }
-    }
-
-    pub fn encode(&self) -> Iso2BodyType {
-        let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
-            exi_body.__bindgen_anon_1.CertificateUpdateRes = self.payload;
-            exi_body.set_CertificateUpdateRes_isUsed(1);
-            exi_body
-        };
-        body
-    }
 
     pub fn get_rcode(&self) -> ResponseCode {
         ResponseCode::from_u32(self.payload.ResponseCode)
     }
 
-    pub fn get_provisioning_chain(&self) -> CertificateChainType{
+    pub fn set_rcount(&mut self, rcount: i16) -> &mut Self  {
+        self.payload.set_RetryCounter_isUsed(1);
+        self.payload.RetryCounter= rcount;
+        self
+    }
+
+    pub fn get_rcount(&self) -> Option<i16> {
+        if self.payload.RetryCounter_isUsed() == 0 {
+            None
+        } else {
+            Some(self.payload.RetryCounter)
+        }
+    }
+
+    pub fn get_provisioning_chain(&self) -> CertificateChainType {
         CertificateChainType::decode(self.payload.SAProvisioningCertificateChain)
     }
 
-    pub fn get_contract_chain(&self) -> CertificateChainType{
+    pub fn get_contract_chain(&self) -> CertificateChainType {
         CertificateChainType::decode(self.payload.ContractSignatureCertChain)
     }
 
@@ -138,4 +146,17 @@ impl CertificateUpdateResponse {
         EmaidType::decode(self.payload.eMAID)
     }
 
+    pub fn decode(payload: cglue::iso2_CertificateUpdateResType) -> Self {
+        Self { payload }
+    }
+
+    pub fn encode(&self) -> Iso2BodyType {
+        let body = unsafe {
+            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            exi_body.__bindgen_anon_1.CertificateUpdateRes = self.payload;
+            exi_body.set_CertificateUpdateRes_isUsed(1);
+            exi_body
+        };
+        body
+    }
 }

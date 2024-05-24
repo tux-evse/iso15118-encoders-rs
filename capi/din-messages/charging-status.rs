@@ -21,21 +21,21 @@ use std::mem;
 
 #[derive(Clone)]
 pub struct ChargingStatusRequest {
-    payload: cglue::iso2_ChargingStatusReqType,
+    payload: cglue::din_ChargingStatusReqType,
 }
 impl ChargingStatusRequest {
     pub fn new() -> Self {
-        let payload = unsafe { mem::zeroed::<cglue::iso2_ChargingStatusReqType>() };
+        let payload = unsafe { mem::zeroed::<cglue::din_ChargingStatusReqType>() };
         Self { payload }
     }
 
-    pub fn decode(payload: cglue::iso2_ChargingStatusReqType) -> Self {
+    pub fn decode(payload: cglue::din_ChargingStatusReqType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.ChargingStatusReq = self.payload;
             exi_body.set_ChargingStatusReq_isUsed(1);
             exi_body
@@ -45,38 +45,45 @@ impl ChargingStatusRequest {
 }
 
 pub struct ChargingStatusResponse {
-    payload: cglue::iso2_ChargingStatusResType,
+    payload: cglue::din_ChargingStatusResType,
 }
 
 impl ChargingStatusResponse {
-    pub fn new(rcode: ResponseCode, evse_id: &str, tuple_id: u8, status: &AcEvseStatusType) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_ChargingStatusResType>() };
+    pub fn new(
+        rcode: ResponseCode,
+        evse_id: &[u8],
+        tuple_id: i16,
+        receipt_require: bool,
+        status: &AcEvseStatusType,
+    ) -> Result<Self, AfbError> {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_ChargingStatusResType>() };
 
         payload.ResponseCode = rcode as u32;
-        payload.EVSEID.charactersLen = str_to_array(
+        payload.EVSEID.bytesLen = bytes_to_array(
             evse_id,
-            &mut payload.EVSEID.characters,
-            cglue::iso2_EVSEID_CHARACTER_SIZE,
+            &mut payload.EVSEID.bytes,
+            cglue::din_evseIDType_BYTES_SIZE,
         )?;
         payload.SAScheduleTupleID = tuple_id;
         payload.AC_EVSEStatus = status.encode();
 
+        if receipt_require {
+            payload.ReceiptRequired = 1
+        }
+
         Ok(Self { payload })
     }
 
-    pub fn get_ac_evse_status(&self) -> AcEvseStatusType  {
-        AcEvseStatusType::decode (self.payload.AC_EVSEStatus)
+    pub fn get_ac_evse_status(&self) -> AcEvseStatusType {
+        AcEvseStatusType::decode(self.payload.AC_EVSEStatus)
     }
 
-    pub fn get_evse_id(&self) -> Result<&str, AfbError> {
-        array_to_str(
-            &self.payload.EVSEID.characters,
-            self.payload.EVSEID.charactersLen,
-        )
+    pub fn get_evse_id(&self) -> &[u8] {
+        array_to_bytes(&self.payload.EVSEID.bytes, self.payload.EVSEID.bytesLen)
     }
 
-    pub fn get_tuple_id(&self) -> u8 {
-            self.payload.SAScheduleTupleID
+    pub fn get_tuple_id(&self) -> i16 {
+        self.payload.SAScheduleTupleID
     }
 
     pub fn get_rcode(&self) -> ResponseCode {
@@ -93,25 +100,14 @@ impl ChargingStatusResponse {
         if self.payload.EVSEMaxCurrent_isUsed() == 0 {
             None
         } else {
-           Some(PhysicalValue::decode(self.payload.EVSEMaxCurrent))
+            Some(PhysicalValue::decode(self.payload.EVSEMaxCurrent))
         }
     }
-
-    pub fn set_receipt_require(&mut self, require: bool) -> &mut Self {
-        self.payload.ReceiptRequired = if require { 1 } else { 0 };
-        self.payload.set_ReceiptRequired_isUsed(1);
-        self
-    }
-
-    pub fn get_receipt_require(&self) -> Option<bool> {
-        if self.payload.ReceiptRequired_isUsed() == 0 {
-            None
+    pub fn get_receipt_require(&self) -> bool {
+        if self.payload.ReceiptRequired == 0 {
+            false
         } else {
-            Some(if self.payload.ReceiptRequired == 0 {
-                false
-            } else {
-                true
-            })
+            true
         }
     }
 
@@ -129,13 +125,13 @@ impl ChargingStatusResponse {
         }
     }
 
-    pub fn decode(payload: cglue::iso2_ChargingStatusResType) -> Self {
+    pub fn decode(payload: cglue::din_ChargingStatusResType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.ChargingStatusRes = self.payload;
             exi_body.set_ChargingStatusRes_isUsed(1);
             exi_body

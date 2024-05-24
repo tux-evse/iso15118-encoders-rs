@@ -21,20 +21,19 @@ use crate::prelude::v2g::*;
 use std::mem;
 
 // export body type to other crate modules
-pub type Iso2BodyType = cglue::iso2_BodyType;
+pub type DinBodyType = cglue::din_BodyType;
 
-
-pub struct ExiMessageHeader {
-    payload: cglue::iso2_MessageHeaderType,
+pub struct V2gMessageHeader {
+    payload: cglue::din_MessageHeaderType,
 }
 
-impl ExiMessageHeader {
+impl V2gMessageHeader {
     pub fn new(session_id: &[u8]) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_MessageHeaderType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_MessageHeaderType>() };
         payload.SessionID.bytesLen = bytes_to_array(
             session_id,
             &mut payload.SessionID.bytes,
-            cglue::iso2_sessionIDType_BYTES_SIZE,
+            cglue::din_sessionIDType_BYTES_SIZE,
         )?;
         Ok(Self { payload })
     }
@@ -73,32 +72,32 @@ impl ExiMessageHeader {
         session
     }
 
-    pub fn decode(payload: cglue::iso2_MessageHeaderType) -> Self {
+    pub fn decode(payload: cglue::din_MessageHeaderType) -> Self {
         Self {
             payload: payload.clone(),
         }
     }
 
-    pub fn encode(&self) -> cglue::iso2_MessageHeaderType {
+    pub fn encode(&self) -> cglue::din_MessageHeaderType {
         self.payload
     }
 }
 
 pub struct ExiMessageDoc {
-    payload: cglue::iso2_exiDocument,
+    payload: cglue::din_exiDocument,
 }
 
 impl ExiMessageDoc {
     #[track_caller]
     pub fn decode_from_stream(locked: &RawStream) -> Result<ExiMessageDoc, AfbError> {
         let payload = unsafe {
-            let mut buffer = mem::MaybeUninit::<cglue::iso2_exiDocument>::uninit();
-            let status = cglue::decode_iso2_exiDocument(locked.stream, buffer.as_mut_ptr());
+            let mut buffer = mem::MaybeUninit::<cglue::din_exiDocument>::uninit();
+            let status = cglue::decode_din_exiDocument(locked.stream, buffer.as_mut_ptr());
             let exi_raw = buffer.assume_init();
             if status < 0 {
                 return afb_error!(
-                    "iso2-exi-decode",
-                    "fail to decode iso-2 (ExiDocument) from stream"
+                    "din-exi-decode",
+                    "fail to decode din (ExiDocument) from stream"
                 );
             }
             locked.reset();
@@ -124,11 +123,16 @@ impl ExiMessageDoc {
             }
         };
 
-        let status = unsafe { cglue::encode_iso2_exiDocument(locked.stream, &self.payload) };
+        let status = unsafe {
+            cglue::encode_din_exiDocument(
+                locked.stream,
+                &self.payload as *const _ as *mut cglue::din_exiDocument,
+            )
+        };
         if status < 0 {
             return afb_error!(
                 "exi-iso-encode",
-                "fail to encode encode_iso2_exiDocument to exi"
+                "fail to encode encode_din_exiDocument to exi"
             );
         }
 
@@ -146,17 +150,18 @@ impl ExiMessageDoc {
         Ok(())
     }
 
-    pub fn new(header: &ExiMessageHeader, body: &Iso2BodyType) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_exiDocument>() };
+    pub fn new(header: &V2gMessageHeader, body: &DinBodyType) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_exiDocument>() };
         payload.V2G_Message.Header = header.encode();
         payload.V2G_Message.Body = *body;
         Self { payload }
     }
 
-    pub fn get_header(&self) -> ExiMessageHeader {
-        ExiMessageHeader::decode(self.payload.V2G_Message.Header)
+    pub fn get_header(&self) -> V2gMessageHeader {
+        V2gMessageHeader::decode(self.payload.V2G_Message.Header)
     }
 
+    #[track_caller]
     pub fn get_body(&self) -> Result<MessageBody, AfbError> {
         MessageBody::decode(&self.payload.V2G_Message.Body)
     }

@@ -96,7 +96,7 @@ impl IsoController {
                 let message = Iso2Payload::decode_from_stream(lock)?;
                 let mut data_set = self.lock_handle()?;
                 match message.get_payload() {
-                    Iso2MessageBody::SessionSetupReq(request) => {
+                    MessageBody::SessionSetupReq(request) => {
                         data_set.evccid = request.clone();
 
                         afb_log_msg!(
@@ -122,7 +122,7 @@ impl IsoController {
                         Iso2MessageExi::encode_to_stream(lock, &body, &data_set.session_id)?;
                     } //end SessionSetupReq
 
-                    Iso2MessageBody::ServiceDiscoveryReq(request) => {
+                    MessageBody::ServiceDiscoveryReq(request) => {
                         let scope = match request.get_scope() {
                             Some(value) => value.to_string(),
                             None => "no-scope-defined".to_string(),
@@ -143,7 +143,7 @@ impl IsoController {
                         Iso2MessageExi::encode_to_stream(lock, &body, &data_set.session_id)?;
                     } // end DiscoverySvcReq
 
-                    Iso2MessageBody::ServiceDetailReq(request) => {
+                    MessageBody::ServiceDetailReq(request) => {
                         afb_log_msg!(
                             Debug,
                             None,

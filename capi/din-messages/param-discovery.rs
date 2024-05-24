@@ -19,7 +19,7 @@ use super::*;
 use std::mem;
 
 pub struct DcEvChargeParam {
-    payload: cglue::iso2_DC_EVChargeParameterType,
+    payload: cglue::din_DC_EVChargeParameterType,
 }
 
 impl DcEvChargeParam {
@@ -29,7 +29,7 @@ impl DcEvChargeParam {
         max_voltage: &PhysicalValue,
         max_current: &PhysicalValue,
     ) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVChargeParameterType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_DC_EVChargeParameterType>() };
 
         if max_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
@@ -126,20 +126,6 @@ impl DcEvChargeParam {
         }
     }
 
-    pub fn set_departure_time(&mut self, departure_time: u32) -> &mut Self {
-        self.payload.DepartureTime = departure_time;
-        self.payload.set_DepartureTime_isUsed(1);
-        self
-    }
-
-    pub fn get_departure_time(&self) -> Option<u32> {
-        if self.payload.DepartureTime_isUsed() == 0 {
-            None
-        } else {
-            Some(self.payload.DepartureTime)
-        }
-    }
-
     pub fn set_bulk_soc(&mut self, bulk_soc: i8) -> &mut Self {
         self.payload.BulkSOC = bulk_soc;
         self.payload.set_BulkSOC_isUsed(1);
@@ -168,17 +154,17 @@ impl DcEvChargeParam {
         }
     }
 
-    pub fn decode(payload: cglue::iso2_DC_EVChargeParameterType) -> Self {
+    pub fn decode(payload: cglue::din_DC_EVChargeParameterType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_DC_EVChargeParameterType {
+    pub fn encode(&self) -> cglue::din_DC_EVChargeParameterType {
         self.payload
     }
 }
 
 pub struct AcEvChargeParam {
-    payload: cglue::iso2_AC_EVChargeParameterType,
+    payload: cglue::din_AC_EVChargeParameterType,
 }
 
 impl AcEvChargeParam {
@@ -189,7 +175,7 @@ impl AcEvChargeParam {
         max_current: &PhysicalValue,
         min_current: &PhysicalValue,
     ) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_AC_EVChargeParameterType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_AC_EVChargeParameterType>() };
 
         if max_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
@@ -238,100 +224,49 @@ impl AcEvChargeParam {
         PhysicalValue::decode(self.payload.EVMinCurrent)
     }
 
-    pub fn set_departure_time(&mut self, departure_time: u32) -> &mut Self {
-        self.payload.DepartureTime = departure_time;
-        self.payload.set_DepartureTime_isUsed(1);
-        self
-    }
-
-    pub fn get_departure_time(&self) -> Option<u32> {
-        if self.payload.DepartureTime_isUsed() == 0 {
-            None
-        } else {
-            Some(self.payload.DepartureTime)
-        }
-    }
-
-    pub fn decode(payload: cglue::iso2_AC_EVChargeParameterType) -> Self {
+    pub fn decode(payload: cglue::din_AC_EVChargeParameterType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_AC_EVChargeParameterType {
+    pub fn encode(&self) -> cglue::din_AC_EVChargeParameterType {
         self.payload
     }
 }
 
 pub struct EvChargeParam {
-    payload: cglue::iso2_EVChargeParameterType,
+    payload: cglue::din_EVChargeParameterType,
 }
 
 impl EvChargeParam {
     #[track_caller]
-    pub fn new(ac_param: &AcEvChargeParam, dc_param: &DcEvChargeParam) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_EVChargeParameterType>() };
-        payload.AC_EVChargeParameter = ac_param.encode();
-        payload.DC_EVChargeParameter = dc_param.encode();
+    pub fn new(_unused: i32) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_EVChargeParameterType>() };
+        payload._unused = _unused;
         Self { payload }
     }
 
-    pub fn get_ac_param(&self) -> AcEvChargeParam {
-        AcEvChargeParam::decode(self.payload.AC_EVChargeParameter)
-    }
-
-    pub fn get_dc_param(&self) -> DcEvChargeParam {
-        DcEvChargeParam::decode(self.payload.DC_EVChargeParameter)
-    }
-
-    pub fn set_departure_time(&mut self, departure_time: u32) -> &mut Self {
-        self.payload.DepartureTime = departure_time;
-        self.payload.set_DepartureTime_isUsed(1);
-        self
-    }
-
-    pub fn get_departure_time(&self) -> Option<u32> {
-        if self.payload.DepartureTime_isUsed() == 0 {
-            None
-        } else {
-            Some(self.payload.DepartureTime)
-        }
-    }
-
-    pub fn decode(payload: cglue::iso2_EVChargeParameterType) -> Self {
+    pub fn decode(payload: cglue::din_EVChargeParameterType) -> Self {
         Self { payload: payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_EVChargeParameterType {
+    pub fn encode(&self) -> cglue::din_EVChargeParameterType {
         self.payload
     }
 }
 
 pub struct ParamDiscoveryRequest {
-    payload: cglue::iso2_ChargeParameterDiscoveryReqType,
+    payload: cglue::din_ChargeParameterDiscoveryReqType,
 }
 
 impl ParamDiscoveryRequest {
-    pub fn new(transfer: EngyTransfertMode) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_ChargeParameterDiscoveryReqType>() };
-        payload.RequestedEnergyTransferMode = transfer as u32;
+    pub fn new(ev_request_transfer: EvRequestTransfertMode) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_ChargeParameterDiscoveryReqType>() };
+        payload.EVRequestedEnergyTransferType = ev_request_transfer as u32;
         Self { payload }
     }
 
-    pub fn get_transfert_energy_mode(&self) -> EngyTransfertMode {
-        EngyTransfertMode::from_u32(self.payload.RequestedEnergyTransferMode)
-    }
-
-    pub fn set_max_schedule_tuple(&mut self, max_entries: u16) -> &mut Self {
-        self.payload.MaxEntriesSAScheduleTuple = max_entries;
-        self.payload.set_MaxEntriesSAScheduleTuple_isUsed(1);
-        self
-    }
-
-    pub fn get_max_schedule_tuple(&self) -> Option<u16> {
-        if self.payload.MaxEntriesSAScheduleTuple_isUsed() == 0 {
-            None
-        } else {
-            Some(self.payload.MaxEntriesSAScheduleTuple)
-        }
+    pub fn get_transfert_energy_mode(&self) -> EvRequestTransfertMode {
+        EvRequestTransfertMode::from_u32(self.payload.EVRequestedEnergyTransferType)
     }
 
     #[track_caller]
@@ -348,9 +283,9 @@ impl ParamDiscoveryRequest {
             );
         }
 
-        match EngyTransfertMode::from_u32(self.payload.RequestedEnergyTransferMode) {
-            EngyTransfertMode::AcSinglePhase => {}
-            EngyTransfertMode::AcTreePhase => {}
+        match EvRequestTransfertMode::from_u32(self.payload.EVRequestedEnergyTransferType) {
+            EvRequestTransfertMode::AcSinglePhase => {}
+            EvRequestTransfertMode::AcTreePhase => {}
             _ => {
                 return afb_error!(
                     "param-discovery-request",
@@ -384,11 +319,11 @@ impl ParamDiscoveryRequest {
                 "fail set_dc_charge_param because ac already set"
             );
         }
-        match EngyTransfertMode::from_u32(self.payload.RequestedEnergyTransferMode) {
-            EngyTransfertMode::DcBasic => {}
-            EngyTransfertMode::DcExtended => {}
-            EngyTransfertMode::DcCombo => {}
-            EngyTransfertMode::DcUnique => {}
+        match EvRequestTransfertMode::from_u32(self.payload.EVRequestedEnergyTransferType) {
+            EvRequestTransfertMode::DcBasic => {}
+            EvRequestTransfertMode::DcExtended => {}
+            EvRequestTransfertMode::DcCombo => {}
+            EvRequestTransfertMode::DcUnique => {}
             _ => {
                 return afb_error!(
                     "param-discovery-request",
@@ -436,13 +371,13 @@ impl ParamDiscoveryRequest {
         Ok(self)
     }
 
-    pub fn decode(payload: cglue::iso2_ChargeParameterDiscoveryReqType) -> Self {
+    pub fn decode(payload: cglue::din_ChargeParameterDiscoveryReqType) -> Self {
         Self { payload: payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.ChargeParameterDiscoveryReq = self.payload;
             exi_body.set_ChargeParameterDiscoveryReq_isUsed(1);
             exi_body
@@ -452,40 +387,32 @@ impl ParamDiscoveryRequest {
 }
 
 pub struct SalesTariff {
-    payload: cglue::iso2_SalesTariffType,
+    payload: cglue::din_SalesTariffType,
 }
 
 impl SalesTariff {
-    pub fn new(tariff_id: u8) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_SalesTariffType>() };
+    pub fn new(name_id: &str, tariff_id: i16, price_levels: u8) -> Result<Self, AfbError> {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_SalesTariffType>() };
         payload.SalesTariffID = tariff_id;
-        Self { payload }
+        payload.Id.charactersLen = str_to_array(
+            name_id,
+            &mut payload.Id.characters,
+            cglue::din_Id_CHARACTER_SIZE,
+        )?;
+        payload.NumEPriceLevels = price_levels;
+        Ok(Self { payload })
     }
 
-    pub fn get_tariff_id(&self) -> u8 {
+    pub fn get_id(&self) -> Result<&str, AfbError> {
+        array_to_str(&self.payload.Id.characters, self.payload.Id.charactersLen)
+    }
+
+    pub fn get_tariff_id(&self) -> i16 {
         self.payload.SalesTariffID
     }
 
-    #[track_caller]
-    pub fn set_id(&mut self, text: &str) -> Result<&mut Self, AfbError> {
-        self.payload.Id.charactersLen = str_to_array(
-            text,
-            &mut self.payload.Id.characters,
-            cglue::iso2_Id_CHARACTER_SIZE,
-        )?;
-        if self.payload.Id.charactersLen > 0 {
-            self.payload.set_Id_isUsed(1);
-        }
-        Ok(self)
-    }
-
-    pub fn get_id(&self) -> Option<&str> {
-        if self.payload.Id_isUsed() == 0 {
-            None
-        } else {
-            // note if string is not UTF8 compatible return none
-            array_to_str(&self.payload.Id.characters, self.payload.Id.charactersLen).ok()
-        }
+    pub fn get_price_level(&self) -> u8 {
+        self.payload.NumEPriceLevels
     }
 
     #[track_caller]
@@ -493,7 +420,7 @@ impl SalesTariff {
         self.payload.SalesTariffDescription.charactersLen = str_to_array(
             text,
             &mut self.payload.SalesTariffDescription.characters,
-            cglue::iso2_SalesTariffDescription_CHARACTER_SIZE,
+            cglue::din_SalesTariffDescription_CHARACTER_SIZE,
         )?;
         if self.payload.SalesTariffDescription.charactersLen > 0 {
             self.payload.set_SalesTariffDescription_isUsed(1);
@@ -514,25 +441,11 @@ impl SalesTariff {
         }
     }
 
-    pub fn set_tariff_level(&mut self, level: u8) -> &mut Self {
-        self.payload.NumEPriceLevels = level;
-        self.payload.set_NumEPriceLevels_isUsed(1);
-        self
-    }
-
-    pub fn get_tariff_level(&self) -> Option<u8> {
-        if self.payload.SalesTariffDescription_isUsed() == 0 {
-            None
-        } else {
-            Some(self.payload.NumEPriceLevels)
-        }
-    }
-
     #[track_caller]
     pub fn add_entry(&mut self, entry: &SaleTariffEntry) -> Result<&mut Self, AfbError> {
         let idx = self.payload.SalesTariffEntry.arrayLen;
-        if idx == cglue::iso2_SalesTariffEntryType_12_ARRAY_SIZE as u16 {
-            return afb_error!("iso2-tarrif-entry", "fail to add tariff entry (array full)");
+        if idx == cglue::din_SalesTariffEntryType_5_ARRAY_SIZE as u16 {
+            return afb_error!("din-tarrif-entry", "fail to add tariff entry (array full)");
         }
         self.payload.SalesTariffEntry.array[idx as usize] = entry.encode();
         self.payload.SalesTariffEntry.arrayLen = idx + 1;
@@ -549,22 +462,22 @@ impl SalesTariff {
         entries
     }
 
-    pub fn decode(payload: cglue::iso2_SalesTariffType) -> Self {
+    pub fn decode(payload: cglue::din_SalesTariffType) -> Self {
         Self { payload: payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_SalesTariffType {
+    pub fn encode(&self) -> cglue::din_SalesTariffType {
         self.payload
     }
 }
 
 pub struct RelativeTimeInterval {
-    payload: cglue::iso2_RelativeTimeIntervalType,
+    payload: cglue::din_RelativeTimeIntervalType,
 }
 
 impl RelativeTimeInterval {
     pub fn new(start: u32) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_RelativeTimeIntervalType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_RelativeTimeIntervalType>() };
         payload.start = start;
         Self { payload }
     }
@@ -587,31 +500,32 @@ impl RelativeTimeInterval {
         }
     }
 
-    pub fn decode(payload: cglue::iso2_RelativeTimeIntervalType) -> Self {
+    pub fn decode(payload: cglue::din_RelativeTimeIntervalType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_RelativeTimeIntervalType {
+    pub fn encode(&self) -> cglue::din_RelativeTimeIntervalType {
         self.payload
     }
 }
 
 pub struct PMaxScheduleEntry {
-    payload: cglue::iso2_PMaxScheduleEntryType,
+    payload: cglue::din_PMaxScheduleEntryType,
 }
 
 impl PMaxScheduleEntry {
-    pub fn new(pmax: &PhysicalValue) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_PMaxScheduleEntryType>() };
-        payload.PMax = pmax.encode();
+    pub fn new(pmax: i16) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_PMaxScheduleEntryType>() };
+        payload.PMax = pmax;
+
         Self { payload }
     }
 
-    pub fn get_pmax(&self) -> PhysicalValue {
-        PhysicalValue::decode(self.payload.PMax)
+    pub fn get_pmax(&self) -> i16 {
+        self.payload.PMax
     }
 
-     pub fn set_relative_time_interval(
+    pub fn set_relative_time_interval(
         &mut self,
         relative_time: &RelativeTimeInterval,
     ) -> &mut Self {
@@ -636,45 +550,96 @@ impl PMaxScheduleEntry {
         self
     }
 
-    pub fn get_time_interval(&mut self, _unused: i32) -> i32 {
-        if self.payload.TimeInterval_isUsed() != 0 {
-            self.payload.TimeInterval._unused
+    pub fn get_time_interval(&self) -> Option<i32> {
+        if self.payload.TimeInterval_isUsed() == 0 {
+            None
         } else {
-            0
+            Some(self.payload.TimeInterval._unused)
         }
     }
 
-    pub fn decode(payload: cglue::iso2_PMaxScheduleEntryType) -> Self {
+    pub fn decode(payload: cglue::din_PMaxScheduleEntryType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_PMaxScheduleEntryType {
+    pub fn encode(&self) -> cglue::din_PMaxScheduleEntryType {
         self.payload
     }
 }
 
-pub struct CostType {
-    payload: cglue::iso2_CostType,
+pub struct PMaxSchedule {
+    payload: cglue::din_PMaxScheduleType,
 }
 
-impl CostType {
-    pub fn new(kind: CostKind, amount: u32, multiplier: i8) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_CostType>() };
-        payload.costKind = kind as u32;
-        payload.amount = amount;
-        if multiplier != 0 {
-            payload.amountMultiplier = multiplier;
-            payload.set_amountMultiplier_isUsed(1);
-        }
+impl PMaxSchedule {
+    pub fn new(id: i16) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_PMaxScheduleType>() };
+        payload.PMaxScheduleID = id;
         Self { payload }
     }
 
-    pub fn get_kind(&self) -> CostKind {
-        CostKind::from_u32(self.payload.costKind)
+    pub fn get_id(&self) -> i16 {
+        self.payload.PMaxScheduleID
     }
 
-    pub fn get_amount(&self) -> u32 {
-        self.payload.amount
+    pub fn add_entry(&mut self, entry: &PMaxScheduleEntry) -> Result<&mut Self, AfbError> {
+        let idx = self.payload.PMaxScheduleEntry.arrayLen;
+        if idx == cglue::din_PMaxScheduleEntryType_5_ARRAY_SIZE as u16 {
+            return afb_error!("pmax-schedule-add", "entry array full");
+        }
+        self.payload.PMaxScheduleEntry.array[idx as usize] = entry.encode();
+        self.payload.PMaxScheduleEntry.arrayLen = idx + 1;
+
+        Ok(self)
+    }
+
+    pub fn get_entries(&self) -> Vec<PMaxScheduleEntry> {
+        let mut response = Vec::new();
+        for idx in 0..self.payload.PMaxScheduleEntry.arrayLen {
+            response.push(PMaxScheduleEntry::decode(
+                self.payload.PMaxScheduleEntry.array[idx as usize],
+            ))
+        }
+        response
+    }
+
+    pub fn decode(payload: cglue::din_PMaxScheduleType) -> Self {
+        Self { payload }
+    }
+
+    pub fn encode(&self) -> cglue::din_PMaxScheduleType {
+        self.payload
+    }
+}
+
+#[repr(u32)]
+pub enum CostKind {
+    PricePercent = cglue::din_costKindType_din_costKindType_relativePricePercentage,
+    RenewGenPercent = cglue::din_costKindType_din_costKindType_RenewableGenerationPercentage,
+    CarbonEmission = cglue::din_costKindType_din_costKindType_CarbonDioxideEmission,
+}
+impl CostKind {
+    pub fn from_u32(value: u32) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+pub struct CostType {
+    payload: cglue::din_CostType,
+}
+
+impl CostType {
+    pub fn new(kind: CostKind, amount: u32) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_CostType>() };
+        payload.costKind = kind as u32;
+        payload.amount = amount;
+        Self { payload }
+    }
+
+    pub fn set_multiplier(&mut self, multiplier: i8) -> &mut Self {
+        self.payload.amountMultiplier = multiplier;
+        self.payload.set_amountMultiplier_isUsed(1);
+        self
     }
 
     pub fn get_multiplier(&self) -> Option<i8> {
@@ -685,62 +650,58 @@ impl CostType {
         }
     }
 
-    pub fn decode(payload: cglue::iso2_CostType) -> Self {
+    pub fn decode(payload: cglue::din_CostType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_CostType {
+    pub fn encode(&self) -> cglue::din_CostType {
         self.payload
     }
 }
 
 pub struct ConsumptionCost {
-    payload: cglue::iso2_ConsumptionCostType,
+    payload: cglue::din_ConsumptionCostType,
 }
 
 impl ConsumptionCost {
-    pub fn new(start_value: PhysicalValue) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_ConsumptionCostType>() };
-        payload.startValue = start_value.encode();
+    pub fn new(start_value: u32) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_ConsumptionCostType>() };
+        payload.startValue = start_value;
         Self { payload }
     }
 
     #[track_caller]
-    pub fn add_cost(&mut self, cost: CostType) -> Result<&mut Self, AfbError> {
-        let idx = self.payload.Cost.arrayLen;
-        if idx == cglue::iso2_CostType_3_ARRAY_SIZE as u16 {
-            return afb_error!("consumption-add-cost", "Fail to add cost (array full");
-        }
-        self.payload.Cost.array[idx as usize] = cost.encode();
-        self.payload.Cost.arrayLen = idx + 1;
-        Ok(self)
+    pub fn set_cost(&mut self, cost: &CostType) -> &mut Self {
+        self.payload.Cost = cost.encode();
+        self
     }
 
-    pub fn get_costs(&self) -> Vec<CostType> {
-        let mut response = Vec::new();
-        for idx in 0..self.payload.Cost.arrayLen as usize {
-            response.push(CostType::decode(self.payload.Cost.array[idx]));
-        }
-        response
+    pub fn get_costs(&self) -> CostType {
+        CostType::decode(self.payload.Cost)
     }
 
-    pub fn decode(payload: cglue::iso2_ConsumptionCostType) -> Self {
+    pub fn decode(payload: cglue::din_ConsumptionCostType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_ConsumptionCostType {
+    pub fn encode(&self) -> cglue::din_ConsumptionCostType {
         self.payload
     }
 }
 
 pub struct SaleTariffEntry {
-    payload: cglue::iso2_SalesTariffEntryType,
+    payload: cglue::din_SalesTariffEntryType,
 }
 
 impl SaleTariffEntry {
-    pub fn new() -> Self {
-        let payload = unsafe { mem::zeroed::<cglue::iso2_SalesTariffEntryType>() };
+    pub fn new(tariff_level: u8) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_SalesTariffEntryType>() };
+        payload.EPriceLevel = tariff_level;
         Self { payload }
+    }
+
+    pub fn get_price_level(&self) -> u8 {
+        self.payload.EPriceLevel
     }
 
     pub fn set_start(&mut self, start: u32) -> &mut Self {
@@ -754,20 +715,6 @@ impl SaleTariffEntry {
             None
         } else {
             Some(self.payload.RelativeTimeInterval.start)
-        }
-    }
-
-    pub fn set_price_level(&mut self, tariff_level: u8) -> &mut Self {
-        self.payload.set_EPriceLevel_isUsed(1);
-        self.payload.EPriceLevel = tariff_level;
-        self
-    }
-
-    pub fn get_price_level(&self) -> Option<u8> {
-        if self.payload.EPriceLevel_isUsed() == 0 {
-            None
-        } else {
-            Some(self.payload.EPriceLevel)
         }
     }
 
@@ -786,62 +733,41 @@ impl SaleTariffEntry {
     }
 
     #[track_caller]
-    pub fn add_comsumption_cost(&mut self, cost: ConsumptionCost) -> Result<&mut Self, AfbError> {
-        let idx = self.payload.ConsumptionCost.arrayLen;
-        if idx == cglue::iso2_ConsumptionCostType_3_ARRAY_SIZE as u16 {
-            return afb_error!(
-                "sale-consumption-entry",
-                "fail to add consumption cost (array full)"
-            );
-        }
-        self.payload.ConsumptionCost.array[idx as usize] = cost.encode();
-        self.payload.ConsumptionCost.arrayLen = idx + 1;
-
+    pub fn set_comsumption_cost(&mut self, cost: ConsumptionCost) -> Result<&mut Self, AfbError> {
+        self.payload.ConsumptionCost = cost.encode();
         Ok(self)
     }
 
-    pub fn decode(payload: cglue::iso2_SalesTariffEntryType) -> Self {
+    pub fn get_comsumption_cost(&mut self) -> ConsumptionCost {
+        ConsumptionCost::decode(self.payload.ConsumptionCost)
+    }
+
+    pub fn decode(payload: cglue::din_SalesTariffEntryType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_SalesTariffEntryType {
+    pub fn encode(&self) -> cglue::din_SalesTariffEntryType {
         self.payload
     }
 }
 pub struct SasScheduleTuple {
-    payload: cglue::iso2_SAScheduleTupleType,
+    payload: cglue::din_SAScheduleTupleType,
 }
 
 impl SasScheduleTuple {
-    pub fn new(description: u8) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_SAScheduleTupleType>() };
-        payload.SAScheduleTupleID = description;
+    pub fn new(id: i16, pmax_schedule: &PMaxSchedule) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_SAScheduleTupleType>() };
+        payload.SAScheduleTupleID = id;
+        payload.PMaxSchedule = pmax_schedule.encode();
         Self { payload }
     }
 
-    pub fn get_description(&self) -> u8 {
+    pub fn get_id(&self) -> i16 {
         self.payload.SAScheduleTupleID
     }
 
-    #[track_caller]
-    pub fn add_pmax(&mut self, pmax: &PMaxScheduleEntry) -> Result<&mut Self, AfbError> {
-        let idx = self.payload.PMaxSchedule.PMaxScheduleEntry.arrayLen;
-        if idx == cglue::iso2_PMaxScheduleEntryType_12_ARRAY_SIZE as u16 {
-            return afb_error!("iso2-schedule-tuple", "fail to add tuple (array full)");
-        }
-        self.payload.PMaxSchedule.PMaxScheduleEntry.array[idx as usize] = pmax.encode();
-        self.payload.PMaxSchedule.PMaxScheduleEntry.arrayLen = idx + 1;
-        Ok(self)
-    }
-
-    pub fn get_pmaxs(&self) -> Vec<PMaxScheduleEntry> {
-        let mut response = Vec::new();
-        for idx in 0..self.payload.PMaxSchedule.PMaxScheduleEntry.arrayLen as usize {
-            response.push(PMaxScheduleEntry::decode(
-                self.payload.PMaxSchedule.PMaxScheduleEntry.array[idx as usize],
-            ));
-        }
-        response
+    pub fn get_pmax_schedule(&self) -> PMaxSchedule {
+        PMaxSchedule::decode(self.payload.PMaxSchedule)
     }
 
     pub fn set_tariff(&mut self, tariff: &SalesTariff) -> &mut Self {
@@ -858,57 +784,87 @@ impl SasScheduleTuple {
         }
     }
 
-    pub fn decode(payload: cglue::iso2_SAScheduleTupleType) -> Self {
+    pub fn decode(payload: cglue::din_SAScheduleTupleType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_SAScheduleTupleType {
+    pub fn encode(&self) -> cglue::din_SAScheduleTupleType {
         self.payload
     }
 }
 
 pub struct AcEvseChargeParam {
-    payload: cglue::iso2_AC_EVSEChargeParameterType,
+    payload: cglue::din_AC_EVSEChargeParameterType,
 }
 
 impl AcEvseChargeParam {
     pub fn new(
         status: &AcEvseStatusType,
+        max_voltage: &PhysicalValue,
         max_current: &PhysicalValue,
-        nominate_voltage: &PhysicalValue,
-    ) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_AC_EVSEChargeParameterType>() };
+        min_current: &PhysicalValue,
+    ) -> Result<Self, AfbError> {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_AC_EVSEChargeParameterType>() };
 
         payload.AC_EVSEStatus = status.encode();
-        payload.EVSENominalVoltage = nominate_voltage.encode();
+
+        if max_voltage.get_unit() != PhysicalUnit::Volt {
+            return afb_error!(
+                "av-evse-charge-param",
+                "expect: PhysicalUnit::Volt get:{}",
+                max_voltage.get_unit()
+            );
+        }
+        payload.EVSEMaxVoltage = max_voltage.encode();
+
+        if max_current.get_unit() != PhysicalUnit::Ampere {
+            return afb_error!(
+                "av-evse-charge-param",
+                "expect: PhysicalUnit::Ampere get:{}",
+                max_voltage.get_unit()
+            );
+        }
         payload.EVSEMaxCurrent = max_current.encode();
 
-        Self { payload }
+        if min_current.get_unit() != PhysicalUnit::Ampere {
+            return afb_error!(
+                "av-evse-charge-param",
+                "expect: PhysicalUnit::Ampere get:{}",
+                max_voltage.get_unit()
+            );
+        }
+        payload.EVSEMinCurrent = min_current.encode();
+
+        Ok(Self { payload })
     }
 
     pub fn get_status(&self) -> AcEvseStatusType {
         AcEvseStatusType::decode(self.payload.AC_EVSEStatus)
     }
 
-    pub fn get_nominate_voltage(&self) -> PhysicalValue {
-        PhysicalValue::decode(self.payload.EVSENominalVoltage)
+    pub fn get_maximum_voltage(&self) -> PhysicalValue {
+        PhysicalValue::decode(self.payload.EVSEMaxVoltage)
     }
 
     pub fn get_max_current(&self) -> PhysicalValue {
         PhysicalValue::decode(self.payload.EVSEMaxCurrent)
     }
 
-    pub fn decode(payload: cglue::iso2_AC_EVSEChargeParameterType) -> Self {
+    pub fn get_min_current(&self) -> PhysicalValue {
+        PhysicalValue::decode(self.payload.EVSEMinCurrent)
+    }
+
+    pub fn decode(payload: cglue::din_AC_EVSEChargeParameterType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_AC_EVSEChargeParameterType {
+    pub fn encode(&self) -> cglue::din_AC_EVSEChargeParameterType {
         self.payload
     }
 }
 
 pub struct DcEvseChargeParam {
-    payload: cglue::iso2_DC_EVSEChargeParameterType,
+    payload: cglue::din_DC_EVSEChargeParameterType,
 }
 
 impl DcEvseChargeParam {
@@ -922,7 +878,7 @@ impl DcEvseChargeParam {
         max_power: &PhysicalValue,
         current_ripple: &PhysicalValue,
     ) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_DC_EVSEChargeParameterType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_DC_EVSEChargeParameterType>() };
 
         if max_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
@@ -1035,34 +991,28 @@ impl DcEvseChargeParam {
         PhysicalValue::decode(self.payload.EVSEPeakCurrentRipple)
     }
 
-    pub fn decode(payload: cglue::iso2_DC_EVSEChargeParameterType) -> Self {
+    pub fn decode(payload: cglue::din_DC_EVSEChargeParameterType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_DC_EVSEChargeParameterType {
+    pub fn encode(&self) -> cglue::din_DC_EVSEChargeParameterType {
         self.payload
     }
 }
 
 pub struct ParamDiscoveryResponse {
-    // note: EVSEChargeParameter unused
-    payload: cglue::iso2_ChargeParameterDiscoveryResType,
+    payload: cglue::din_ChargeParameterDiscoveryResType,
 }
 
 impl ParamDiscoveryResponse {
-    pub fn new(code: ResponseCode, processing: EvseProcessing) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_ChargeParameterDiscoveryResType>() };
+    pub fn new(code: ResponseCode) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_ChargeParameterDiscoveryResType>() };
         payload.ResponseCode = code as u32;
-        payload.EVSEProcessing = processing as u32;
         Self { payload }
     }
 
     pub fn get_rcode(&self) -> ResponseCode {
         ResponseCode::from_u32(self.payload.ResponseCode)
-    }
-
-    pub fn get_processing(&self) -> EvseProcessing {
-        EvseProcessing::from_u32(self.payload.EVSEProcessing)
     }
 
     pub fn set_schedules(&mut self, unused: i32) -> &mut Self {
@@ -1096,9 +1046,9 @@ impl ParamDiscoveryResponse {
     #[track_caller]
     pub fn add_schedule_tuple(&mut self, tuple: &SasScheduleTuple) -> Result<&mut Self, AfbError> {
         let idx = self.payload.SAScheduleList.SAScheduleTuple.arrayLen;
-        if idx == cglue::iso2_SAScheduleTupleType_3_ARRAY_SIZE as u16 {
+        if idx == cglue::din_SAScheduleTupleType_5_ARRAY_SIZE as u16 {
             return afb_error!(
-                "iso2-param-disco-res",
+                "din-param-disco-res",
                 "fail to add schedule_tuple array full"
             );
         }
@@ -1150,13 +1100,13 @@ impl ParamDiscoveryResponse {
         }
     }
 
-    pub fn decode(payload: cglue::iso2_ChargeParameterDiscoveryResType) -> Self {
+    pub fn decode(payload: cglue::din_ChargeParameterDiscoveryResType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
+            let mut exi_body = mem::zeroed::<DinBodyType>();
             exi_body.__bindgen_anon_1.ChargeParameterDiscoveryRes = self.payload;
             exi_body.set_ChargeParameterDiscoveryRes_isUsed(1);
             exi_body

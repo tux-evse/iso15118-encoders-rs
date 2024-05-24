@@ -21,7 +21,7 @@ use std::mem;
 
 #[derive(Clone, Copy)]
 pub struct PhysicalValue {
-    payload: cglue::iso2_PhysicalValueType,
+    payload: cglue::din_PhysicalValueType,
 }
 impl fmt::Debug for PhysicalValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -38,7 +38,7 @@ impl fmt::Debug for PhysicalValue {
 
 impl PhysicalValue {
     pub fn new(value: i16, multiplier: i8, unit: PhysicalUnit) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_PhysicalValueType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_PhysicalValueType>() };
         payload.Multiplier = multiplier;
         payload.Unit = unit as u32;
         payload.Value = value;
@@ -57,13 +57,13 @@ impl PhysicalValue {
         self.payload.Value
     }
 
-    pub fn decode(payload: cglue::iso2_PhysicalValueType) -> Self {
+    pub fn decode(payload: cglue::din_PhysicalValueType) -> Self {
         Self {
             payload: payload.clone(),
         }
     }
 
-    pub fn encode(&self) -> cglue::iso2_PhysicalValueType {
+    pub fn encode(&self) -> cglue::din_PhysicalValueType {
         self.payload
     }
 }
@@ -78,18 +78,19 @@ pub enum ParamValue {
     PhyValue(PhysicalValue),
 }
 
+
 pub struct ParamTuple {
-    payload: cglue::iso2_ParameterType,
+    payload: cglue::din_ParameterType,
 }
 
 impl ParamTuple {
     pub fn new(prm_name: &str, prm_value: &ParamValue) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_ParameterType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_ParameterType>() };
 
         payload.Name.charactersLen = str_to_array(
             prm_name,
             &mut payload.Name.characters,
-            cglue::iso2_Name_CHARACTER_SIZE,
+            cglue::din_Name_CHARACTER_SIZE,
         )?;
         match prm_value {
             ParamValue::Bool(data) => {
@@ -116,7 +117,7 @@ impl ParamTuple {
                 let len = str_to_array(
                     data.as_str(),
                     &mut payload.stringValue.characters,
-                    cglue::iso2_stringValue_CHARACTER_SIZE,
+                    cglue::din_stringValue_CHARACTER_SIZE,
                 )?;
                 if len > 0 {
                     payload.stringValue.charactersLen = len;
@@ -172,24 +173,26 @@ impl ParamTuple {
         Ok(value)
     }
 
-    pub fn decode(payload: cglue::iso2_ParameterType) -> Self {
+    pub fn decode(payload: cglue::din_ParameterType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_ParameterType {
+    pub fn encode(&self) -> cglue::din_ParameterType {
         self.payload
     }
 }
 
 #[derive(Clone)]
 pub struct ParamSet {
-    payload: cglue::iso2_ParameterSetType,
+    payload: cglue::din_ParameterSetType,
 }
 
 impl ParamSet {
-    pub fn new(param_id: i16) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_ParameterSetType>() };
-        payload.ParameterSetID = param_id;
+    pub fn new(prm_id: i16, param: &ParamTuple) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_ParameterSetType>() };
+        payload.ParameterSetID = prm_id;
+
+        payload.Parameter= param.encode();
         Self { payload }
     }
 
@@ -197,39 +200,15 @@ impl ParamSet {
         self.payload.ParameterSetID
     }
 
-    pub fn add_param(
-        &mut self,
-        param: &ParamTuple,
-    ) -> Result<&mut Self, AfbError> {
-
-        if self.payload.Parameter.arrayLen >= cglue::iso2_ParameterType_16_ARRAY_SIZE as u16 {
-            return afb_error!(
-                "iso2-param-set",
-                "fail to add param (too many params max:{})",
-                cglue::iso2_ParameterType_16_ARRAY_SIZE
-            );
-        }
-
-        let idx = self.payload.Parameter.arrayLen;
-        self.payload.Parameter.array[idx as usize] = param.encode();
-        self.payload.Parameter.arrayLen = idx + 1;
-        Ok(self)
+    pub fn get_param(&self) -> ParamTuple {
+        ParamTuple::decode(self.payload.Parameter)
     }
 
-    pub fn get_params(&self) -> Result<Vec<ParamTuple>, AfbError> {
-        let mut params = Vec::new();
-
-        for idx in 0..self.payload.Parameter.arrayLen {
-            params.push(ParamTuple::decode(self.payload.Parameter.array[idx as usize]));
-        }
-        Ok(params)
-    }
-
-    pub fn decode(payload: cglue::iso2_ParameterSetType) -> Self {
+    pub fn decode(payload: cglue::din_ParameterSetType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_ParameterSetType {
+    pub fn encode(&self) -> cglue::din_ParameterSetType {
         self.payload
     }
 }

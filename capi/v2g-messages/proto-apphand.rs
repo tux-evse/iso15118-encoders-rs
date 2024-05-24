@@ -15,11 +15,11 @@
  * limitations under the License.
  *
  */
+use super::status_enums::*;
 use super::*;
 use std::fmt;
 use std::mem;
 use std::pin::Pin;
-use super::status_enums::*;
 
 pub type V2gAppHandDoc = cglue::appHand_exiDocument;
 
@@ -63,9 +63,7 @@ pub(crate) fn v2gtp20_write_header(
 #[inline]
 #[allow(dead_code)]
 // export cglue function to other create modules
-pub(crate) fn v2gtp20_read_header(
-    stream_data: *mut u8,
-) -> i32 {
+pub(crate) fn v2gtp20_read_header(stream_data: *mut u8) -> i32 {
     unsafe { cglue::V2GTP20_GetPayloadLen(stream_data) }
 }
 
@@ -102,20 +100,11 @@ impl AppHandAppProtocolType {
         Ok(Self { payload })
     }
 
-    pub fn encode(&self) -> cglue::appHand_AppProtocolType {
-        self.payload
-    }
-
-    pub fn decode(payload: cglue::appHand_AppProtocolType) -> Self {
-        Self { payload }
-    }
-
-    pub fn get_name(&self) -> Result<String, AfbError> {
+    pub fn get_name(&self) -> Result<&str, AfbError> {
         let name = array_to_str(
             &self.payload.ProtocolNamespace.characters,
             self.payload.ProtocolNamespace.charactersLen,
-        )?
-        .to_string();
+        )?;
         Ok(name)
     }
 
@@ -133,6 +122,14 @@ impl AppHandAppProtocolType {
 
     pub fn get_priority(&self) -> u8 {
         self.payload.Priority
+    }
+
+    pub fn encode(&self) -> cglue::appHand_AppProtocolType {
+        self.payload
+    }
+
+    pub fn decode(payload: cglue::appHand_AppProtocolType) -> Self {
+        Self { payload }
     }
 }
 
@@ -208,17 +205,14 @@ impl SupportedAppProtocolReq {
         for request in protocols {
             for idx in 0..supported.len() {
                 let provided = &supported[idx];
-                if request.get_name().unwrap().as_str() == provided.name
+                if request.get_name().unwrap() == provided.name
                     && request.get_major() == provided.major
                 {
                     afb_log_msg!(Debug, None, "Protocol:{} selected", provided.name);
                     if request.get_minor() == provided.minor {
                         return Ok((ResponseCode::Success, supported[idx]));
                     } else {
-                        return Ok((
-                            ResponseCode::SuccessWithMinorDeviation,
-                            supported[idx],
-                        ));
+                        return Ok((ResponseCode::SuccessWithMinorDeviation, supported[idx]));
                     }
                 }
             }
@@ -231,7 +225,7 @@ impl fmt::Debug for SupportedAppProtocolReq {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let protocols = self.get_protocols();
         for protocol in protocols {
-            write!(f, "{:?}\n", protocol)?;
+            write!(f, "{:?}", protocol)?;
         }
         Ok(())
     }
@@ -253,6 +247,19 @@ impl SupportedAppProtocolRes {
             Self { payload }
         }
     }
+
+    pub fn get_rcode(&self) -> ResponseCode {
+        ResponseCode::from_u32(self.payload.ResponseCode)
+    }
+
+    pub fn get_schema(&self) -> u8 {
+        if self.payload.SchemaID_isUsed() != 0 {
+            self.payload.SchemaID
+        } else {
+            255
+        }
+    }
+
     pub fn decode(payload: cglue::appHand_supportedAppProtocolRes) -> Self {
         Self { payload }
     }
@@ -267,19 +274,15 @@ impl SupportedAppProtocolRes {
         };
         body
     }
+}
 
-    pub fn get_schema(&self) -> u8 {
-        if self.payload.SchemaID_isUsed() != 0 {
-            self.payload.SchemaID
-        } else {
-            255
-        }
-    }
-
-    pub fn get_rcode(&self) -> ResponseCode {
-        ResponseCode::from_u32(self.payload.ResponseCode)
+impl fmt::Debug for SupportedAppProtocolRes {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "rcode:{} schema:{}", self.get_rcode().to_label(), self.get_schema())?;
+        Ok(())
     }
 }
+
 
 pub enum V2gMsgBody {
     Request(SupportedAppProtocolReq),

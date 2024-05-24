@@ -17,7 +17,7 @@
  */
 
 use crate::prelude::*;
-use iso2_exi::*;
+use din_exi::*;
 
 pub(self) mod cglue {
     #![allow(dead_code)]
@@ -26,15 +26,17 @@ pub(self) mod cglue {
     #![allow(non_snake_case)]
     // force reuse of C bitstream from exi-encoder
     use crate::prelude::exi_bitstream_t;
-    include!("_iso2-capi.rs");
+    include!("_din-capi.rs");
 }
-
 
 #[path = "status-enums.rs"]
 mod status_enums;
 
 #[path = "param-value.rs"]
 mod param_value;
+
+#[path = "contract-authentication.rs"]
+mod contract_authentication;
 
 #[path = "param-discovery.rs"]
 mod param_discovery;
@@ -47,9 +49,6 @@ mod service_discovery;
 
 #[path = "service-detail.rs"]
 mod service_detail;
-
-#[path = "authorization.rs"]
-mod authorization;
 
 #[path = "body-element.rs"]
 mod body_element;
@@ -96,9 +95,7 @@ mod welding_detection;
 #[path = "body-encoder.rs"]
 mod body_encoder;
 
-pub mod iso2_exi {
-    pub use afbv4::prelude::*;
-    pub use super::authorization::*;
+pub mod din_exi {
     pub use super::body_element::*;
     pub use super::body_encoder::*;
     pub use super::cable_check::*;
@@ -106,6 +103,7 @@ pub mod iso2_exi {
     pub use super::certificate_install::*;
     pub use super::certificate_update::*;
     pub use super::charging_status::*;
+    pub use super::contract_authentication::*;
     pub use super::current_demand::*;
     pub use super::metering_receipt::*;
     pub use super::param_discovery::*;
@@ -120,6 +118,7 @@ pub mod iso2_exi {
     pub use super::session_stop::*;
     pub use super::status_enums::*;
     pub use super::welding_detection::*;
+    use afbv4::prelude::*;
 
     pub enum MessageBody {
         SessionSetupReq(SessionSetupRequest),
@@ -128,8 +127,6 @@ pub mod iso2_exi {
         ServiceDiscoveryRes(ServiceDiscoveryResponse),
         ServiceDetailReq(ServiceDetailRequest),
         ServiceDetailRes(ServiceDetailResponse),
-        AuthorizationReq(AuthorizationRequest),
-        AuthorizationRes(AuthorizationResponse),
         BodyElement(BodyBaseElement),
         CableCheckReq(CableCheckRequest),
         CableCheckRes(CableCheckResponse),
@@ -137,6 +134,8 @@ pub mod iso2_exi {
         CertificateInstallRes(CertificateInstallResponse),
         CertificateUpdateReq(CertificateUpdateRequest),
         CertificateUpdateRes(CertificateUpdateResponse),
+        ContractAuthenticationReq(ContractAuthenticationRequest),
+        ContractAuthenticationRes(ContractAuthenticationResponse),
         ParamDiscoveryReq(ParamDiscoveryRequest),
         ParamDiscoveryRes(ParamDiscoveryResponse),
         ChargingStatusReq(ChargingStatusRequest),
@@ -161,6 +160,7 @@ pub mod iso2_exi {
     }
 
     impl MessageBody {
+        #[track_caller]
         pub fn get_tagid(&self) -> MessageTagId {
             match self {
                 MessageBody::SessionSetupReq(_) => MessageTagId::SessionSetupReq,
@@ -169,8 +169,8 @@ pub mod iso2_exi {
                 MessageBody::ServiceDiscoveryRes(_) => MessageTagId::ServiceDiscoveryRes,
                 MessageBody::ServiceDetailReq(_) => MessageTagId::ServiceDetailReq,
                 MessageBody::ServiceDetailRes(_) => MessageTagId::ServiceDetailRes,
-                MessageBody::AuthorizationReq(_) => MessageTagId::AuthorizationReq,
-                MessageBody::AuthorizationRes(_) => MessageTagId::AuthorizationRes,
+                // MessageBody::AuthorizationReq(_) => MessageTagId::AuthorizationReq,
+                // MessageBody::AuthorizationRes(_) => MessageTagId::AuthorizationRes,
                 MessageBody::BodyElement(_) => MessageTagId::BodyElement,
                 MessageBody::CableCheckReq(_) => MessageTagId::CableCheckReq,
                 MessageBody::CableCheckRes(_) => MessageTagId::CableCheckRes,
@@ -178,6 +178,12 @@ pub mod iso2_exi {
                 MessageBody::CertificateInstallRes(_) => MessageTagId::CertificateInstallRes,
                 MessageBody::CertificateUpdateReq(_) => MessageTagId::CertificateUpdateReq,
                 MessageBody::CertificateUpdateRes(_) => MessageTagId::CertificateUpdateRes,
+                MessageBody::ContractAuthenticationReq(_) => {
+                    MessageTagId::ContractAuthenticationReq
+                }
+                MessageBody::ContractAuthenticationRes(_) => {
+                    MessageTagId::ContractAuthenticationRes
+                }
                 MessageBody::ParamDiscoveryReq(_) => MessageTagId::ParamDiscoveryReq,
                 MessageBody::ParamDiscoveryRes(_) => MessageTagId::ParamDiscoveryRes,
                 MessageBody::ChargingStatusReq(_) => MessageTagId::ChargingStatusReq,
@@ -201,7 +207,9 @@ pub mod iso2_exi {
                 MessageBody::Unsupported => MessageTagId::Unsupported,
             }
         }
-        pub fn decode(payload: &super::cglue::iso2_BodyType) -> Result<Self, AfbError> {
+
+        #[track_caller]
+        pub fn decode(payload: &super::cglue::din_BodyType) -> Result<Self, AfbError> {
             // SessionSetup
             let body = if payload.SessionSetupReq_isUsed() == 1 {
                 let body = SessionSetupRequest::decode(unsafe {
@@ -238,17 +246,16 @@ pub mod iso2_exi {
                 });
                 MessageBody::ServiceDetailRes(body)
 
-            // Authorization
-            } else if payload.AuthorizationReq_isUsed() == 1 {
-                let body = AuthorizationRequest::decode(unsafe {
-                    payload.__bindgen_anon_1.AuthorizationReq
-                });
-                MessageBody::AuthorizationReq(body)
-            } else if payload.AuthorizationRes_isUsed() == 1 {
-                let body = AuthorizationResponse::decode(unsafe {
-                    payload.__bindgen_anon_1.AuthorizationRes
-                });
-                MessageBody::AuthorizationRes(body)
+            // // Authorization
+            // } else if payload.AuthorizationReq_isUsed() == 1 {
+            //     let body =
+            //         AuthorizationRequest::decode(unsafe { payload.__bindgen_anon_1.AuthorizationReq });
+            //     MessageBody::AuthorizationReq(body)
+            // } else if payload.AuthorizationRes_isUsed() == 1 {
+            //     let body = AuthorizationResponse::decode(unsafe {
+            //         payload.__bindgen_anon_1.AuthorizationRes
+            //     });
+            //     MessageBody::AuthorizationRes(body)
 
             // ElementBody
             } else if payload.BodyElement_isUsed() == 1 {
@@ -277,7 +284,7 @@ pub mod iso2_exi {
                 });
                 MessageBody::CertificateInstallRes(body)
 
-            // CertifcateUpdate
+            // CertificateUpdate
             } else if payload.CertificateUpdateReq_isUsed() == 1 {
                 let body = CertificateUpdateRequest::decode(unsafe {
                     payload.__bindgen_anon_1.CertificateUpdateReq
@@ -312,6 +319,18 @@ pub mod iso2_exi {
                     payload.__bindgen_anon_1.ChargingStatusRes
                 });
                 MessageBody::ChargingStatusRes(body)
+
+            // Contract Authorization
+            } else if payload.ContractAuthenticationReq_isUsed() == 1 {
+                let body = ContractAuthenticationRequest::decode(unsafe {
+                    payload.__bindgen_anon_1.ContractAuthenticationReq
+                });
+                MessageBody::ContractAuthenticationReq(body)
+            } else if payload.ContractAuthenticationRes_isUsed() == 1 {
+                let body = ContractAuthenticationResponse::decode(unsafe {
+                    payload.__bindgen_anon_1.ContractAuthenticationRes
+                });
+                MessageBody::ContractAuthenticationRes(body)
 
             // CurrentDemand
             } else if payload.CurrentDemandReq_isUsed() == 1 {
@@ -349,15 +368,15 @@ pub mod iso2_exi {
                 });
                 MessageBody::PaymentDetailsRes(body)
 
-            // PaymentServiceSelection
-            } else if payload.PaymentServiceSelectionReq_isUsed() == 1 {
+            // ServicePaymentSelection
+            } else if payload.ServicePaymentSelectionReq_isUsed() == 1 {
                 let body = PaymentSelectionRequest::decode(unsafe {
-                    payload.__bindgen_anon_1.PaymentServiceSelectionReq
+                    payload.__bindgen_anon_1.ServicePaymentSelectionReq
                 });
                 MessageBody::PaymentSelectionReq(body)
-            } else if payload.PaymentServiceSelectionRes_isUsed() == 1 {
+            } else if payload.ServicePaymentSelectionRes_isUsed() == 1 {
                 let body = PaymentSelectionResponse::decode(unsafe {
-                    payload.__bindgen_anon_1.PaymentServiceSelectionRes
+                    payload.__bindgen_anon_1.ServicePaymentSelectionRes
                 });
                 MessageBody::PaymentSelectionRes(body)
 
@@ -405,7 +424,7 @@ pub mod iso2_exi {
                 });
                 MessageBody::WeldingDetectionRes(body)
             } else {
-                return afb_error!("iso2-decode-exi", "unknown/unsupported message");
+                return afb_error!("din-decode-exi", "unknown/unsupported message");
             };
             Ok(body)
         }

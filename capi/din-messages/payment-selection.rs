@@ -20,12 +20,12 @@ use super::*;
 use std::mem;
 
 pub struct SelectedService {
-    payload: cglue::iso2_SelectedServiceType,
+    payload: cglue::din_SelectedServiceType,
 }
 
 impl SelectedService {
     pub fn new(service_id: u16) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_SelectedServiceType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_SelectedServiceType>() };
         payload.ServiceID = service_id;
         Self { payload }
     }
@@ -48,22 +48,22 @@ impl SelectedService {
         }
     }
 
-    pub fn decode(payload: cglue::iso2_SelectedServiceType) -> Self {
+    pub fn decode(payload: cglue::din_SelectedServiceType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> cglue::iso2_SelectedServiceType {
+    pub fn encode(&self) -> cglue::din_SelectedServiceType {
         self.payload
     }
 }
 
 pub struct PaymentSelectionRequest {
-    payload: cglue::iso2_PaymentServiceSelectionReqType,
+    payload: cglue::din_ServicePaymentSelectionReqType,
 }
 
 impl PaymentSelectionRequest {
     pub fn new(payment: PaymentOption) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_PaymentServiceSelectionReqType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_ServicePaymentSelectionReqType>() };
         payload.SelectedPaymentOption = payment as u32;
         Self { payload }
     }
@@ -74,8 +74,8 @@ impl PaymentSelectionRequest {
 
     pub fn add_service(&mut self, service: &SelectedService) -> Result<&mut Self, AfbError> {
         let idx = self.payload.SelectedServiceList.SelectedService.arrayLen;
-        if idx == cglue::iso2_SelectedServiceType_16_ARRAY_SIZE as u16 {
-            return afb_error!("iso2-payment-option", "fail to add service (array full)");
+        if idx == cglue::din_SelectedServiceType_16_ARRAY_SIZE as u16 {
+            return afb_error!("din-payment-option", "fail to add service (array full)");
         }
 
         self.payload.SelectedServiceList.SelectedService.array[idx as usize] = service.encode();
@@ -93,15 +93,15 @@ impl PaymentSelectionRequest {
         response
     }
 
-    pub fn decode(payload: cglue::iso2_PaymentServiceSelectionReqType) -> Self {
+    pub fn decode(payload: cglue::din_ServicePaymentSelectionReqType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
-            exi_body.__bindgen_anon_1.PaymentServiceSelectionReq = self.payload;
-            exi_body.set_PaymentServiceSelectionReq_isUsed(1);
+            let mut exi_body = mem::zeroed::<DinBodyType>();
+            exi_body.__bindgen_anon_1.ServicePaymentSelectionReq = self.payload;
+            exi_body.set_ServicePaymentSelectionReq_isUsed(1);
             exi_body
         };
         body
@@ -109,12 +109,12 @@ impl PaymentSelectionRequest {
 }
 
 pub struct PaymentSelectionResponse {
-    payload: cglue::iso2_PaymentServiceSelectionResType,
+    payload: cglue::din_ServicePaymentSelectionResType,
 }
 
 impl PaymentSelectionResponse {
     pub fn new(code: ResponseCode) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_PaymentServiceSelectionResType>() };
+        let mut payload = unsafe { mem::zeroed::<cglue::din_ServicePaymentSelectionResType>() };
         payload.ResponseCode = code as u32;
         Self { payload }
     }
@@ -123,15 +123,15 @@ impl PaymentSelectionResponse {
         ResponseCode::from_u32(self.payload.ResponseCode)
     }
 
-    pub fn decode(payload: cglue::iso2_PaymentServiceSelectionResType) -> Self {
+    pub fn decode(payload: cglue::din_ServicePaymentSelectionResType) -> Self {
         Self { payload }
     }
 
-    pub fn encode(&self) -> Iso2BodyType {
+    pub fn encode(&self) -> DinBodyType {
         let body = unsafe {
-            let mut exi_body = mem::zeroed::<Iso2BodyType>();
-            exi_body.__bindgen_anon_1.PaymentServiceSelectionRes = self.payload;
-            exi_body.set_PaymentServiceSelectionRes_isUsed(1);
+            let mut exi_body = mem::zeroed::<DinBodyType>();
+            exi_body.__bindgen_anon_1.ServicePaymentSelectionRes = self.payload;
+            exi_body.set_ServicePaymentSelectionRes_isUsed(1);
             exi_body
         };
         body

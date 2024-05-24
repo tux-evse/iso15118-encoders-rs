@@ -19,25 +19,36 @@
 use super::*;
 use std::mem;
 
-#[derive(Clone, Debug)]
-pub struct CertificateData {
-    issuer_name: String,
-    serial_number: i32,
+pub struct IssuerSerialType {
+    payload: cglue::iso2_X509IssuerSerialType,
 }
 
-impl CertificateData {
-    pub fn new(issuer_name: &str, serial_number: i32) -> Self {
-        Self {
-            issuer_name: issuer_name.to_string(),
-            serial_number,
-        }
+impl IssuerSerialType {
+    pub fn new(issuer_name: &str, serial_number: i32) -> Result<Self, AfbError> {
+        let mut payload = unsafe { mem::zeroed::<cglue::iso2_X509IssuerSerialType>() };
+
+        payload.X509IssuerName.charactersLen = str_to_array(
+            issuer_name,
+            &mut payload.X509IssuerName.characters,
+            cglue::iso2_X509IssuerName_CHARACTER_SIZE,
+        )?;
+        payload.X509SerialNumber = serial_number;
+        Ok(Self {payload})
     }
 
-    pub fn get_issuer(&self) -> &str {
-        self.issuer_name.as_str()
+    pub fn get_issuer(&self) -> Result<&str, AfbError> {
+        array_to_str(&self.payload.X509IssuerName.characters, self.payload.X509IssuerName.charactersLen)
     }
     pub fn get_serial(&self) -> i32 {
-        self.serial_number
+        self.payload.X509SerialNumber
+    }
+
+    pub fn decode(payload: cglue::iso2_X509IssuerSerialType) -> Self {
+        Self { payload }
+    }
+
+    pub fn encode(&self) -> cglue::iso2_X509IssuerSerialType {
+        self.payload
     }
 }
 
@@ -46,45 +57,27 @@ pub struct CertificateRootList {
 }
 
 impl CertificateRootList {
-    pub fn new(cert: &CertificateData) -> Result<Self, AfbError> {
+    pub fn new(cert: &IssuerSerialType) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_ListOfRootCertificateIDsType>() };
-        let certificate = &mut payload.RootCertificateID.array[0];
-        certificate.X509IssuerName.charactersLen = str_to_array(
-            cert.get_issuer(),
-            &mut certificate.X509IssuerName.characters,
-            cglue::iso2_X509IssuerName_CHARACTER_SIZE,
-        )?;
-        certificate.X509SerialNumber = cert.get_serial();
+        payload.RootCertificateID.array[0]= cert.encode();
         payload.RootCertificateID.arrayLen = 1;
         Ok(Self { payload })
     }
 
-    pub fn add_cert(&mut self, cert: &CertificateData) -> Result<&mut Self, AfbError> {
+    pub fn add_cert(&mut self, cert: &IssuerSerialType) -> Result<&mut Self, AfbError> {
         let idx = self.payload.RootCertificateID.arrayLen;
         if idx == cglue::iso2_X509IssuerSerialType_5_ARRAY_SIZE as u16 {
             return afb_error!("cert-list-add", "reach max:{} root certificate", idx);
         }
-        let certificate = &mut self.payload.RootCertificateID.array[idx as usize];
-        certificate.X509IssuerName.charactersLen = str_to_array(
-            cert.get_issuer(),
-            &mut certificate.X509IssuerName.characters,
-            cglue::iso2_X509IssuerName_CHARACTER_SIZE,
-        )?;
-        certificate.X509SerialNumber = cert.get_serial();
+        self.payload.RootCertificateID.array[idx as usize]= cert.encode();
         self.payload.RootCertificateID.arrayLen = idx + 1;
         Ok(self)
     }
 
-    pub fn get_certs(&self) -> Result<Vec<CertificateData>, AfbError> {
+    pub fn get_certs(&self) -> Result<Vec<IssuerSerialType>, AfbError> {
         let mut certs = Vec::new();
         for idx in 0..self.payload.RootCertificateID.arrayLen {
-            let data = self.payload.RootCertificateID.array[idx as usize];
-            let issuer = array_to_str(
-                &data.X509IssuerName.characters,
-                data.X509IssuerName.charactersLen,
-            )?;
-            let cert = CertificateData::new(issuer, data.X509SerialNumber);
-            certs.push(cert)
+            certs.push(IssuerSerialType::decode(self.payload.RootCertificateID.array[idx as usize]));
         }
         Ok(certs)
     }

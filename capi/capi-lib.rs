@@ -27,8 +27,13 @@ mod v2g_encoder;
 #[path = "iso2-messages/iso2-lib.rs"]
 mod iso2_encoder;
 
+#[path = "din-messages/din-lib.rs"]
+mod din_encoder;
+
 pub mod prelude {
+    pub use afbv4::prelude::*;
     pub use crate::capi::exi_encoder::*;
     pub use crate::capi::v2g_encoder::*;
     pub use crate::capi::iso2_encoder::*;
+    pub use crate::capi::din_encoder::*;
 }

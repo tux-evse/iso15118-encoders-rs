@@ -20,41 +20,6 @@ use super::*;
 use std::mem;
 
 #[derive(Clone)]
-pub struct ServiceOtherx {
-    id: u16,
-    name: String,
-    scope: String,
-    category: ServiceCategory,
-    isfree: bool,
-}
-impl ServiceOtherx {
-    pub fn new(id: u16, name: &str, scope: &str, category: ServiceCategory, isfree: bool) -> Self {
-        Self {
-            id,
-            name: name.to_string(),
-            scope: scope.to_string(),
-            category,
-            isfree,
-        }
-    }
-
-    pub fn get_id(&self) -> u16 {
-        self.id
-    }
-    pub fn get_name(&self) -> String {
-        self.name.clone()
-    }
-    pub fn get_scope(&self) -> String {
-        self.scope.clone()
-    }
-    pub fn get_isfree(&self) -> bool {
-        self.isfree
-    }
-    pub fn get_category(&self) -> ServiceCategory {
-        self.category.clone()
-    }
-}
-#[derive(Clone)]
 pub struct ServiceOther {
     payload: cglue::iso2_ServiceType,
 }
