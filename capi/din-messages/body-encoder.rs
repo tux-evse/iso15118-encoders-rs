@@ -23,11 +23,11 @@ use std::mem;
 // export body type to other crate modules
 pub type DinBodyType = cglue::din_BodyType;
 
-pub struct V2gMessageHeader {
+pub struct ExiMessageHeader {
     payload: cglue::din_MessageHeaderType,
 }
 
-impl V2gMessageHeader {
+impl ExiMessageHeader {
     pub fn new(session_id: &[u8]) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::din_MessageHeaderType>() };
         payload.SessionID.bytesLen = bytes_to_array(
@@ -150,15 +150,15 @@ impl ExiMessageDoc {
         Ok(())
     }
 
-    pub fn new(header: &V2gMessageHeader, body: &DinBodyType) -> Self {
+    pub fn new(header: &ExiMessageHeader, body: &DinBodyType) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::din_exiDocument>() };
         payload.V2G_Message.Header = header.encode();
         payload.V2G_Message.Body = *body;
         Self { payload }
     }
 
-    pub fn get_header(&self) -> V2gMessageHeader {
-        V2gMessageHeader::decode(self.payload.V2G_Message.Header)
+    pub fn get_header(&self) -> ExiMessageHeader {
+        ExiMessageHeader::decode(self.payload.V2G_Message.Header)
     }
 
     #[track_caller]

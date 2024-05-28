@@ -27,8 +27,6 @@ use super::*;
 #[repr(u32)]
 #[allow(dead_code)]
 pub enum MessageTagId {
-    AppProtocolReq,
-    AppProtocolRes,
     SessionSetupReq,
     SessionSetupRes,
     ServiceDiscoveryReq,
@@ -93,7 +91,6 @@ impl MessageTagId {
 
     pub fn match_res_id(&self) -> Self {
         let response = match self {
-            MessageTagId::AppProtocolReq => MessageTagId::AppProtocolRes,
             MessageTagId::SessionSetupReq => MessageTagId::SessionSetupRes,
             MessageTagId::ServiceDiscoveryReq => MessageTagId::ServiceDiscoveryRes,
             MessageTagId::ServiceDetailReq => MessageTagId::ServiceDetailRes,

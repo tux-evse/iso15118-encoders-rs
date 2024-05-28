@@ -173,3 +173,48 @@ pub const V2G_PROTOCOLS_SUPPORTED_LIST: [&SupportedAppProtocolConf; 3] = [
         minor: 0,
     },
 ];
+
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
+#[repr(u32)]
+#[allow(dead_code)]
+pub enum MessageTagId {
+    AppProtocolReq,
+    AppProtocolRes,
+    Unsupported,
+}
+
+impl MessageTagId {
+    pub fn from_u32(code: u32) -> Self {
+        unsafe { mem::transmute(code) }
+    }
+
+    #[track_caller]
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
+            Ok(value) => Ok(value),
+            Err(error) => {
+                return afb_error!(
+                    "message_tagid_from_label",
+                    "deserialize({}):{}",
+                    json,
+                    error
+                )
+            }
+        }
+    }
+
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
+    }
+
+    pub fn match_res_id(&self) -> Self {
+        let response = match self {
+            MessageTagId::AppProtocolReq => MessageTagId::AppProtocolRes,
+            _ => MessageTagId::Unsupported,
+
+        };
+        response
+
+    }
+}
