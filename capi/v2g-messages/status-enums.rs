@@ -47,7 +47,7 @@ impl PayloadMsgId {
         unsafe { mem::transmute(code) }
     }
 }
-#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr)]
+#[derive(Clone, Copy, PartialEq, Display, EnumString, AsRefStr, Debug)]
 #[strum(serialize_all = "snake_case")]
 #[repr(u8)]
 pub enum ProtocolTagId {
