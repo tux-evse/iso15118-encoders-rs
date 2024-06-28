@@ -2,12 +2,38 @@
 
 Rust encoding/decoding API for Electric Vehicle protocols. Relies on cbexigen iso15118-encoder library for low level EXI binary encoding and GTLS for signature handling.
 
-Dependencies: https://github.com/tux-evse/iso15118-encoders
+Dependencies: <https://github.com/tux-evse/iso15118-encoders>
+
+## optional Dependencies
+
+* afbv4
+
+'afb-librust' should be install on your system.
+
+```bash
+/usr/lib/rustlib/%{_arch}-unknown-linux-gnu/lib/libafbv4.rlib
+```
+
+For development purpose, you can use an external libafbv4.
+To activate it, as a feature, you can execute:
+
+```bash
+cargo add --git https://github.com/redpesk-common/afb-librust afbv4 --optional
+```
+
+And build with the features "afbv4"
+
+```bash
+cargo build --features afbv4
+```
+
+You can also directly edit the file Cargo.toml, and manually change it.
 
 ## Compiling
 
 Install C dependencies:
-```
+
+```bash
 dnf/apt/zypper install gcc cmake make libgnutls-devel
 git clone https://github.com/tux-evse/iso15118-encoders
 mkdir ./iso15118-encoders/build && cd ./iso15118-encoders/build
@@ -15,13 +41,15 @@ cmake .. && make install
 ```
 
 Build without libafb microservice framework
-```
+
+```bash
 dnf/apt/zypper install rust cargo clang
 cargo build --features=afbmock
 ```
 
 Build with libafb microservice framework
-```
+
+```bash
 # install libafb dependencies
 wget -O - https://raw.githubusercontent.com/redpesk-devtools/redpesk-sdk-tools/master/install-redpesk-sdk.sh | bash
 
@@ -30,7 +58,7 @@ cargo build --features=afbv4
 
 ## Testing
 
-```
+```bash
 export LD_LIBRARY_PATH=/usr/local/lib64 # or where ever you install libiso15118.so dependency
 cargo test --features=afbmock --package iso15118 --test test-v2g
 cargo test --features=afbv4 --package iso15118 --test test-v2g
@@ -40,11 +68,9 @@ cargo test --features=afbv4 --package iso15118 --test test-v2g
 
 Currently the only API documentation is provided through the testing suite. Hopefully the API should be easy to integrate with any network stack. While samples leverage Chargebyte exi-stream library to interface with our network TCP/TLS server, the encoders/decoders rely on Rust native '&[u8]' type and do not depend on exi_stream or libafb.
 
-
-
 Example of asynchronous network interface to receive an XML/EXI message. As EXI messages may potentially be up to 8KB, they may arrive in chucks. It is the responsibility of developer to assemble message part before calling decoder.
 
-Following sample used exi-stream to assemble message chunks. It call iso-decoder only when full exi message is store into stream buffer. Snippet of code extracted from https://github.com/tux-evse/iso15118-network-rs
+Following sample used exi-stream to assemble message chunks. It call iso-decoder only when full exi message is store into stream buffer. Snippet of code extracted from <https://github.com/tux-evse/iso15118-network-rs>
 
 ```Rust
 // New TLS client connecting
@@ -103,7 +129,7 @@ fn async_tls_client_cb(
 }
 ```
 
-Example of decoding request, encoding response. Stream input contain a full encoded Request and when returnin stream output contain the full encoded response with body, header, signatures,...
+Example of decoding request, encoding response. Stream input contain a full encoded Request and when returning stream output contain the full encoded response with body, header, signatures,...
 
 ```Rust
 use iso2::*;
@@ -133,9 +159,8 @@ match message.get_payload() {
 ...
 ```
 
-
 Fulup TBD finir param_discovery_response
 
- - set_regul_tolerance
- - set_energy_to_deliver
- - set_peak_current_ripple
+* set_regul_tolerance
+* set_energy_to_deliver
+* set_peak_current_ripple
