@@ -23,7 +23,6 @@ use std::mem;
 // export body type to other crate modules
 pub type Iso2BodyType = cglue::iso2_BodyType;
 
-
 pub struct ExiMessageHeader {
     payload: cglue::iso2_MessageHeaderType,
 }
@@ -53,12 +52,12 @@ impl ExiMessageHeader {
     }
 
     pub fn set_signature_used(&mut self) -> &mut Self {
-        self.payload.set_Notification_isUsed(1);
+        self.payload.set_Signature_isUsed(1);
         self
     }
 
     pub fn get_signature_used(&self) -> bool {
-        if self.payload.Notification_isUsed() == 0 {
+        if self.payload.Signature_isUsed() == 0 {
             false
         } else {
             true
@@ -89,6 +88,13 @@ pub struct ExiMessageDoc {
 }
 
 impl ExiMessageDoc {
+    pub fn new(header: &ExiMessageHeader, body: &Iso2BodyType) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::iso2_exiDocument>() };
+        payload.V2G_Message.Header = header.encode();
+        payload.V2G_Message.Body = *body;
+        Self { payload }
+    }
+
     #[track_caller]
     pub fn decode_from_stream(locked: &RawStream) -> Result<ExiMessageDoc, AfbError> {
         let payload = unsafe {
@@ -146,18 +152,101 @@ impl ExiMessageDoc {
         Ok(())
     }
 
-    pub fn new(header: &ExiMessageHeader, body: &Iso2BodyType) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso2_exiDocument>() };
-        payload.V2G_Message.Header = header.encode();
-        payload.V2G_Message.Body = *body;
-        Self { payload }
-    }
-
     pub fn get_header(&self) -> ExiMessageHeader {
         ExiMessageHeader::decode(self.payload.V2G_Message.Header)
     }
 
     pub fn get_body(&self) -> Result<MessageBody, AfbError> {
         MessageBody::decode(&self.payload.V2G_Message.Body)
+    }
+
+    pub fn get_payload(&self) -> cglue::iso2_exiDocument {
+        self.payload
+    }
+}
+
+impl PkiSignature for ExiMessageDoc {
+    fn pki_sign_check(
+        &self,
+        tagid: iso2_exi::MessageTagId,
+        challenge: &[u8],
+        pub_key: &PkiPubKey,
+    ) -> Result<(), AfbError> {
+        use iso2_exi::*;
+
+        if self.payload.V2G_Message.Header.Signature_isUsed() == 0 {
+            return afb_error!(
+                "iso2-pki-sign-check",
+                "error: tagid:{} no signature set in exi header",
+                tagid.to_label()
+            );
+        }
+
+        let status = match tagid {
+            MessageTagId::AuthorizationReq => unsafe {
+                cglue::iso2_sign_check_authorization_req(
+                    &self.payload,
+                    challenge.as_ptr(),
+                    pub_key.get_payload(),
+                )
+            },
+            MessageTagId::MeteringReceiptReq => unsafe {
+                cglue::iso2_sign_check_metering_receipt_req(&self.payload, pub_key.get_payload())
+            },
+            others => {
+                return afb_error!(
+                    "exi-message-check-signature",
+                    "fail iso2-exi document tagid:{} does not implement signature",
+                    others.to_label()
+                )
+            }
+        };
+
+        if status != 0 {
+            return afb_error!(
+                "iso2-pki-sign-check",
+                "error:{}",
+                PkiErrorStatus::from_u32(status).to_label()
+            );
+        }
+
+        Ok(())
+    }
+
+    fn pki_sign_sign(
+        &mut self,
+        tagid: iso2_exi::MessageTagId,
+        priv_key: &PkiPrivKey,
+    ) -> Result<(), AfbError> {
+        use iso2_exi::*;
+
+        let status = match tagid {
+            MessageTagId::AuthorizationReq => unsafe {
+                cglue::iso2_sign_sign_authorization_req(&mut self.payload, priv_key.get_payload())
+            },
+            MessageTagId::MeteringReceiptReq => unsafe {
+                cglue::iso2_sign_sign_metering_receipt_req(
+                    &mut self.payload,
+                    priv_key.get_payload(),
+                )
+            },
+            others => {
+                return afb_error!(
+                    "exi-message-check-signature",
+                    "fail iso2-exi document tagid:{} does not implement signature",
+                    others.to_label()
+                )
+            }
+        };
+
+        if status != 0 {
+            return afb_error!(
+                "iso2-pki-sign-sign",
+                "error:{}",
+                PkiErrorStatus::from_u32(status).to_label()
+            );
+        }
+
+        Ok(())
     }
 }

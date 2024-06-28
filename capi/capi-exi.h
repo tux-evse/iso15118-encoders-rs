@@ -21,4 +21,6 @@
 
 #include <iso15118/exi_error_codes.h>
 #include <iso15118/exi_bitstream.h>
+#include <iso15118/isox_sign.h>
+
 const size_t EXI_MAX_DOCUMENT_SIZE= 8192;

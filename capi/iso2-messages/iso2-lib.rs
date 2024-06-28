@@ -26,6 +26,7 @@ pub(self) mod cglue {
     #![allow(non_snake_case)]
     // force reuse of C bitstream from exi-encoder
     use crate::prelude::exi_bitstream_t;
+    use crate::prelude::cglue::{gnutls_pubkey_t, gnutls_privkey_t, gnutls_x509_trust_list_t, gnutls_x509_crt_t};
     include!("_iso2-capi.rs");
 }
 

@@ -25,6 +25,9 @@ use std::mem;
 use std::os::raw;
 use std::pin::Pin;
 use std::str;
+use std::str::FromStr;
+use strum_macros::{AsRefStr, Display, EnumString};
+
 
 mod cglue {
     #![allow(dead_code)]
@@ -32,6 +35,67 @@ mod cglue {
     #![allow(non_camel_case_types)]
     #![allow(non_snake_case)]
     include!("_exi-capi.rs");
+}
+
+#[repr(u32)]
+#[derive(Clone, Copy, Debug, PartialEq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
+#[allow(non_camel_case_types)]
+pub enum PkiErrorStatus {
+    MAKE_DIGEST = cglue::isox_sign_status_t_isox_sign_ERROR_MAKE_DIGEST,
+    ERROR_DIGEST = cglue::isox_sign_status_t_isox_sign_ERROR_DIGEST,
+    DIGEST_LENGTH = cglue::isox_sign_status_t_isox_sign_ERROR_DIGEST_LENGTH,
+    DIGEST_MISMATCH = cglue::isox_sign_status_t_isox_sign_ERROR_DIGEST_MISMATCH,
+    NOT_SINGLE_SIGNED = cglue::isox_sign_status_t_isox_sign_ERROR_NOT_SINGLE_SIGNED,
+    NOT_AUTHORIZATION_REQ = cglue::isox_sign_status_t_isox_sign_ERROR_NOT_AUTHORIZATION_REQ,
+    NOT_METERING_RECEIPT_REQ = cglue::isox_sign_status_t_isox_sign_ERROR_NOT_METERING_RECEIPT_REQ,
+    NOT_PAYEMENT_DETAIL_REQ = cglue::isox_sign_status_t_isox_sign_ERROR_NOT_PAYEMENT_DETAIL_REQ,
+    NOT_METERING_CONFIRMATION_REQ =
+        cglue::isox_sign_status_t_isox_sign_ERROR_NOT_METERING_CONFIRMATION_REQ,
+    NOT_PNC_AUTHORIZATION_REQ = cglue::isox_sign_status_t_isox_sign_ERROR_NOT_PNC_AUTHORIZATION_REQ,
+    NO_SIGNATURE = cglue::isox_sign_status_t_isox_sign_ERROR_NO_SIGNATURE,
+    NO_CHALLENGE = cglue::isox_sign_status_t_isox_sign_ERROR_NO_CHALLENGE,
+    CHALLENGE_SIZE = cglue::isox_sign_status_t_isox_sign_ERROR_CHALLENGE_SIZE,
+    CHALLENGE_MISMATCH = cglue::isox_sign_status_t_isox_sign_ERROR_CHALLENGE_MISMATCH,
+    BAD_SIGNATURE = cglue::isox_sign_status_t_isox_sign_ERROR_BAD_SIGNATURE,
+    CERT_IMPORT = cglue::isox_sign_status_t_isox_sign_ERROR_CERT_IMPORT,
+    SUBCERT_IMPORT = cglue::isox_sign_status_t_isox_sign_ERROR_SUBCERT_IMPORT,
+    ROOTCERT_OPEN = cglue::isox_sign_status_t_isox_sign_ERROR_ROOTCERT_OPEN,
+    ROOTCERT_READ = cglue::isox_sign_status_t_isox_sign_ERROR_ROOTCERT_READ,
+    ROOTCERT_OVERFLOW = cglue::isox_sign_status_t_isox_sign_ERROR_ROOTCERT_OVERFLOW,
+    ROOTCERT_IMPORT = cglue::isox_sign_status_t_isox_sign_ERROR_ROOTCERT_IMPORT,
+    SUBJECT_CN = cglue::isox_sign_status_t_isox_sign_ERROR_SUBJECT_CN,
+    EMAID_MISMATCH = cglue::isox_sign_status_t_isox_sign_ERROR_EMAID_MISMATCH,
+    TOO_MANY_CERT = cglue::isox_sign_status_t_isox_sign_ERROR_TOO_MANY_CERT,
+    INVALID_CERT = cglue::isox_sign_status_t_isox_sign_ERROR_INVALID_CERT,
+    SIGN_FAILED = cglue::isox_sign_status_t_isox_sign_ERROR_SIGN_FAILED,
+    ERROR_INTERNAL1 = cglue::isox_sign_status_t_isox_sign_ERROR_INTERNAL1,
+    ERROR_INTERNAL2 = cglue::isox_sign_status_t_isox_sign_ERROR_INTERNAL2,
+    ERROR_INTERNAL3 = cglue::isox_sign_status_t_isox_sign_ERROR_INTERNAL3,
+    ERROR_INTERNAL4 = cglue::isox_sign_status_t_isox_sign_ERROR_INTERNAL4,
+    ERROR_INTERNAL5 = cglue::isox_sign_status_t_isox_sign_ERROR_INTERNAL5,
+    ERROR_INTERNAL6 = cglue::isox_sign_status_t_isox_sign_ERROR_INTERNAL6,
+    ERROR_INTERNAL7 = cglue::isox_sign_status_t_isox_sign_ERROR_INTERNAL7,
+    ERROR_INTERNAL8 = cglue::isox_sign_status_t_isox_sign_ERROR_INTERNAL8,
+    ERROR_INTERNAL9 = cglue::isox_sign_status_t_isox_sign_ERROR_INTERNAL9,
+}
+
+impl PkiErrorStatus {
+    pub fn from_u32(value: u32) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+
+    #[track_caller]
+    pub fn from_label(json: &str) -> Result<Self, AfbError> {
+        match Self::from_str(json) {
+            Ok(value) => Ok(value),
+            Err(error) => return afb_error!("pki-error-status", "deserialize({}):{}", json, error),
+        }
+    }
+
+    pub fn to_label(&self) -> &str {
+        self.as_ref()
+    }
 }
 
 // reexport some C type in order to share them without all capi modules
@@ -121,11 +185,12 @@ pub fn byte_equal_array(src: &[u8], data: &[u8], len: u16) -> bool {
     return true;
 }
 
+
 pub fn array_to_str<'a>(data: &'a [raw::c_char], len: u16) -> Result<&'a str, AfbError> {
     let slice = unsafe { slice::from_raw_parts(data.as_ptr() as *const u8, len as usize) };
     let text = match str::from_utf8(slice) {
         Ok(value) => value,
-        Err(_) => return afb_error!("array_str", "not a valid UTF string"),
+        Err(_) => return afb_error!("array_to_str", "not a valid UTF string"),
     };
     Ok(text)
 }

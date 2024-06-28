@@ -4,6 +4,7 @@
         "cglue",
         "isfree",
         "psets",
-        "rcode"
+        "rcode",
+        "tagid"
     ]
 }

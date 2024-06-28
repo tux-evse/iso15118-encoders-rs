@@ -165,4 +165,8 @@ impl ExiMessageDoc {
     pub fn get_body(&self) -> Result<MessageBody, AfbError> {
         MessageBody::decode(&self.payload.V2G_Message.Body)
     }
+
+    pub fn get_payload(&self) -> cglue::din_exiDocument {
+        self.payload
+    }
 }

@@ -400,6 +400,9 @@ fn authorization_request() -> Result<(), AfbError> {
         _ => panic!("Unexpected message type"),
     };
 
+    // check if authentication is signed
+    let header= message.get_header();
+
     // Decoding API
     let id_out = payload.get_id().unwrap();
     let challenge_out = payload.get_challenge().unwrap();

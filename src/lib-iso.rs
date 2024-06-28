@@ -38,10 +38,14 @@ mod capi;
 #[path = "exi-stream.rs"]
 mod stream;
 
+#[path = "pki-sign.rs"]
+mod pki_sign;
+
 // Include either afbV4 or mock for log/error handling
 pub mod prelude {
     pub use crate::capi::prelude::*;
     pub use crate::stream::*;
+    pub use crate::pki_sign::*;
     #[cfg(feature = "afbmock")]
     pub use crate::afbv4::*;
     #[cfg(not(feature = "afbmock"))]

@@ -17,6 +17,8 @@
  */
 
 // cargo test --package iso15118 --test test-v2g
+#[path = "pki-sign/capi-pki.rs"]
+mod pki_sign;
 
 #[path = "exi-encoder.rs"]
 mod exi_encoder;
@@ -36,4 +38,5 @@ pub mod prelude {
     pub use crate::capi::v2g_encoder::*;
     pub use crate::capi::iso2_encoder::*;
     pub use crate::capi::din_encoder::*;
+    pub use crate::capi::pki_sign::*;
 }

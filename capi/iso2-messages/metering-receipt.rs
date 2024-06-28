@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-use std::mem;
 use super::*;
+use std::mem;
 
 pub struct MeterInfo {
     payload: cglue::iso2_MeterInfoType,
@@ -165,7 +165,7 @@ impl MeteringReceiptRequest {
 
     pub fn set_tupple_id(&mut self, tuple_id: u8) -> &mut Self {
         self.payload.set_SAScheduleTupleID_isUsed(1);
-        self.payload.SAScheduleTupleID= tuple_id;
+        self.payload.SAScheduleTupleID = tuple_id;
         self
     }
 
@@ -189,6 +189,27 @@ impl MeteringReceiptRequest {
             exi_body
         };
         body
+    }
+
+    pub fn sign_check(
+        &self,
+        header: &ExiMessageHeader,
+        pub_key: &PkiPubKey,
+    ) -> Result<(), AfbError> {
+        let mut exi_doc = unsafe { mem::zeroed::<cglue::iso2_exiDocument>() };
+        exi_doc.V2G_Message.Header = header.encode();
+        exi_doc.V2G_Message.Body = self.encode();
+
+        let status =
+            unsafe { cglue::iso2_sign_check_metering_receipt_req(&exi_doc, pub_key.get_payload()) };
+        if status != 0 {
+            return afb_error!(
+                "iso2-metering-receipe-sign",
+                "fail to check signature error:{}",
+                PkiErrorStatus::from_u32(status).to_label()
+            );
+        }
+        Ok(())
     }
 }
 
@@ -214,11 +235,11 @@ impl MeteringReceiptResponse {
         self
     }
 
-    pub fn get_ac_evse_status(&self) -> Option<AcEvseStatusType>  {
-        if  self.payload.AC_EVSEStatus_isUsed() == 0 {
+    pub fn get_ac_evse_status(&self) -> Option<AcEvseStatusType> {
+        if self.payload.AC_EVSEStatus_isUsed() == 0 {
             None
         } else {
-            Some(AcEvseStatusType::decode (self.payload.AC_EVSEStatus))
+            Some(AcEvseStatusType::decode(self.payload.AC_EVSEStatus))
         }
     }
 
@@ -228,11 +249,11 @@ impl MeteringReceiptResponse {
         self
     }
 
-    pub fn get_dc_evse_status(&self) -> Option<DcEvseStatusType>  {
-        if  self.payload.DC_EVSEStatus_isUsed() == 0 {
+    pub fn get_dc_evse_status(&self) -> Option<DcEvseStatusType> {
+        if self.payload.DC_EVSEStatus_isUsed() == 0 {
             None
         } else {
-            Some(DcEvseStatusType::decode (self.payload.DC_EVSEStatus))
+            Some(DcEvseStatusType::decode(self.payload.DC_EVSEStatus))
         }
     }
 
@@ -242,11 +263,11 @@ impl MeteringReceiptResponse {
         self
     }
 
-    pub fn get_evse_status(&self) -> Option<EvseStatusType>  {
-        if  self.payload.EVSEStatus_isUsed() == 0 {
+    pub fn get_evse_status(&self) -> Option<EvseStatusType> {
+        if self.payload.EVSEStatus_isUsed() == 0 {
             None
         } else {
-            Some(EvseStatusType::decode (self.payload.EVSEStatus))
+            Some(EvseStatusType::decode(self.payload.EVSEStatus))
         }
     }
 
