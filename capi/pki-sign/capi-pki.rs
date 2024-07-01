@@ -591,8 +591,9 @@ impl GnuPkiConfig {
         if status < 0 {
             return afb_error!(
                 "gpki-credentials-set-keys",
-                "invalid pki key key:{} error:{}",
+                "invalid pki key:{} cert:{} error:{}",
                 key_path,
+                cert_path,
                 gtls_perror(status)
             );
         }
