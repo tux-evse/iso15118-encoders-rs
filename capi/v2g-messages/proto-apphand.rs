@@ -46,7 +46,9 @@ pub fn v2gtp_get_payload_id(buffer: Pin<&[u8]>) -> PayloadMsgId {
 }
 
 pub fn v2gtp_get_payload_len(buffer: Pin<&[u8]>) -> i32 {
-    let payload_len = unsafe { cglue::V2GTP20_GetPayloadLen(buffer.as_ptr()) };
+    let payload_len = unsafe {
+        cglue::V2GTP20_GetPayloadLen(buffer.as_ptr()) + cglue::V2GTP_HEADER_LENGTH as i32
+    };
     payload_len
 }
 
@@ -278,11 +280,15 @@ impl SupportedAppProtocolRes {
 
 impl fmt::Debug for SupportedAppProtocolRes {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "rcode:{} schema:{}", self.get_rcode().to_label(), self.get_schema())?;
+        write!(
+            f,
+            "rcode:{} schema:{}",
+            self.get_rcode().to_label(),
+            self.get_schema()
+        )?;
         Ok(())
     }
 }
-
 
 pub enum V2gMsgBody {
     Request(SupportedAppProtocolReq),
