@@ -96,7 +96,7 @@ impl ExiMessageDoc {
     }
 
     #[track_caller]
-    pub fn decode_from_stream(locked: &RawStream) -> Result<ExiMessageDoc, AfbError> {
+    pub fn decode_from_stream(locked: &mut RawStream) -> Result<ExiMessageDoc, AfbError> {
         let payload = unsafe {
             let mut buffer = mem::MaybeUninit::<cglue::iso2_exiDocument>::uninit();
             let status = cglue::decode_iso2_exiDocument(locked.stream, buffer.as_mut_ptr());

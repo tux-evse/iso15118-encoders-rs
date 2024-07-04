@@ -118,7 +118,7 @@ impl ExiStream {
         (*lock).drop()
     }
 
-    pub fn reset(&self, lock: &MutexGuard<RawStream>) {
+    pub fn reset(&self, lock: &mut MutexGuard<RawStream>) {
         lock.reset()
     }
 

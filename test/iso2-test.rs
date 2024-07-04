@@ -36,6 +36,10 @@ pub fn decode_from_stream(_funcname: &str, stream: ExiStream) -> Result<ExiMessa
 // cargo test --package iso15118 --test test-v2g --  test_iso2::enum_rename --exact --nocapture
 fn enum_rename() {
     println!(
+        "MessageTagId:SessionSetupRes= {}",
+        MessageTagId::from_label("session_setup_res").unwrap()
+    );
+    println!(
         "MessageTagId:SessionSetupReq= {}",
         MessageTagId::SessionSetupReq.to_label()
     );
@@ -401,7 +405,7 @@ fn authorization_request() -> Result<(), AfbError> {
     };
 
     // check if authentication is signed
-    let header= message.get_header();
+    let _header= message.get_header();
 
     // Decoding API
     let id_out = payload.get_id().unwrap();

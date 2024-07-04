@@ -210,6 +210,8 @@ pub struct RawStream {
     pub buffer: Pin<Box<[u8; cglue::EXI_MAX_DOCUMENT_SIZE]>>,
     pub stream: *mut cglue::exi_bitstream_t,
     layout: alloc::Layout,
+    pub current_len: u32,
+    pub expected_len: u32,
 }
 
 #[no_mangle]
@@ -237,6 +239,8 @@ impl RawStream {
             layout,
             buffer: Box::pin([0; cglue::EXI_MAX_DOCUMENT_SIZE]),
             stream: handle,
+            current_len: 0,
+            expected_len: 0,
         };
 
         // create an empty exi doc
@@ -283,9 +287,11 @@ impl RawStream {
             stream.data_size= size as usize
         }
     }
-    pub fn reset(&self) {
+    pub fn reset(&mut self) {
         // reset everything including data_count
         unsafe {
+            self.expected_len = 0;
+            self.current_len = 0;
             let stream = self.stream.as_mut().expect("stream.reset valid handle");
             stream.data_size = cglue::EXI_MAX_DOCUMENT_SIZE;
             stream.byte_pos = 0;

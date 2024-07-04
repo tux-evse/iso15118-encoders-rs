@@ -15,7 +15,7 @@ fn main() {
     // invalidate the built crate whenever the wrapper changes
     println!("cargo:rustc-link-search=/usr/local/lib64");
     println!("cargo:rustc-link-arg=-liso15118");
-    // println!("cargo:rustc-link-arg=-lgnutls");
+    println!("cargo:rustc-link-arg=-lgnutls");
 
     if let Ok(value) = env::var("CARGO_TARGET_DIR") {
         if let Ok(profile) = env::var("PROFILE") {
