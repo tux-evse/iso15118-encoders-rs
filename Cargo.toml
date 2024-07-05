@@ -29,10 +29,10 @@ libiso15118= "1.0"
 [lib]
 name = "iso15118"
 crate-type = ["lib"]
-path = "src/lib-iso.rs"
+path = "src/@lib-iso.rs"
 
 [[test]]
 name= "test-v2g"
-path = "test/lib-test.rs"
+path = "test/@lib-test.rs"
 iso15118= {path ="../iso-15118"}
 

@@ -32,7 +32,7 @@ extern crate afbv4;
 #[path = "../afb-mock/error-log.rs"]
 mod afbv4;
 
-#[path = "../capi/capi-lib.rs"]
+#[path = "../capi/@capi-lib.rs"]
 mod capi;
 
 #[path = "exi-stream.rs"]

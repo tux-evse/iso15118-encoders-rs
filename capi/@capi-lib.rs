@@ -23,13 +23,13 @@ mod pki_sign;
 #[path = "exi-encoder.rs"]
 mod exi_encoder;
 
-#[path = "v2g-messages/v2g-lib.rs"]
+#[path = "v2g-messages/@v2g-lib.rs"]
 mod v2g_encoder;
 
-#[path = "iso2-messages/iso2-lib.rs"]
+#[path = "iso2-messages/@iso2-lib.rs"]
 mod iso2_encoder;
 
-#[path = "din-messages/din-lib.rs"]
+#[path = "din-messages/@din-lib.rs"]
 mod din_encoder;
 
 pub mod prelude {
