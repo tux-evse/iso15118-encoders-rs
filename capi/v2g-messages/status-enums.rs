@@ -56,6 +56,11 @@ pub enum ProtocolTagId {
     Din,
     Unknown=255,
 }
+
+const PROTO_DIN:&str = "urn:din:70121:2012:MsgDef";
+const PROTO_ISO2:&str =  "urn:iso:15118:2:2013:MsgDef";
+const PROTO_ISO20:&str = "urn:iso:15118:20:2018:MsgDef";
+
 impl ProtocolTagId {
     pub fn from_u8(code: u8) -> Self {
         unsafe { mem::transmute(code) }
@@ -64,9 +69,9 @@ impl ProtocolTagId {
     #[track_caller]
     pub fn from_urn(urn: &str) -> Result<Self, AfbError> {
         let proto= match urn {
-           "urn:din:70121:2012:MsgDef" =>  ProtocolTagId::Din,
-           "urn:iso:15118:2:2013:MsgDef"=> ProtocolTagId::Iso2,
-           "urn:iso:15118:20:2018:MsgDef"=> ProtocolTagId::Iso20,
+           PROTO_DIN => ProtocolTagId::Din,
+           PROTO_ISO2=> ProtocolTagId::Iso2,
+           PROTO_ISO20=> ProtocolTagId::Iso20,
            _ => return afb_error!("get-from-urn", "fail deserialize:{}", urn)
         };
 
@@ -83,6 +88,19 @@ impl ProtocolTagId {
 
     pub fn to_label(&self) -> &str{
         self.as_ref()
+    }
+
+    pub fn to_jsonc(&self) -> Result<JsoncObj, AfbError> {
+        let proto= match self {
+          ProtocolTagId::Din => PROTO_DIN,
+          ProtocolTagId::Iso2 => PROTO_ISO2,
+          ProtocolTagId::Iso20 => PROTO_ISO20,
+          _ => return afb_error!("to_jsonc", "invalid protocol")
+        };
+        let jsonc = JsoncObj::new();
+        jsonc.add("id", self.to_label())?;
+        jsonc.add("urn", proto)?;
+        Ok(jsonc)
     }
 }
 
