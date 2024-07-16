@@ -89,7 +89,7 @@ impl MessageTagId {
         self.as_ref()
     }
 
-    pub fn match_res_id(&self) -> Self {
+    pub fn match_resid(&self) -> Self {
         let response = match self {
             MessageTagId::SessionSetupReq => MessageTagId::SessionSetupRes,
             MessageTagId::ServiceDiscoveryReq => MessageTagId::ServiceDiscoveryRes,
@@ -204,7 +204,7 @@ impl ResponseCode {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => {
-                return afb_error!("response-code-from-label", "fail deserialize:{}", error)
+                return afb_error!("response-code-from-label", "fail deserialize:{} {}", json, error)
             }
         }
     }
@@ -233,7 +233,7 @@ impl ServiceCategory {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => {
-                return afb_error!("service-category-from_label", "fail deserialize:{}", error)
+                return afb_error!("service-category-from_label", "fail deserialize:{} {}", json, error)
             }
         }
     }
@@ -261,7 +261,7 @@ impl PaymentOption {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => {
-                return afb_error!("payment-option-from-label", "fail deserialize:{}", error)
+                return afb_error!("payment-option-from-label", "fail deserialize:{} {}", json, error)
             }
         }
     }
@@ -289,7 +289,7 @@ impl ChargingSessionType {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => {
-                return afb_error!("charging-session-from-label", "fail deserialize:{}", error)
+                return afb_error!("charging-session-from-label", "fail deserialize:{} {}", json, error)
             }
         }
     }
@@ -317,7 +317,7 @@ impl ChargeProgress {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => {
-                return afb_error!("charge-progress-from-label", "fail deserialize:{}", error)
+                return afb_error!("charge-progress-from-label", "fail deserialize:{} {}", json, error)
             }
         }
     }
@@ -345,7 +345,7 @@ impl EvseProcessing {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => {
-                return afb_error!("evse-processing-from-label", "fail deserialize:{}", error)
+                return afb_error!("evse-processing-from-label", "fail deserialize:{} {}", json, error)
             }
         }
     }
@@ -388,7 +388,7 @@ impl DcEvErrorCode {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => {
-                return afb_error!("dc-error-code-from-label", "fail deserialize:{}", error)
+                return afb_error!("dc-error-code-from-label", "fail deserialize:{} {}", json, error)
             }
         }
     }
@@ -454,7 +454,7 @@ impl EvseNotification {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => {
-                return afb_error!("evse-notification-from-label", "fail deserialize:{}", error)
+                return afb_error!("evse-notification-from-label", "fail deserialize:{} {}", json, error)
             }
         }
     }
@@ -484,7 +484,7 @@ impl IsolationStatus {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => {
-                return afb_error!("isolation-status-from-label", "fail deserialize:{}", error)
+                return afb_error!("isolation-status-from-label", "fail deserialize:{} {}", json, error)
             }
         }
     }
@@ -561,7 +561,7 @@ impl PhysicalUnit {
         match Self::from_str(json) {
             Ok(value) => Ok(value),
             Err(error) => {
-                return afb_error!("physical-unit-from-label", "fail deserialize:{}", error)
+                return afb_error!("physical-unit-from-label", "fail deserialize:{} {}", json, error)
             }
         }
     }

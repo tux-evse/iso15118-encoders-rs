@@ -111,7 +111,7 @@ impl SessionSetupResponse {
         ResponseCode::from_u32(self.payload.ResponseCode)
     }
 
-    pub fn set_time_stamp(&mut self, timestamp: i64) -> &mut Self {
+    pub fn set_timestamp(&mut self, timestamp: i64) -> &mut Self {
         self.payload.EVSETimeStamp= timestamp;
         self.payload.set_EVSETimeStamp_isUsed(1);
         self

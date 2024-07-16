@@ -34,7 +34,7 @@ impl DcEvChargeParam {
         if max_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "dc-ev-charge-param",
-                "expect: PhysicalUnit::Ampere get:{}",
+                "max_current expect: PhysicalUnit::Ampere get:{}",
                 max_current.get_unit()
             );
         }
@@ -42,7 +42,7 @@ impl DcEvChargeParam {
         if max_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "dc-ev-charge-param",
-                "expect: PhysicalUnit::Volt get:{}",
+                "max_voltage expect: PhysicalUnit::Volt get:{}",
                 max_voltage.get_unit()
             );
         }
@@ -70,7 +70,7 @@ impl DcEvChargeParam {
         if power_limit.get_unit() != PhysicalUnit::Watt {
             return afb_error!(
                 "dc-ev-charge-param",
-                "expect: PhysicalUnit::Watt get:{}",
+                "max_power expect: PhysicalUnit::Watt get:{}",
                 power_limit.get_unit()
             );
         }
@@ -95,7 +95,7 @@ impl DcEvChargeParam {
         if power_limit.get_unit() != PhysicalUnit::Wh {
             return afb_error!(
                 "dc-ev-charge-param",
-                "expect: PhysicalUnit::Wh get:{}",
+                "energy_capacity expect: PhysicalUnit::Wh get:{}",
                 power_limit.get_unit()
             );
         }
@@ -112,10 +112,20 @@ impl DcEvChargeParam {
         }
     }
 
-    pub fn set_energy_request(&mut self, power_limit: &PhysicalValue) -> &mut Self {
+    pub fn set_energy_request(
+        &mut self,
+        power_limit: &PhysicalValue,
+    ) -> Result<&mut Self, AfbError> {
+        if power_limit.get_unit() != PhysicalUnit::Wh {
+            return afb_error!(
+                "dc-ev-charge-param",
+                "power_limit expect: PhysicalUnit::Wh get:{}",
+                power_limit.get_unit()
+            );
+        }
         self.payload.EVEnergyRequest = power_limit.encode();
         self.payload.set_EVEnergyRequest_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_energy_request(&self) -> Option<PhysicalValue> {
@@ -194,7 +204,7 @@ impl AcEvChargeParam {
         if max_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "ac-ev-charge-param",
-                "expect: PhysicalUnit::Ampere get:{}",
+                "max_current expect: PhysicalUnit::Ampere get:{}",
                 max_current.get_unit()
             );
         }
@@ -202,7 +212,7 @@ impl AcEvChargeParam {
         if min_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "ac-ev-charge-param",
-                "expect: PhysicalUnit::Ampere get:{}",
+                "min_current expect: PhysicalUnit::Ampere get:{}",
                 max_current.get_unit()
             );
         }
@@ -210,7 +220,7 @@ impl AcEvChargeParam {
         if max_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "ac-ev-charge-param",
-                "expect: PhysicalUnit::Volt get:{}",
+                "max_voltage expect: PhysicalUnit::Volt get:{}",
                 max_current.get_unit()
             );
         }
@@ -611,7 +621,7 @@ impl PMaxScheduleEntry {
         PhysicalValue::decode(self.payload.PMax)
     }
 
-     pub fn set_relative_time_interval(
+    pub fn set_relative_time_interval(
         &mut self,
         relative_time: &RelativeTimeInterval,
     ) -> &mut Self {
@@ -927,42 +937,42 @@ impl DcEvseChargeParam {
         if max_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "dc-charge-param",
-                "expect: PhysicalUnit::Volt get:{}",
+                "max_voltage expect: PhysicalUnit::Volt get:{}",
                 max_voltage.get_unit()
             );
         }
         if min_voltage.get_unit() != PhysicalUnit::Volt {
             return afb_error!(
                 "dc-charge-param",
-                "expect: PhysicalUnit::Volt get:{}",
+                "min_voltage expect: PhysicalUnit::Volt get:{}",
                 min_voltage.get_unit()
             );
         }
         if max_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "pre-charge-req",
-                "expect: PhysicalUnit::Ampere get:{}",
+                "max_current expect: PhysicalUnit::Ampere get:{}",
                 max_current.get_unit()
             );
         }
         if min_current.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "pre-charge-req",
-                "expect: PhysicalUnit::Ampere get:{}",
+                "min_current expect: PhysicalUnit::Ampere get:{}",
                 min_current.get_unit()
             );
         }
         if max_power.get_unit() != PhysicalUnit::Watt {
             return afb_error!(
                 "pre-charge-req",
-                "expect: PhysicalUnit::Watt get:{}",
+                "max_power expect: PhysicalUnit::Watt get:{}",
                 max_power.get_unit()
             );
         }
-        if current_ripple.get_unit() != PhysicalUnit::Volt {
+        if current_ripple.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "pre-charge-req",
-                "expect: PhysicalUnit::Volt get:{}",
+                "current_ripple expect: PhysicalUnit::Ampere get:{}",
                 current_ripple.get_unit()
             );
         }
@@ -1001,10 +1011,17 @@ impl DcEvseChargeParam {
         PhysicalValue::decode(self.payload.EVSEMaximumPowerLimit)
     }
 
-    pub fn set_regul_tolerance(&mut self, tolerance: PhysicalValue) -> &mut Self {
+    pub fn set_regul_tolerance(&mut self, tolerance: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if tolerance.get_unit() != PhysicalUnit::Ampere {
+            return afb_error!(
+                "dc-ev-charge-param",
+                "regul_tolerance expect: PhysicalUnit::Ampere get:{}",
+                tolerance.get_unit()
+            );
+        }
         self.payload.EVSECurrentRegulationTolerance = tolerance.encode();
         self.payload.set_EVSECurrentRegulationTolerance_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_regul_tolerance(&self) -> Option<PhysicalValue> {
@@ -1017,10 +1034,17 @@ impl DcEvseChargeParam {
         }
     }
 
-    pub fn set_energy_to_deliver(&mut self, energy: PhysicalValue) -> &mut Self {
+    pub fn set_energy_to_deliver(&mut self, energy: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if energy.get_unit() != PhysicalUnit::Wh {
+            return afb_error!(
+                "dc-ev-charge-param",
+                "energy_to_deliver expect: PhysicalUnit::Wh get:{}",
+                energy.get_unit()
+            );
+        }
         self.payload.EVSEEnergyToBeDelivered = energy.encode();
         self.payload.set_EVSEEnergyToBeDelivered_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_energy_to_deliver(&self) -> Option<PhysicalValue> {

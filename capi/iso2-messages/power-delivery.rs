@@ -269,6 +269,7 @@ impl PowerDeliveryResponse {
             return afb_error!("power-delivery-res", "cannot set both AC & DC status",);
         }
         self.payload.DC_EVSEStatus = status.encode();
+        self.payload.set_DC_EVSEStatus_isUsed(1);
         Ok(self)
     }
 

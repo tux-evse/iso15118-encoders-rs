@@ -112,10 +112,20 @@ impl DcEvChargeParam {
         }
     }
 
-    pub fn set_energy_request(&mut self, power_limit: &PhysicalValue) -> &mut Self {
+    pub fn set_energy_request(
+        &mut self,
+        power_limit: &PhysicalValue,
+    ) -> Result<&mut Self, AfbError> {
+        if power_limit.get_unit() != PhysicalUnit::Wh {
+            return afb_error!(
+                "dc-ev-charge-param",
+                "expect: PhysicalUnit::Wh get:{}",
+                power_limit.get_unit()
+            );
+        }
         self.payload.EVEnergyRequest = power_limit.encode();
         self.payload.set_EVEnergyRequest_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_energy_request(&self) -> Option<PhysicalValue> {
@@ -915,7 +925,7 @@ impl DcEvseChargeParam {
                 max_power.get_unit()
             );
         }
-        if current_ripple.get_unit() != PhysicalUnit::Volt {
+        if current_ripple.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "pre-charge-req",
                 "expect: PhysicalUnit::Volt get:{}",
@@ -957,10 +967,17 @@ impl DcEvseChargeParam {
         PhysicalValue::decode(self.payload.EVSEMaximumPowerLimit)
     }
 
-    pub fn set_regul_tolerance(&mut self, tolerance: PhysicalValue) -> &mut Self {
+    pub fn set_regul_tolerance(&mut self, tolerance: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if tolerance.get_unit() != PhysicalUnit::Ampere {
+            return afb_error!(
+                "dc-ev-charge-param",
+                "regul_tolerance expect: PhysicalUnit::Ampere get:{}",
+                tolerance.get_unit()
+            );
+        }
         self.payload.EVSECurrentRegulationTolerance = tolerance.encode();
         self.payload.set_EVSECurrentRegulationTolerance_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_regul_tolerance(&self) -> Option<PhysicalValue> {
@@ -973,10 +990,17 @@ impl DcEvseChargeParam {
         }
     }
 
-    pub fn set_energy_to_deliver(&mut self, energy: PhysicalValue) -> &mut Self {
+    pub fn set_energy_to_deliver(&mut self, energy: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if energy.get_unit() != PhysicalUnit::Wh {
+            return afb_error!(
+                "dc-ev-charge-param",
+                "energy_to_deliver expect: PhysicalUnit::Wh get:{}",
+                energy.get_unit()
+            );
+        }
         self.payload.EVSEEnergyToBeDelivered = energy.encode();
         self.payload.set_EVSEEnergyToBeDelivered_isUsed(1);
-        self
+        Ok(self)
     }
 
     pub fn get_energy_to_deliver(&self) -> Option<PhysicalValue> {

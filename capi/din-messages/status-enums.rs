@@ -91,7 +91,7 @@ impl MessageTagId {
         self.as_ref()
     }
 
-    pub fn match_res_id(&self) -> Self {
+    pub fn match_resid(&self) -> Self {
         let response = match self {
             MessageTagId::ContractAuthenticationReq => MessageTagId::ContractAuthenticationRes,
             MessageTagId::SessionSetupReq => MessageTagId::SessionSetupRes,

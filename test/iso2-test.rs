@@ -27,8 +27,8 @@ pub fn encode_to_stream<'a>(funcname: &str, body: Iso2BodyType) -> Result<ExiStr
 
 pub fn decode_from_stream(_funcname: &str, stream: ExiStream) -> Result<ExiMessageDoc, AfbError> {
     let stream_decode = mock_network_input(stream.lock_stream().get_buffer());
-    let lock = stream_decode.lock_stream();
-    let message = ExiMessageDoc::decode_from_stream(&lock)?;
+    let mut lock = stream_decode.lock_stream();
+    let message = ExiMessageDoc::decode_from_stream(&mut lock)?;
     Ok(message)
 }
 
@@ -93,7 +93,7 @@ fn session_setup_response() -> Result<(), AfbError> {
     let evse_id = "tux-evse-001";
     let rcode = ResponseCode::Ok;
     let payload = SessionSetupResponse::new(evse_id, rcode)?
-        .set_time_stamp(0)
+        .set_timestamp(0)
         .encode();
 
     // encode message to stream_exi an compare with expected binary result
@@ -405,7 +405,7 @@ fn authorization_request() -> Result<(), AfbError> {
     };
 
     // check if authentication is signed
-    let _header= message.get_header();
+    let _header = message.get_header();
 
     // Decoding API
     let id_out = payload.get_id().unwrap();
@@ -1144,6 +1144,51 @@ fn metering_outeipt_response() -> Result<(), AfbError> {
 #[test]
 fn ac_param_discovery_request() -> Result<(), AfbError> {
     let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x21, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x10, 0x90, 0x20, 0x0, 0x1a, 0x41, 0x21, 0x46, 0x1, 0x40, 0x21, 0x2,
+        0x80, 0x7c, 0x4, 0x30, 0xb8, 0x17, 0x3, 0xc, 0x0, 0x0,
+    ];
+    let ea_mount = PhysicalValue::new(20, 10, PhysicalUnit::Wh);
+    let max_voltage = PhysicalValue::new(4000, -1, PhysicalUnit::Volt);
+    let max_current = PhysicalValue::new(3000, -2, PhysicalUnit::Ampere);
+    let min_current = PhysicalValue::new(0, 0, PhysicalUnit::Ampere);
+
+    let mut params = AcEvChargeParam::new(&ea_mount, &max_voltage, &max_current, &min_current)?;
+    params.set_departure_time(1234);
+
+    // Encoding API
+    let payload = ParamDiscoveryRequest::new(EngyTransfertMode::AcSinglePhase)
+        .set_max_schedule_tuple(16)
+        .set_ac_charge_param(&params)?
+        .encode();
+
+    // encode message to stream_exi an compare with expected binary result
+
+    let stream = encode_to_stream(func_name!(), payload)?;
+    assert!(expected_response == stream.lock_stream().get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), stream)?;
+    let payload = match message.get_body()? {
+        MessageBody::ParamDiscoveryReq(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_transfert_energy_mode() == EngyTransfertMode::AcSinglePhase);
+    assert!(payload.get_max_schedule_tuple().unwrap() == 16);
+    let ac_value = payload.get_ac_charge_param().unwrap();
+    assert!(ac_value.get_departure_time().unwrap() == 1234);
+    assert!(ac_value.get_max_current().get_value() == 3000);
+    assert!(ac_value.get_min_current().get_value() == 0);
+    assert!(ac_value.get_max_voltage().get_value() == 4000);
+
+    Ok(())
+}
+
+#[test]
+fn ac_param_discovery_response() -> Result<(), AfbError> {
+    let expected_response = [
         0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x20, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
         0x41, 0x81, 0xc2, 0x10, 0x90, 0x20, 0x0, 0x1a, 0x41, 0x21, 0x46, 0x1, 0x40, 0x41, 0x2,
         0x40, 0xc, 0x10, 0x30, 0x40, 0x4, 0xc, 0x2, 0x80,
@@ -1189,24 +1234,26 @@ fn ac_param_discovery_request() -> Result<(), AfbError> {
 #[test]
 fn dc_param_discovery_request() -> Result<(), AfbError> {
     let expected_response = [
-        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x1b, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
-        0x41, 0x81, 0xc2, 0x10, 0x90, 0x20, 0x11, 0x48, 0x0, 0x4, 0x10, 0x30, 0x64, 0x12, 0x8,
-        0x14, 0x0, 0xc4, 0x0,
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x20, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x10, 0x91, 0x80, 0x2, 0x19, 0x40, 0x0, 0xdc, 0x10, 0x30, 0x64, 0x12,
+        0x8, 0x14, 0x0, 0xc1, 0x18, 0xc1, 0x68, 0x52, 0x40,
     ];
 
-    let dc_max_voltage = PhysicalValue::new(800, 1, PhysicalUnit::Volt);
-    let dc_max_current = PhysicalValue::new(100, 1, PhysicalUnit::Ampere);
-    let dc_status = DcEvStatusType::new(true, DcEvErrorCode::NoError, 1);
-    let dc_params = DcEvChargeParam::new(&dc_status, &dc_max_voltage, &dc_max_current)?;
+    let max_tuple = 192;
+    let max_voltage = PhysicalValue::new(800, 1, PhysicalUnit::Volt);
+    let max_current = PhysicalValue::new(100, 1, PhysicalUnit::Ampere);
+    let energy_request = PhysicalValue::new(5300, 0, PhysicalUnit::Wh);
+    let status = DcEvStatusType::new(false, DcEvErrorCode::NoError, 55);
+    let mut params = DcEvChargeParam::new(&status, &max_voltage, &max_current)?;
+    params.set_energy_request(&energy_request)?;
 
     // Encoding API
-    let payload = ParamDiscoveryRequest::new(EngyTransfertMode::DcBasic)
-        .set_max_schedule_tuple(16)
-        .set_dc_charge_param(&dc_params)?
+    let payload = ParamDiscoveryRequest::new(EngyTransfertMode::DcExtended)
+        .set_max_schedule_tuple(max_tuple)
+        .set_dc_charge_param(&params)?
         .encode();
 
     // encode message to stream_exi an compare with expected binary result
-
     let stream = encode_to_stream(func_name!(), payload)?;
     assert!(expected_response == stream.lock_stream().get_buffer());
 
@@ -1218,12 +1265,91 @@ fn dc_param_discovery_request() -> Result<(), AfbError> {
     };
 
     // Decoding API
-    assert!(payload.get_max_schedule_tuple().unwrap() == 16);
+    assert!(payload.get_transfert_energy_mode() == EngyTransfertMode::DcExtended);
+    assert!(payload.get_max_schedule_tuple().unwrap() == max_tuple);
     let dc_value = payload.get_dc_charge_param().unwrap();
     assert!(dc_value.get_max_current().get_value() == 100);
     assert!(dc_value.get_max_voltage().get_value() == 800);
     assert!(dc_value.get_status().get_error() == DcEvErrorCode::NoError);
-    assert!(dc_value.get_status().get_ready() == true);
+    assert!(dc_value.get_status().get_ready() == false);
+    Ok(())
+}
+
+#[test]
+fn dc_param_discovery_response() -> Result<(), AfbError> {
+    let expected_response = [
+        0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x3e, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
+        0x41, 0x81, 0xc2, 0x10, 0xa0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x20, 0x28, 0xc1, 0x40, 0xc5, 0xf,
+        0x85, 0x50, 0xaa, 0x0, 0x0, 0x42, 0x2, 0x18, 0x5c, 0xb, 0x81, 0x8a, 0x1f, 0xa, 0xa0, 0x42,
+        0x6, 0x81, 0x40, 0x10, 0x60, 0x0, 0x4, 0x20, 0x7a, 0x1, 0x80, 0x83, 0x0, 0x50, 0x20, 0xc0,
+        0x28, 0x6, 0x30, 0x48, 0x27, 0x0,
+    ];
+
+    let rcode = ResponseCode::Ok;
+    let processing = EvseProcessing::Finished;
+    let max_voltage = PhysicalValue::new(5200, -1, PhysicalUnit::Volt);
+    let min_voltage = PhysicalValue::new(500, -1, PhysicalUnit::Volt);
+    let max_current = PhysicalValue::new(3000, -2, PhysicalUnit::Ampere);
+    let min_current = PhysicalValue::new(0, -1, PhysicalUnit::Ampere);
+    let max_power = PhysicalValue::new(11000, 0, PhysicalUnit::Watt);
+    let current_ripple = PhysicalValue::new(10, -1, PhysicalUnit::Ampere);
+    let regul_tolerance = PhysicalValue::new(5, -1, PhysicalUnit::Ampere);
+    let energy_to_deliver = PhysicalValue::new(10000, 0, PhysicalUnit::Wh);
+    let status = DcEvseStatusType::new(DcEvseErrorCode::Ready, EvseNotification::None, 0);
+    let mut params = DcEvseChargeParam::new(
+        &status,
+        &max_voltage,
+        &min_voltage,
+        &max_current,
+        &min_current,
+        &max_power,
+        &current_ripple,
+    )?;
+    params
+        .set_regul_tolerance(&regul_tolerance)?
+        .set_energy_to_deliver(&energy_to_deliver)?;
+
+    let mut pmax = PMaxScheduleEntry::new(&PhysicalValue::new(11000, 0, PhysicalUnit::Watt));
+    pmax.set_relative_time_interval(RelativeTimeInterval::new(0).set_duration(86400));
+
+    let mut sched = SasScheduleTuple::new(1);
+    sched.add_pmax(&pmax)?;
+
+    // Encoding API
+    let payload = ParamDiscoveryResponse::new(rcode, processing)
+        .add_schedule_tuple(&sched)?
+        .set_evse_dc_charge_param(&params)
+        .encode();
+
+    // encode message to stream_exi an compare with expected binary result
+
+    let stream = encode_to_stream(func_name!(), payload)?;
+    assert!(expected_response == stream.lock_stream().get_buffer());
+
+    // simulate network exi_stream input and decode received message
+    let message = decode_from_stream(func_name!(), stream)?;
+    let payload = match message.get_body()? {
+        MessageBody::ParamDiscoveryRes(msg) => msg,
+        _ => panic!("Unexpected message type"),
+    };
+
+    // Decoding API
+    assert!(payload.get_rcode() == rcode);
+    assert!(payload.get_processing() == processing);
+
+    let dc_params = payload.get_evse_dc_charge_param().unwrap();
+    assert!(dc_params.get_max_voltage().get_value() == 5200);
+    assert!(dc_params.get_min_voltage().get_value() == 500);
+    assert!(dc_params.get_max_current().get_value() == 3000);
+    assert!(dc_params.get_min_current().get_value() == 0);
+    assert!(dc_params.get_max_power().get_value() == 11000);
+    assert!(dc_params.get_status().get_error() == DcEvseErrorCode::Ready);
+    assert!(dc_params.get_status().get_notification() == EvseNotification::None);
+
+    let dc_sched = payload.get_schedule_tuples();
+    let dc_pmax = dc_sched[0].get_pmaxs();
+    assert!(dc_pmax[0].get_pmax().get_value() == 11000);
+
     Ok(())
 }
 
@@ -1289,13 +1415,13 @@ fn ev_param_discovery_request() -> Result<(), AfbError> {
 }
 
 #[test]
-fn param_discovery_response() -> Result<(), AfbError> {
+fn ev_param_discovery_response() -> Result<(), AfbError> {
     let expected_response = [
         0x1, 0xfe, 0x80, 0x1, 0x0, 0x0, 0x0, 0x47, 0x80, 0x98, 0x2, 0x0, 0x40, 0x80, 0xc1, 0x1,
         0x41, 0x81, 0xc2, 0x10, 0xa0, 0x1, 0x0, 0x0, 0x0, 0x28, 0xf, 0x1, 0x4, 0xf, 0x0, 0x10, 0x0,
         0x18, 0x3c, 0x2, 0x6, 0x1, 0x41, 0x40, 0x0, 0x21, 0x4, 0x9, 0x0, 0x30, 0x21, 0x3, 0x6,
         0x40, 0xaa, 0x28, 0x0, 0x44, 0x42, 0x8, 0x18, 0x20, 0x3, 0x8a, 0x10, 0x6, 0x40, 0x82, 0x7,
-        0xd0, 0x8, 0x20, 0x60, 0x14, 0x8, 0x20, 0x64, 0x0, 0x89, 0x4, 0x0, 0x11, 0x0,
+        0xd0, 0x8, 0x20, 0x60, 0x14, 0x8, 0x20, 0x64, 0x0, 0x89, 0x3, 0x0, 0x11, 0x0,
     ];
     // Encoding API
     let rcode = ResponseCode::Ok;
@@ -1324,7 +1450,7 @@ fn param_discovery_response() -> Result<(), AfbError> {
     let max_current = PhysicalValue::new(64, 1, PhysicalUnit::Ampere);
     let min_current = PhysicalValue::new(10, 1, PhysicalUnit::Ampere);
     let max_power = PhysicalValue::new(6400, 100, PhysicalUnit::Watt);
-    let current_ripple = PhysicalValue::new(1, 1, PhysicalUnit::Volt);
+    let current_ripple = PhysicalValue::new(1, 1, PhysicalUnit::Ampere);
     let charge_param = DcEvseChargeParam::new(
         &dc_status,
         &max_voltage,

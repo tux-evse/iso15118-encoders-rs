@@ -25,13 +25,10 @@ pub struct ChargingProfileEntry {
 }
 
 impl ChargingProfileEntry {
-    pub fn new(
-        start: u32,
-        power_max: i16,
-    ) -> Self {
+    pub fn new(start: u32, power_max: i16) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::din_ProfileEntryType>() };
         payload.ChargingProfileEntryStart = start;
-        payload.ChargingProfileEntryMaxPower= power_max;
+        payload.ChargingProfileEntryMaxPower = power_max;
 
         Self { payload }
     }
@@ -117,7 +114,7 @@ impl PowerDeliveryRequest {
         let mut payload = unsafe { mem::zeroed::<cglue::din_PowerDeliveryReqType>() };
         if ready {
             payload.ReadyToChargeState = 1;
-            payload.ChargingProfile.SAScheduleTupleID= schedule_id;
+            payload.ChargingProfile.SAScheduleTupleID = schedule_id;
         };
         Self { payload }
     }
@@ -134,7 +131,10 @@ impl PowerDeliveryRequest {
         self.payload.ChargingProfile.SAScheduleTupleID
     }
 
-    pub fn add_charging_profile(&mut self, entry: &ChargingProfileEntry) ->Result<&mut Self, AfbError> {
+    pub fn add_charging_profile(
+        &mut self,
+        entry: &ChargingProfileEntry,
+    ) -> Result<&mut Self, AfbError> {
         let idx = self.payload.ChargingProfile.ProfileEntry.arrayLen;
         if idx == cglue::din_ProfileEntryType_24_ARRAY_SIZE as u16 {
             return afb_error!(
@@ -246,6 +246,7 @@ impl PowerDeliveryResponse {
             return afb_error!("power-delivery-res", "cannot set both AC & DC status",);
         }
         self.payload.DC_EVSEStatus = status.encode();
+        self.payload.set_DC_EVSEStatus_isUsed(1);
         Ok(self)
     }
 
