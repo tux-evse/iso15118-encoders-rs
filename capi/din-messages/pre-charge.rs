@@ -29,20 +29,24 @@ impl PreChargeRequest {
         target_voltage: &PhysicalValue,
         target_current: &PhysicalValue,
     ) -> Result<Self, AfbError> {
-        if target_voltage.get_unit() != PhysicalUnit::Volt {
-            return afb_error!(
-                "pre-charge-req",
-                "expect: PhysicalUnit::Volt get:{}",
-                target_voltage.get_unit()
-            );
+        if let Some(unit) = target_voltage.get_unit() {
+            if unit != PhysicalUnit::Volt {
+                return afb_error!(
+                    "pre-charge-req",
+                    "expect: PhysicalUnit::Volt get:{}",
+                    unit
+                );
+            }
         }
 
-        if target_current.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "pre-charge-req",
-                "expect: PhysicalUnit::Ampere get:{}",
-                target_current.get_unit()
-            );
+        if let Some(unit) = target_current.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "pre-charge-req",
+                    "expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
 
         let mut payload = unsafe { mem::zeroed::<cglue::din_PreChargeReqType>() };
@@ -89,12 +93,10 @@ impl PreChargeResponse {
         evse_status: &DcEvseStatusType,
         evse_voltage: &PhysicalValue,
     ) -> Result<Self, AfbError> {
-        if evse_voltage.get_unit() != PhysicalUnit::Volt {
-            return afb_error!(
-                "pre-charge-res",
-                "expect: PhysicalUnit::Volt get:{}",
-                evse_voltage.get_unit()
-            );
+        if let Some(unit) = evse_voltage.get_unit() {
+            if unit != PhysicalUnit::Volt {
+                return afb_error!("pre-charge-res", "expect: PhysicalUnit::Volt get:{}", unit);
+            }
         }
         let mut payload = unsafe { mem::zeroed::<cglue::din_PreChargeResType>() };
         payload.ResponseCode = rcode as u32;

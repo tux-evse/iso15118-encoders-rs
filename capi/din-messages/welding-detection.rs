@@ -59,12 +59,14 @@ impl WeldingDetectionResponse {
         evse_status: &DcEvseStatusType,
         evse_voltage: &PhysicalValue,
     ) -> Result<Self, AfbError> {
-        if evse_voltage.get_unit() != PhysicalUnit::Volt {
-            return afb_error!(
-                "welding-detection-response",
-                "expect: PhysicalUnit::Volt get:{}",
-                evse_voltage.get_unit()
-            );
+        if let Some(unit) = evse_voltage.get_unit() {
+            if unit != PhysicalUnit::Volt {
+                return afb_error!(
+                    "welding-detection-response",
+                    "expect: PhysicalUnit::Volt get:{}",
+                    unit
+                );
+            }
         }
 
         let mut payload = unsafe { mem::zeroed::<cglue::din_WeldingDetectionResType>() };

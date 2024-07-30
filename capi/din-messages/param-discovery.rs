@@ -31,20 +31,24 @@ impl DcEvChargeParam {
     ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::din_DC_EVChargeParameterType>() };
 
-        if max_current.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "dc-ev-charge-param",
-                "expect: PhysicalUnit::Ampere get:{}",
-                max_current.get_unit()
-            );
+        if let Some(unit) = max_current.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "dc-ev-charge-param",
+                    "expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
 
-        if max_voltage.get_unit() != PhysicalUnit::Volt {
-            return afb_error!(
-                "dc-ev-charge-param",
-                "expect: PhysicalUnit::Volt get:{}",
-                max_voltage.get_unit()
-            );
+        if let Some(unit) = max_voltage.get_unit() {
+            if unit != PhysicalUnit::Volt {
+                return afb_error!(
+                    "dc-ev-charge-param",
+                    "expect: PhysicalUnit::Volt get:{}",
+                    unit
+                );
+            }
         }
 
         payload.DC_EVStatus = status.encode();
@@ -67,12 +71,14 @@ impl DcEvChargeParam {
 
     #[track_caller]
     pub fn set_max_power(&mut self, power_limit: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        if power_limit.get_unit() != PhysicalUnit::Watt {
-            return afb_error!(
-                "dc-ev-charge-param",
-                "expect: PhysicalUnit::Watt get:{}",
-                power_limit.get_unit()
-            );
+        if let Some(unit) = power_limit.get_unit() {
+            if unit != PhysicalUnit::Watt {
+                return afb_error!(
+                    "dc-ev-charge-param",
+                    "expect: PhysicalUnit::Watt get:{}",
+                    unit
+                );
+            }
         }
         self.payload.EVMaximumPowerLimit = power_limit.encode();
         self.payload.set_EVMaximumPowerLimit_isUsed(1);
@@ -92,12 +98,14 @@ impl DcEvChargeParam {
         &mut self,
         power_limit: &PhysicalValue,
     ) -> Result<&mut Self, AfbError> {
-        if power_limit.get_unit() != PhysicalUnit::Wh {
-            return afb_error!(
-                "dc-ev-charge-param",
-                "expect: PhysicalUnit::Wh get:{}",
-                power_limit.get_unit()
-            );
+        if let Some(unit) = power_limit.get_unit() {
+            if unit != PhysicalUnit::Wh {
+                return afb_error!(
+                    "dc-ev-charge-param",
+                    "expect: PhysicalUnit::Wh get:{}",
+                    unit
+                );
+            }
         }
         self.payload.EVEnergyCapacity = power_limit.encode();
         self.payload.set_EVEnergyCapacity_isUsed(1);
@@ -116,12 +124,14 @@ impl DcEvChargeParam {
         &mut self,
         power_limit: &PhysicalValue,
     ) -> Result<&mut Self, AfbError> {
-        if power_limit.get_unit() != PhysicalUnit::Wh {
-            return afb_error!(
-                "dc-ev-charge-param",
-                "expect: PhysicalUnit::Wh get:{}",
-                power_limit.get_unit()
-            );
+        if let Some(unit) = power_limit.get_unit() {
+            if unit != PhysicalUnit::Wh {
+                return afb_error!(
+                    "dc-ev-charge-param",
+                    "expect: PhysicalUnit::Wh get:{}",
+                    unit
+                );
+            }
         }
         self.payload.EVEnergyRequest = power_limit.encode();
         self.payload.set_EVEnergyRequest_isUsed(1);
@@ -187,28 +197,34 @@ impl AcEvChargeParam {
     ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::din_AC_EVChargeParameterType>() };
 
-        if max_current.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "ac-ev-charge-param",
-                "expect: PhysicalUnit::Ampere get:{}",
-                max_current.get_unit()
-            );
+        if let Some(unit) = max_current.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "ac-ev-charge-param",
+                    "expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
 
-        if min_current.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "ac-ev-charge-param",
-                "expect: PhysicalUnit::Ampere get:{}",
-                max_current.get_unit()
-            );
+        if let Some(unit) = min_current.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "ac-ev-charge-param",
+                    "expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
 
-        if max_voltage.get_unit() != PhysicalUnit::Volt {
-            return afb_error!(
-                "ac-ev-charge-param",
-                "expect: PhysicalUnit::Volt get:{}",
-                max_current.get_unit()
-            );
+        if let Some(unit) = max_voltage.get_unit() {
+            if unit != PhysicalUnit::Volt {
+                return afb_error!(
+                    "ac-ev-charge-param",
+                    "expect: PhysicalUnit::Volt get:{}",
+                    unit
+                );
+            }
         }
 
         payload.EAmount = ea_mount.encode();
@@ -818,30 +834,36 @@ impl AcEvseChargeParam {
 
         payload.AC_EVSEStatus = status.encode();
 
-        if max_voltage.get_unit() != PhysicalUnit::Volt {
-            return afb_error!(
-                "av-evse-charge-param",
-                "expect: PhysicalUnit::Volt get:{}",
-                max_voltage.get_unit()
-            );
+        if let Some(unit) = max_voltage.get_unit() {
+            if unit != PhysicalUnit::Volt {
+                return afb_error!(
+                    "av-evse-charge-param",
+                    "expect: PhysicalUnit::Volt get:{}",
+                    unit
+                );
+            }
         }
         payload.EVSEMaxVoltage = max_voltage.encode();
 
-        if max_current.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "av-evse-charge-param",
-                "expect: PhysicalUnit::Ampere get:{}",
-                max_voltage.get_unit()
-            );
+        if let Some(unit) = max_current.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "av-evse-charge-param",
+                    "expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
         payload.EVSEMaxCurrent = max_current.encode();
 
-        if min_current.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "av-evse-charge-param",
-                "expect: PhysicalUnit::Ampere get:{}",
-                max_voltage.get_unit()
-            );
+        if let Some(unit) = min_current.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "av-evse-charge-param",
+                    "expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
         payload.EVSEMinCurrent = min_current.encode();
 
@@ -889,41 +911,39 @@ impl DcEvseChargeParam {
     ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::din_DC_EVSEChargeParameterType>() };
 
-        if max_voltage.get_unit() != PhysicalUnit::Volt {
-            return afb_error!(
-                "dc-charge-param",
-                "expect: PhysicalUnit::Volt get:{}",
-                max_voltage.get_unit()
-            );
+        if let Some(unit) = max_voltage.get_unit() {
+            if unit != PhysicalUnit::Volt {
+                return afb_error!("dc-charge-param", "expect: PhysicalUnit::Volt get:{}", unit);
+            }
         }
-        if min_voltage.get_unit() != PhysicalUnit::Volt {
-            return afb_error!(
-                "dc-charge-param",
-                "expect: PhysicalUnit::Volt get:{}",
-                min_voltage.get_unit()
-            );
+        if let Some(unit) = min_voltage.get_unit() {
+            if unit != PhysicalUnit::Volt {
+                return afb_error!("dc-charge-param", "expect: PhysicalUnit::Volt get:{}", unit);
+            }
         }
-        if max_current.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "pre-charge-req",
-                "expect: PhysicalUnit::Ampere get:{}",
-                max_current.get_unit()
-            );
+        if let Some(unit) = max_current.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "pre-charge-req",
+                    "expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
-        if min_current.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "pre-charge-req",
-                "expect: PhysicalUnit::Ampere get:{}",
-                min_current.get_unit()
-            );
+        if let Some(unit) = min_current.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "pre-charge-req",
+                    "expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
 
-        if current_ripple.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "pre-charge-req",
-                "expect: PhysicalUnit::Volt get:{}",
-                current_ripple.get_unit()
-            );
+        if let Some(unit) = current_ripple.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!("pre-charge-req", "expect: PhysicalUnit::Volt get:{}", unit);
+            }
         }
 
         payload.DC_EVSEStatus = status.encode();
@@ -965,16 +985,15 @@ impl DcEvseChargeParam {
         }
     }
 
-    pub fn set_max_power(
-        &mut self,
-        max_power: &PhysicalValue,
-    ) -> Result<&mut Self, AfbError> {
-        if max_power.get_unit() != PhysicalUnit::Watt {
-            return afb_error!(
-                "dc-ev-charge-param",
-                "max_power expect: PhysicalUnit::Ampere get:{}",
-                max_power.get_unit()
-            );
+    pub fn set_max_power(&mut self, max_power: &PhysicalValue) -> Result<&mut Self, AfbError> {
+        if let Some(unit) = max_power.get_unit() {
+            if unit != PhysicalUnit::Watt {
+                return afb_error!(
+                    "dc-ev-charge-param",
+                    "max_power expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
         self.payload.EVSEMaximumPowerLimit = max_power.encode();
         self.payload.set_EVSEMaximumPowerLimit_isUsed(1);
@@ -985,13 +1004,16 @@ impl DcEvseChargeParam {
         &mut self,
         tolerance: &PhysicalValue,
     ) -> Result<&mut Self, AfbError> {
-        if tolerance.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "dc-ev-charge-param",
-                "regul_tolerance expect: PhysicalUnit::Ampere get:{}",
-                tolerance.get_unit()
-            );
+        if let Some(unit) = tolerance.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "dc-ev-charge-param",
+                    "regul_tolerance expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
+
         self.payload.EVSECurrentRegulationTolerance = tolerance.encode();
         self.payload.set_EVSECurrentRegulationTolerance_isUsed(1);
         Ok(self)
@@ -1008,12 +1030,14 @@ impl DcEvseChargeParam {
     }
 
     pub fn set_energy_to_deliver(&mut self, energy: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        if energy.get_unit() != PhysicalUnit::Wh {
-            return afb_error!(
-                "dc-ev-charge-param",
-                "energy_to_deliver expect: PhysicalUnit::Wh get:{}",
-                energy.get_unit()
-            );
+        if let Some(unit) = energy.get_unit() {
+            if unit != PhysicalUnit::Wh {
+                return afb_error!(
+                    "dc-ev-charge-param",
+                    "energy_to_deliver expect: PhysicalUnit::Wh get:{}",
+                    unit
+                );
+            }
         }
         self.payload.EVSEEnergyToBeDelivered = energy.encode();
         self.payload.set_EVSEEnergyToBeDelivered_isUsed(1);

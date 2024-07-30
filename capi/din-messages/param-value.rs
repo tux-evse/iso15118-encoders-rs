@@ -27,7 +27,10 @@ impl fmt::Debug for PhysicalValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let value = self.get_value();
         let multiplier = self.get_multiplier();
-        let unit = self.get_unit();
+        let unit: PhysicalUnit = match self.get_unit() {
+            None => PhysicalUnit::Unset,
+            Some(value) => value
+        };
         write!(
             f,
             "(value:{}, multiplier:{} unit:{})",
@@ -50,11 +53,11 @@ impl PhysicalValue {
         Self { payload }
     }
 
-    pub fn get_unit(&self) -> PhysicalUnit {
+    pub fn get_unit(&self) -> Option<PhysicalUnit> {
         if self.payload.Unit_isUsed() == 0 {
-            PhysicalUnit::Unset
+            None
         } else {
-            PhysicalUnit::from_u32(self.payload.Unit)
+            Some(PhysicalUnit::from_u32(self.payload.Unit))
         }
     }
 

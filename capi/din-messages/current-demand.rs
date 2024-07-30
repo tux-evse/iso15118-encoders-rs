@@ -62,12 +62,14 @@ impl CurrentDemandRequest {
         &mut self,
         voltage_limit: &PhysicalValue,
     ) -> Result<&mut Self, AfbError> {
-        if voltage_limit.get_unit() != PhysicalUnit::Volt {
-            return afb_error!(
-                "current-demand-req",
-                "expect: PhysicalUnit::Volt get:{}",
-                voltage_limit.get_unit()
-            );
+        if let Some(unit) = voltage_limit.get_unit() {
+            if unit != PhysicalUnit::Volt {
+                return afb_error!(
+                    "current-demand-req",
+                    "expect: PhysicalUnit::Volt get:{}",
+                    unit
+                );
+            }
         }
         self.payload.EVMaximumVoltageLimit = voltage_limit.encode();
         self.payload.set_EVMaximumVoltageLimit_isUsed(1);
@@ -86,13 +88,16 @@ impl CurrentDemandRequest {
         &mut self,
         current_limit: &PhysicalValue,
     ) -> Result<&mut Self, AfbError> {
-        if current_limit.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "current-demand-req",
-                "expect: PhysicalUnit::Ampere get:{}",
-                current_limit.get_unit()
-            );
+        if let Some(unit) = current_limit.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "current-demand-req",
+                    "expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
+
         self.payload.EVMaximumCurrentLimit = current_limit.encode();
         self.payload.set_EVMaximumCurrentLimit_isUsed(1);
         Ok(self)
@@ -107,12 +112,14 @@ impl CurrentDemandRequest {
     }
 
     pub fn set_power_limit(&mut self, power_limit: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        if power_limit.get_unit() != PhysicalUnit::Watt {
-            return afb_error!(
-                "current-demand-req",
-                "expect: PhysicalUnit::Watt get:{}",
-                power_limit.get_unit()
-            );
+        if let Some(unit) = power_limit.get_unit() {
+            if unit != PhysicalUnit::Watt {
+                return afb_error!(
+                    "current-demand-req",
+                    "expect: PhysicalUnit::Watt get:{}",
+                    unit
+                );
+            }
         }
         self.payload.EVMaximumPowerLimit = power_limit.encode();
         self.payload.set_EVMaximumPowerLimit_isUsed(1);
@@ -131,16 +138,17 @@ impl CurrentDemandRequest {
         &mut self,
         remaining_time: &PhysicalValue,
     ) -> Result<&mut Self, AfbError> {
-        let unit = remaining_time.get_unit();
-        if unit != PhysicalUnit::Hour
-            && unit != PhysicalUnit::Minute
-            && unit != PhysicalUnit::Second
-        {
-            return afb_error!(
-                "current-demand-req",
-                "expect: PhysicalUnit::(Hour|Minute|Second) got:{}",
-                remaining_time.get_unit()
-            );
+        if let Some(unit) = remaining_time.get_unit() {
+            if unit != PhysicalUnit::Hour
+                && unit != PhysicalUnit::Minute
+                && unit != PhysicalUnit::Second
+            {
+                return afb_error!(
+                    "current-demand-req",
+                    "expect: PhysicalUnit::(Hour|Minute|Second) got:{}",
+                    unit
+                );
+            }
         }
         self.payload.RemainingTimeToFullSoC = remaining_time.encode();
         self.payload.set_RemainingTimeToFullSoC_isUsed(1);
@@ -159,16 +167,17 @@ impl CurrentDemandRequest {
         &mut self,
         remaining_time: &PhysicalValue,
     ) -> Result<&mut Self, AfbError> {
-        let unit = remaining_time.get_unit();
-        if unit != PhysicalUnit::Hour
-            && unit != PhysicalUnit::Minute
-            && unit != PhysicalUnit::Second
-        {
-            return afb_error!(
-                "current-demand-req",
-                "expect: PhysicalUnit::Percent get:{}",
-                remaining_time.get_unit()
-            );
+        if let Some(unit) = remaining_time.get_unit() {
+            if unit != PhysicalUnit::Hour
+                && unit != PhysicalUnit::Minute
+                && unit != PhysicalUnit::Second
+            {
+                return afb_error!(
+                    "current-demand-req",
+                    "expect: PhysicalUnit::Percent get:{}",
+                    unit
+                );
+            }
         }
 
         self.payload.RemainingTimeToBulkSoC = remaining_time.encode();
@@ -236,20 +245,24 @@ impl CurrentDemandResponse {
 
         payload.ResponseCode = rcode as u32;
 
-        if current_present.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "current-demand-res",
-                "expect: PhysicalUnit::Ampere get:{}",
-                current_present.get_unit()
-            );
+        if let Some(unit) = current_present.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "current-demand-res",
+                    "expect: PhysicalUnit::Ampere get:{}",
+                    unit
+                );
+            }
         }
 
-        if voltage_present.get_unit() != PhysicalUnit::Volt {
-            return afb_error!(
-                "current-demand-res",
-                "expect: PhysicalUnit::Volt get:{}",
-                voltage_present.get_unit()
-            );
+        if let Some(unit) = voltage_present.get_unit() {
+            if unit != PhysicalUnit::Volt {
+                return afb_error!(
+                    "current-demand-res",
+                    "expect: PhysicalUnit::Volt get:{}",
+                    unit
+                );
+            }
         }
 
         payload.DC_EVSEStatus = dc_status.encode();
@@ -303,12 +316,14 @@ impl CurrentDemandResponse {
     }
 
     pub fn set_voltage_limit(&mut self, voltage: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        if voltage.get_unit() != PhysicalUnit::Volt {
-            return afb_error!(
-                "current-demand-res",
-                "expect: PhysicalUnit::Volt get:{}",
-                voltage.get_unit()
-            );
+        if let Some(unit) = voltage.get_unit() {
+            if unit != PhysicalUnit::Volt {
+                return afb_error!(
+                    "current-demand-res",
+                    "expect: PhysicalUnit::Volt get:{}",
+                    unit
+                );
+            }
         }
 
         self.payload.EVSEMaximumVoltageLimit = voltage.encode();
@@ -325,12 +340,14 @@ impl CurrentDemandResponse {
     }
 
     pub fn set_current_limit(&mut self, current: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        if current.get_unit() != PhysicalUnit::Ampere {
-            return afb_error!(
-                "current-demand-res",
-                "expect: PhysicalUnit::Volt get:{}",
-                current.get_unit()
-            );
+        if let Some(unit) = current.get_unit() {
+            if unit != PhysicalUnit::Ampere {
+                return afb_error!(
+                    "current-demand-res",
+                    "expect: PhysicalUnit::Volt get:{}",
+                    unit
+                );
+            }
         }
         self.payload.EVSEMaximumCurrentLimit = current.encode();
         self.payload.set_EVSEMaximumCurrentLimit_isUsed(1);
@@ -346,12 +363,14 @@ impl CurrentDemandResponse {
     }
 
     pub fn set_power_limit(&mut self, power: &PhysicalValue) -> Result<&mut Self, AfbError> {
-        if power.get_unit() != PhysicalUnit::Watt {
-            return afb_error!(
-                "current-demand-res",
-                "expect: PhysicalUnit::Volt get:{}",
-                power.get_unit()
-            );
+        if let Some(unit) = power.get_unit() {
+            if unit != PhysicalUnit::Watt {
+                return afb_error!(
+                    "current-demand-res",
+                    "expect: PhysicalUnit::Volt get:{}",
+                    unit
+                );
+            }
         }
         self.payload.EVSEMaximumPowerLimit = power.encode();
         self.payload.set_EVSEMaximumPowerLimit_isUsed(1);
