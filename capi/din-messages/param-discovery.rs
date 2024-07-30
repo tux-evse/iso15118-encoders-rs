@@ -885,7 +885,6 @@ impl DcEvseChargeParam {
         min_voltage: &PhysicalValue,
         max_current: &PhysicalValue,
         min_current: &PhysicalValue,
-        max_power: &PhysicalValue,
         current_ripple: &PhysicalValue,
     ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::din_DC_EVSEChargeParameterType>() };
@@ -918,13 +917,7 @@ impl DcEvseChargeParam {
                 min_current.get_unit()
             );
         }
-        if max_power.get_unit() != PhysicalUnit::Watt {
-            return afb_error!(
-                "pre-charge-req",
-                "expect: PhysicalUnit::Watt get:{}",
-                max_power.get_unit()
-            );
-        }
+
         if current_ripple.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "pre-charge-req",
@@ -936,7 +929,7 @@ impl DcEvseChargeParam {
         payload.DC_EVSEStatus = status.encode();
         payload.EVSEMaximumCurrentLimit = max_current.encode();
         payload.EVSEMaximumVoltageLimit = max_voltage.encode();
-        payload.EVSEMaximumPowerLimit = max_power.encode();
+
         payload.EVSEMinimumCurrentLimit = min_current.encode();
         payload.EVSEMinimumVoltageLimit = min_voltage.encode();
         payload.EVSEPeakCurrentRipple = current_ripple.encode();
@@ -963,11 +956,35 @@ impl DcEvseChargeParam {
     pub fn get_min_current(&self) -> PhysicalValue {
         PhysicalValue::decode(self.payload.EVSEMinimumCurrentLimit)
     }
-    pub fn get_max_power(&self) -> PhysicalValue {
-        PhysicalValue::decode(self.payload.EVSEMaximumPowerLimit)
+
+    pub fn get_max_power(&self) -> Option<PhysicalValue> {
+        if self.payload.EVSEMaximumPowerLimit_isUsed() == 0 {
+            None
+        } else {
+            Some(PhysicalValue::decode(self.payload.EVSEMaximumPowerLimit))
+        }
     }
 
-    pub fn set_regul_tolerance(&mut self, tolerance: &PhysicalValue) -> Result<&mut Self, AfbError> {
+    pub fn set_max_power(
+        &mut self,
+        max_power: &PhysicalValue,
+    ) -> Result<&mut Self, AfbError> {
+        if max_power.get_unit() != PhysicalUnit::Watt {
+            return afb_error!(
+                "dc-ev-charge-param",
+                "max_power expect: PhysicalUnit::Ampere get:{}",
+                max_power.get_unit()
+            );
+        }
+        self.payload.EVSEMaximumPowerLimit = max_power.encode();
+        self.payload.set_EVSEMaximumPowerLimit_isUsed(1);
+        Ok(self)
+    }
+
+    pub fn set_regul_tolerance(
+        &mut self,
+        tolerance: &PhysicalValue,
+    ) -> Result<&mut Self, AfbError> {
         if tolerance.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "dc-ev-charge-param",

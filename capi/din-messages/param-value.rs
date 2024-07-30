@@ -40,13 +40,22 @@ impl PhysicalValue {
     pub fn new(value: i16, multiplier: i8, unit: PhysicalUnit) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::din_PhysicalValueType>() };
         payload.Multiplier = multiplier;
-        payload.Unit = unit as u32;
         payload.Value = value;
+
+        if unit != PhysicalUnit::Unset {
+            payload.Unit = unit as u32;
+            payload.set_Unit_isUsed(1);
+        }
+
         Self { payload }
     }
 
     pub fn get_unit(&self) -> PhysicalUnit {
-        PhysicalUnit::from_u32(self.payload.Unit)
+        if self.payload.Unit_isUsed() == 0 {
+            PhysicalUnit::Unset
+        } else {
+            PhysicalUnit::from_u32(self.payload.Unit)
+        }
     }
 
     pub fn get_multiplier(&self) -> i8 {
@@ -77,7 +86,6 @@ pub enum ParamValue {
     Text(String),
     PhyValue(PhysicalValue),
 }
-
 
 pub struct ParamTuple {
     payload: cglue::din_ParameterType,
@@ -192,7 +200,7 @@ impl ParamSet {
         let mut payload = unsafe { mem::zeroed::<cglue::din_ParameterSetType>() };
         payload.ParameterSetID = prm_id;
 
-        payload.Parameter= param.encode();
+        payload.Parameter = param.encode();
         Self { payload }
     }
 

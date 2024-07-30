@@ -110,11 +110,10 @@ pub struct PowerDeliveryRequest {
     payload: cglue::din_PowerDeliveryReqType,
 }
 impl PowerDeliveryRequest {
-    pub fn new(ready: bool, schedule_id: i16) -> Self {
+    pub fn new(ready: bool) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::din_PowerDeliveryReqType>() };
         if ready {
             payload.ReadyToChargeState = 1;
-            payload.ChargingProfile.SAScheduleTupleID = schedule_id;
         };
         Self { payload }
     }
@@ -127,8 +126,18 @@ impl PowerDeliveryRequest {
         }
     }
 
-    pub fn get_schedule_id(&self) -> i16 {
-        self.payload.ChargingProfile.SAScheduleTupleID
+    pub fn set_schedule_id(&mut self, schedule_id: i16) -> &mut Self {
+        self.payload.ChargingProfile.SAScheduleTupleID= schedule_id;
+        self.payload.set_ChargingProfile_isUsed(1);
+        self
+    }
+
+    pub fn get_schedule_id(&self) -> Option<i16> {
+        if self.payload.ChargingProfile_isUsed() != 0 {
+            Some(self.payload.ChargingProfile.SAScheduleTupleID)
+        } else {
+            None
+        }
     }
 
     pub fn add_charging_profile(

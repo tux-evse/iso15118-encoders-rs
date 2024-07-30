@@ -459,6 +459,7 @@ pub enum PhysicalUnit {
     VolAmp = cglue::din_unitSymbolType_din_unitSymbolType_VA,
     AmpHour = cglue::din_unitSymbolType_din_unitSymbolType_Ah,
     WattSecond = cglue::din_unitSymbolType_din_unitSymbolType_W_s,
+    Unset = 9999,
 }
 impl PhysicalUnit {
     pub fn from_u32(code: u32) -> Self {
