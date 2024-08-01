@@ -531,7 +531,7 @@ impl SalesTariff {
     }
 
     pub fn get_tariff_level(&self) -> Option<u8> {
-        if self.payload.SalesTariffDescription_isUsed() == 0 {
+        if self.payload.NumEPriceLevels_isUsed() == 0 {
             None
         } else {
             Some(self.payload.NumEPriceLevels)
@@ -602,6 +602,31 @@ impl RelativeTimeInterval {
     }
 
     pub fn encode(&self) -> cglue::iso2_RelativeTimeIntervalType {
+        self.payload
+    }
+}
+
+
+pub struct TimeInterval {
+    payload: cglue::iso2_IntervalType,
+}
+
+impl TimeInterval {
+    pub fn new(_unused: i32) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::iso2_IntervalType>() };
+        payload._unused = _unused;
+        Self { payload }
+    }
+
+    pub fn get_unused(&self) -> i32 {
+        self.payload._unused
+    }
+
+    pub fn decode(payload: cglue::iso2_IntervalType) -> Self {
+        Self { payload }
+    }
+
+    pub fn encode(&self) -> cglue::iso2_IntervalType {
         self.payload
     }
 }
@@ -753,20 +778,6 @@ impl SaleTariffEntry {
         Self { payload }
     }
 
-    pub fn set_start(&mut self, start: u32) -> &mut Self {
-        self.payload.set_RelativeTimeInterval_isUsed(1);
-        self.payload.RelativeTimeInterval.start = start;
-        self
-    }
-
-    pub fn get_start(&self) -> Option<u32> {
-        if self.payload.RelativeTimeInterval_isUsed() == 0 {
-            None
-        } else {
-            Some(self.payload.RelativeTimeInterval.start)
-        }
-    }
-
     pub fn set_price_level(&mut self, tariff_level: u8) -> &mut Self {
         self.payload.set_EPriceLevel_isUsed(1);
         self.payload.EPriceLevel = tariff_level;
@@ -781,17 +792,31 @@ impl SaleTariffEntry {
         }
     }
 
-    pub fn set_duration(&mut self, duration: u32) -> &mut Self {
+    pub fn set_relative_time(&mut self, time_interval: &RelativeTimeInterval) -> &mut Self {
         self.payload.set_RelativeTimeInterval_isUsed(1);
-        self.payload.RelativeTimeInterval.duration = duration;
+        self.payload.RelativeTimeInterval= time_interval.encode();
         self
     }
 
-    pub fn get_duration(&self) -> Option<u32> {
+    pub fn get_relative_time(&self) -> Option<RelativeTimeInterval> {
         if self.payload.RelativeTimeInterval_isUsed() == 0 {
-            None
+            return None
         } else {
-            Some(self.payload.RelativeTimeInterval.duration)
+            Some(RelativeTimeInterval::decode(self.payload.RelativeTimeInterval))
+        }
+    }
+
+    pub fn set_time(&mut self, time_interval: &TimeInterval) -> &mut Self {
+        self.payload.set_TimeInterval_isUsed(1);
+        self.payload.TimeInterval= time_interval.encode();
+        self
+    }
+
+    pub fn get_time(&self) -> Option<TimeInterval> {
+        if self.payload.TimeInterval_isUsed() == 0 {
+            return None
+        } else {
+            Some(TimeInterval::decode(self.payload.TimeInterval))
         }
     }
 
@@ -884,16 +909,32 @@ pub struct AcEvseChargeParam {
 impl AcEvseChargeParam {
     pub fn new(
         status: &AcEvseStatusType,
-        max_current: &PhysicalValue,
         nominate_voltage: &PhysicalValue,
-    ) -> Self {
+        max_current: &PhysicalValue,
+    ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_AC_EVSEChargeParameterType>() };
+
+        if max_current.get_unit() != PhysicalUnit::Ampere {
+            return afb_error!(
+                "ac-evse-charge-param",
+                "max_current expect: ampere get:{}",
+                max_current.get_unit()
+            );
+        }
+
+        if nominate_voltage.get_unit() != PhysicalUnit::Volt {
+            return afb_error!(
+                "ac-evse-charge-param",
+                "nominate_voltage expect: volt get:{}",
+                nominate_voltage.get_unit()
+            );
+        }
 
         payload.AC_EVSEStatus = status.encode();
         payload.EVSENominalVoltage = nominate_voltage.encode();
         payload.EVSEMaxCurrent = max_current.encode();
 
-        Self { payload }
+        Ok(Self { payload })
     }
 
     pub fn get_status(&self) -> AcEvseStatusType {
@@ -1011,7 +1052,10 @@ impl DcEvseChargeParam {
         PhysicalValue::decode(self.payload.EVSEMaximumPowerLimit)
     }
 
-    pub fn set_regul_tolerance(&mut self, tolerance: &PhysicalValue) -> Result<&mut Self, AfbError> {
+    pub fn set_regul_tolerance(
+        &mut self,
+        tolerance: &PhysicalValue,
+    ) -> Result<&mut Self, AfbError> {
         if tolerance.get_unit() != PhysicalUnit::Ampere {
             return afb_error!(
                 "dc-ev-charge-param",

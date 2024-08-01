@@ -497,44 +497,6 @@ impl SalesTariff {
     }
 }
 
-pub struct RelativeTimeInterval {
-    payload: cglue::din_RelativeTimeIntervalType,
-}
-
-impl RelativeTimeInterval {
-    pub fn new(start: u32) -> Self {
-        let mut payload = unsafe { mem::zeroed::<cglue::din_RelativeTimeIntervalType>() };
-        payload.start = start;
-        Self { payload }
-    }
-
-    pub fn get_start(&self) -> u32 {
-        self.payload.start
-    }
-
-    pub fn set_duration(&mut self, duration: u32) -> &mut Self {
-        self.payload.duration = duration;
-        self.payload.set_duration_isUsed(1);
-        self
-    }
-
-    pub fn get_duration(&self) -> Option<u32> {
-        if self.payload.duration_isUsed() == 0 {
-            None
-        } else {
-            Some(self.payload.duration)
-        }
-    }
-
-    pub fn decode(payload: cglue::din_RelativeTimeIntervalType) -> Self {
-        Self { payload }
-    }
-
-    pub fn encode(&self) -> cglue::din_RelativeTimeIntervalType {
-        self.payload
-    }
-}
-
 pub struct PMaxScheduleEntry {
     payload: cglue::din_PMaxScheduleEntryType,
 }
@@ -715,6 +677,71 @@ impl ConsumptionCost {
     }
 }
 
+
+pub struct RelativeTimeInterval {
+    payload: cglue::din_RelativeTimeIntervalType,
+}
+
+impl RelativeTimeInterval {
+    pub fn new(start: u32) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_RelativeTimeIntervalType>() };
+        payload.start = start;
+        Self { payload }
+    }
+
+    pub fn get_start(&self) -> u32 {
+        self.payload.start
+    }
+
+    pub fn set_duration(&mut self, duration: u32) -> &mut Self {
+        self.payload.duration = duration;
+        self.payload.set_duration_isUsed(1);
+        self
+    }
+
+    pub fn get_duration(&self) -> Option<u32> {
+        if self.payload.duration_isUsed() == 0 {
+            None
+        } else {
+            Some(self.payload.duration)
+        }
+    }
+
+    pub fn decode(payload: cglue::din_RelativeTimeIntervalType) -> Self {
+        Self { payload }
+    }
+
+    pub fn encode(&self) -> cglue::din_RelativeTimeIntervalType {
+        self.payload
+    }
+}
+
+
+pub struct TimeInterval {
+    payload: cglue::din_IntervalType,
+}
+
+impl TimeInterval {
+    pub fn new(_unused: i32) -> Self {
+        let mut payload = unsafe { mem::zeroed::<cglue::din_IntervalType>() };
+        payload._unused = _unused;
+        Self { payload }
+    }
+
+    pub fn get_unused(&self) -> i32 {
+        self.payload._unused
+    }
+
+    pub fn decode(payload: cglue::din_IntervalType) -> Self {
+        Self { payload }
+    }
+
+    pub fn encode(&self) -> cglue::din_IntervalType {
+        self.payload
+    }
+}
+
+
 pub struct SaleTariffEntry {
     payload: cglue::din_SalesTariffEntryType,
 }
@@ -730,31 +757,31 @@ impl SaleTariffEntry {
         self.payload.EPriceLevel
     }
 
-    pub fn set_start(&mut self, start: u32) -> &mut Self {
+    pub fn set_relative_time(&mut self, time_interval: &RelativeTimeInterval) -> &mut Self {
         self.payload.set_RelativeTimeInterval_isUsed(1);
-        self.payload.RelativeTimeInterval.start = start;
+        self.payload.RelativeTimeInterval= time_interval.encode();
         self
     }
 
-    pub fn get_start(&self) -> Option<u32> {
+    pub fn get_relative_time(&self) -> Option<RelativeTimeInterval> {
         if self.payload.RelativeTimeInterval_isUsed() == 0 {
-            None
+            return None
         } else {
-            Some(self.payload.RelativeTimeInterval.start)
+            Some(RelativeTimeInterval::decode(self.payload.RelativeTimeInterval))
         }
     }
 
-    pub fn set_duration(&mut self, duration: u32) -> &mut Self {
-        self.payload.set_RelativeTimeInterval_isUsed(1);
-        self.payload.RelativeTimeInterval.duration = duration;
+    pub fn set_time(&mut self, time_interval: &TimeInterval) -> &mut Self {
+        self.payload.set_TimeInterval_isUsed(1);
+        self.payload.TimeInterval= time_interval.encode();
         self
     }
 
-    pub fn get_duration(&self) -> Option<u32> {
-        if self.payload.RelativeTimeInterval_isUsed() == 0 {
-            None
+    pub fn get_time(&self) -> Option<TimeInterval> {
+        if self.payload.TimeInterval_isUsed() == 0 {
+            return None
         } else {
-            Some(self.payload.RelativeTimeInterval.duration)
+            Some(TimeInterval::decode(self.payload.TimeInterval))
         }
     }
 

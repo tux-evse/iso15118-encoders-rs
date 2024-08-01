@@ -25,10 +25,7 @@ pub struct ChargingProfileEntry {
 }
 
 impl ChargingProfileEntry {
-    pub fn new(
-        start: u32,
-        power_max: &PhysicalValue,
-    ) -> Result<Self, AfbError> {
+    pub fn new(start: u32, power_max: &PhysicalValue) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::iso2_ProfileEntryType>() };
         payload.ChargingProfileEntryStart = start;
 
@@ -173,10 +170,12 @@ impl PowerDeliveryRequest {
 
     pub fn get_charging_profiles(&self) -> Vec<ChargingProfileEntry> {
         let mut response = Vec::new();
-        for idx in 0..self.payload.ChargingProfile.ProfileEntry.arrayLen as usize {
-            response.push(ChargingProfileEntry::decode(
-                self.payload.ChargingProfile.ProfileEntry.array[idx as usize],
-            ));
+        if self.payload.ChargingProfile_isUsed() != 0 {
+            for idx in 0..self.payload.ChargingProfile.ProfileEntry.arrayLen as usize {
+                response.push(ChargingProfileEntry::decode(
+                    self.payload.ChargingProfile.ProfileEntry.array[idx as usize],
+                ));
+            }
         }
         response
     }

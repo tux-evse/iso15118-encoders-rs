@@ -344,7 +344,7 @@ impl CurrentDemandResponse {
             if unit != PhysicalUnit::Ampere {
                 return afb_error!(
                     "current-demand-res",
-                    "expect: PhysicalUnit::Volt get:{}",
+                    "expect: PhysicalUnit::Ampere get:{}",
                     unit
                 );
             }

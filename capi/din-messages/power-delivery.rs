@@ -127,7 +127,7 @@ impl PowerDeliveryRequest {
     }
 
     pub fn set_schedule_id(&mut self, schedule_id: i16) -> &mut Self {
-        self.payload.ChargingProfile.SAScheduleTupleID= schedule_id;
+        self.payload.ChargingProfile.SAScheduleTupleID = schedule_id;
         self.payload.set_ChargingProfile_isUsed(1);
         self
     }
@@ -159,10 +159,12 @@ impl PowerDeliveryRequest {
 
     pub fn get_charging_profiles(&self) -> Vec<ChargingProfileEntry> {
         let mut response = Vec::new();
-        for idx in 0..self.payload.ChargingProfile.ProfileEntry.arrayLen as usize {
-            response.push(ChargingProfileEntry::decode(
-                self.payload.ChargingProfile.ProfileEntry.array[idx as usize],
-            ));
+        if self.payload.ChargingProfile_isUsed() != 0 {
+            for idx in 0..self.payload.ChargingProfile.ProfileEntry.arrayLen as usize {
+                response.push(ChargingProfileEntry::decode(
+                    self.payload.ChargingProfile.ProfileEntry.array[idx as usize],
+                ));
+            }
         }
         response
     }
