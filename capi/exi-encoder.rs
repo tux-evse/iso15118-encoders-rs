@@ -185,7 +185,7 @@ pub fn byte_equal_array(src: &[u8], data: &[u8], len: u16) -> bool {
     return true;
 }
 
-
+#[track_caller]
 pub fn array_to_str<'a>(data: &'a [raw::c_char], len: u16) -> Result<&'a str, AfbError> {
     let slice = unsafe { slice::from_raw_parts(data.as_ptr() as *const u8, len as usize) };
     let text = match str::from_utf8(slice) {

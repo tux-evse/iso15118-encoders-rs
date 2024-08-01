@@ -543,7 +543,8 @@ impl DcEvStatusType {
         payload.EVErrorCode = error as u32;
         Self { payload }
     }
-        pub fn get_ready(&self) -> bool {
+
+    pub fn get_ready(&self) -> bool {
         if self.payload.EVReady == 0 {
             false
         } else {
@@ -596,8 +597,6 @@ impl DcEvStatusType {
     pub fn encode(&self) -> cglue::din_DC_EVStatusType {
         self.payload
     }
-
-
 }
 
 pub struct AcEvseStatusType {

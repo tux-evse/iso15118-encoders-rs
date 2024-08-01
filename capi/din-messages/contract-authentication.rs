@@ -24,21 +24,51 @@ pub struct ContractAuthenticationRequest {
 }
 
 impl ContractAuthenticationRequest {
-    pub fn new(id: &str) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::din_ContractAuthenticationReqType>() };
-        payload.Id.charactersLen = str_to_array(
-            id,
-            &mut payload.Id.characters,
-            cglue::din_ContractID_CHARACTER_SIZE,
-        )?;
-        Ok(Self { payload })
+    pub fn new() -> Self {
+        let payload = unsafe { mem::zeroed::<cglue::din_ContractAuthenticationReqType>() };
+
+        Self { payload }
     }
 
-    pub fn get_id(&self) -> Result<&str, AfbError> {
-        array_to_str(
-            &self.payload.Id.characters,
-            self.payload.Id.charactersLen,
-        )
+    pub fn set_id(&mut self, id: &str) -> Result<&Self, AfbError> {
+        self.payload.Id.charactersLen = str_to_array(
+            id,
+            &mut self.payload.Id.characters,
+            cglue::din_ContractID_CHARACTER_SIZE,
+        )?;
+        self.payload.set_Id_isUsed(1);
+        Ok(self)
+    }
+
+    pub fn get_id(&self) -> Result<Option<&str>, AfbError> {
+        if self.payload.Id_isUsed() == 0 {
+            Ok(None)
+        } else {
+            let id = array_to_str(&self.payload.Id.characters, self.payload.Id.charactersLen)?;
+            Ok(Some(id))
+        }
+    }
+
+    pub fn set_challenge(&mut self, challenge: &str) -> Result<&Self, AfbError> {
+        self.payload.GenChallenge.charactersLen = str_to_array(
+            challenge,
+            &mut self.payload.GenChallenge.characters,
+            cglue::din_GenChallenge_CHARACTER_SIZE,
+        )?;
+        self.payload.set_GenChallenge_isUsed(1);
+        Ok(self)
+    }
+
+    pub fn get_challenge(&self) -> Result<Option<&str>, AfbError> {
+        if self.payload.GenChallenge_isUsed() == 0 {
+            Ok(None)
+        } else {
+            let challenge = array_to_str(
+                &self.payload.GenChallenge.characters,
+                self.payload.GenChallenge.charactersLen,
+            )?;
+            Ok(Some(challenge))
+        }
     }
 
     pub fn decode(payload: cglue::din_ContractAuthenticationReqType) -> Self {
@@ -64,7 +94,7 @@ impl ContractAuthenticationResponse {
     pub fn new(rcode: ResponseCode, processing: EvseProcessing) -> Self {
         let mut payload = unsafe { mem::zeroed::<cglue::din_ContractAuthenticationResType>() };
         payload.ResponseCode = rcode as u32;
-        payload.EVSEProcessing=processing as u32;
+        payload.EVSEProcessing = processing as u32;
 
         Self { payload }
     }
