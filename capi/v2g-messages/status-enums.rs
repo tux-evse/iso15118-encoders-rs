@@ -51,9 +51,9 @@ impl PayloadMsgId {
 #[strum(serialize_all = "snake_case")]
 #[repr(u8)]
 pub enum ProtocolTagId {
-    Iso20,
-    Iso2,
-    Din,
+    Iso20=0,
+    Iso2=1,
+    Din=2,
     Unknown=255,
 }
 

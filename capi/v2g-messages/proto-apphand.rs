@@ -86,7 +86,6 @@ pub struct AppHandAppProtocolType {
 impl AppHandAppProtocolType {
     fn new(
         protocol: &SupportedAppProtocolConf,
-        schema_id: u8,
         priority: u8,
     ) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::appHand_AppProtocolType>() };
@@ -97,7 +96,7 @@ impl AppHandAppProtocolType {
         )?;
         payload.VersionNumberMajor = protocol.major;
         payload.VersionNumberMinor = protocol.minor;
-        payload.SchemaID = schema_id;
+        payload.SchemaID = protocol.tag_id as u8;
         payload.Priority = priority;
         Ok(Self { payload })
     }
@@ -157,7 +156,7 @@ pub struct SupportedAppProtocolReq {
 impl SupportedAppProtocolReq {
     pub fn new(protocol: &SupportedAppProtocolConf) -> Result<Self, AfbError> {
         let mut payload = unsafe { mem::zeroed::<cglue::appHand_supportedAppProtocolReq>() };
-        payload.AppProtocol.array[0] = AppHandAppProtocolType::new(protocol, 0, 1)?.encode();
+        payload.AppProtocol.array[0] = AppHandAppProtocolType::new(protocol, 1)?.encode();
         payload.AppProtocol.arrayLen = 1;
         Ok(Self { payload })
     }
@@ -182,7 +181,7 @@ impl SupportedAppProtocolReq {
     ) -> Result<&mut Self, AfbError> {
         let idx = self.payload.AppProtocol.arrayLen;
         self.payload.AppProtocol.array[idx as usize] =
-            AppHandAppProtocolType::new(protocol, 0, 1)?.encode();
+            AppHandAppProtocolType::new(protocol, 1)?.encode();
         self.payload.AppProtocol.arrayLen += 1;
         Ok(self)
     }
