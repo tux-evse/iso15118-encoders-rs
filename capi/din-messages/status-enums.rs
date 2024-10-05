@@ -310,7 +310,7 @@ impl DcEvErrorCode {
 #[repr(u32)]
 pub enum EvRequestTransfertMode {
     AcSinglePhase = cglue::din_EVRequestedEnergyTransferType_din_EVRequestedEnergyTransferType_AC_single_phase_core,
-    AcTreePhase = cglue::din_EVRequestedEnergyTransferType_din_EVRequestedEnergyTransferType_AC_three_phase_core,
+    AcThreePhase = cglue::din_EVRequestedEnergyTransferType_din_EVRequestedEnergyTransferType_AC_three_phase_core,
     DcBasic = cglue::din_EVRequestedEnergyTransferType_din_EVRequestedEnergyTransferType_DC_core,
     DcExtended =
         cglue::din_EVRequestedEnergyTransferType_din_EVRequestedEnergyTransferType_DC_extended,

@@ -405,7 +405,7 @@ impl DcEvErrorCode {
 pub enum EngyTransfertMode {
     AcSinglePhase =
         cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_AC_single_phase_core,
-    AcTreePhase =
+    AcThreePhase =
         cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_AC_three_phase_core,
     DcBasic = cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_core,
     DcExtended = cglue::iso2_EnergyTransferModeType_iso2_EnergyTransferModeType_DC_extended,

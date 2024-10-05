@@ -311,7 +311,7 @@ impl ParamDiscoveryRequest {
 
         match EvRequestTransfertMode::from_u32(self.payload.EVRequestedEnergyTransferType) {
             EvRequestTransfertMode::AcSinglePhase => {}
-            EvRequestTransfertMode::AcTreePhase => {}
+            EvRequestTransfertMode::AcThreePhase => {}
             _ => {
                 return afb_error!(
                     "param-discovery-request",

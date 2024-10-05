@@ -360,7 +360,7 @@ impl ParamDiscoveryRequest {
 
         match EngyTransfertMode::from_u32(self.payload.RequestedEnergyTransferMode) {
             EngyTransfertMode::AcSinglePhase => {}
-            EngyTransfertMode::AcTreePhase => {}
+            EngyTransfertMode::AcThreePhase => {}
             _ => {
                 return afb_error!(
                     "param-discovery-request",
