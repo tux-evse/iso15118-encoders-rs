@@ -28,7 +28,6 @@ use std::str;
 use std::str::FromStr;
 use strum_macros::{AsRefStr, Display, EnumString};
 
-
 mod cglue {
     #![allow(dead_code)]
     #![allow(non_upper_case_globals)]
@@ -166,10 +165,29 @@ pub fn bytes_to_array(src: &[u8], dst: &mut [u8], max: u32) -> Result<u16, AfbEr
         return afb_error!("byte-to-array", "fail (src:{:?} longer than:{})", src, max);
     }
 
-    for idx in 0..src.len() {
-        dst[idx] = src[idx];
-    }
+    dst.clone_from_slice(src);
     Ok(src.len() as u16)
+}
+
+// A generic version over [u8] and [i8] of bytes_to_array
+pub trait CloneFromSliceWithMax<T> {
+    fn clone_from_slice_with_max(&mut self, src: &[T], max: usize) -> Result<usize, AfbError>;
+}
+impl<T> CloneFromSliceWithMax<T> for [T]
+where
+    T: Clone,
+{
+    fn clone_from_slice_with_max(&mut self, src: &[T], max: usize) -> Result<usize, AfbError> {
+        if src.len() > max {
+            return afb_error!(
+                "clone-from-slice-with-max",
+                "failed (source longer than max={})",
+                max
+            );
+        }
+        self.clone_from_slice(src);
+        Ok(src.len())
+    }
 }
 
 #[track_caller]
@@ -269,6 +287,14 @@ impl RawStream {
         unsafe { cglue::exi_bitstream_get_length(self.stream) }
     }
 
+    pub fn set_cursor(&mut self, byte_offset: usize) {
+        unsafe {
+            let stream = self.stream.as_mut().expect("stream.seek valid handle");
+            stream.byte_pos = byte_offset;
+            stream.bit_count = 0;
+        }
+    }
+
     pub fn get_index(&self) -> (usize, usize) {
         let index = unsafe { cglue::exi_bitstream_get_length(self.stream) };
         (index, cglue::EXI_MAX_DOCUMENT_SIZE - index)
@@ -281,10 +307,10 @@ impl RawStream {
         }
     }
 
-    pub fn set_size(&self, size:u32) {
+    pub fn set_size(&self, size: u32) {
         unsafe {
             let stream = self.stream.as_mut().expect("stream.reset valid handle");
-            stream.data_size= size as usize
+            stream.data_size = size as usize
         }
     }
     pub fn reset(&mut self) {

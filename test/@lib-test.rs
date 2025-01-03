@@ -44,3 +44,7 @@ mod test_v2g;
 #[cfg(test)]
 #[path = "iso2-test.rs"]
 mod test_iso2;
+
+#[cfg(test)]
+#[path = "iso20-test.rs"]
+mod test_iso20;

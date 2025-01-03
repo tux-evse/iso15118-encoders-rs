@@ -29,14 +29,61 @@ mod v2g_encoder;
 #[path = "iso2-messages/@iso2-lib.rs"]
 mod iso2_encoder;
 
+#[path = "iso20-messages/@iso20-lib.rs"]
+mod iso20_encoder;
+
 #[path = "din-messages/@din-lib.rs"]
 mod din_encoder;
 
+//
+// Add a get_<$name>(&self) -> &str method in an impl that reads a
+// string field made of a [i8] ($string_field) and a length ($string_len_field)
+#[macro_export]
+macro_rules! string_field_getter {
+    ( $( $string_field:ident ).+, $( $string_len_field:ident ).+, $name:ident ) => {
+        paste::paste! {
+        pub fn [<get_ $name>](&self) -> &str {
+                str::from_utf8(unsafe {
+                    &*((&self.$( $string_field ).+[0..self.$( $string_len_field ).+ as usize])
+                        as *const [i8] as *const [u8])
+                })
+                .unwrap()
+        }
+        }
+    };
+}
+
+//
+// Add a set_<$name>(&self, input_str: &str, max_length: usize) -> Result<(), AfbError>
+// method in an impl that writes in a string field made of a [i8]
+// ($string_field) and a length ($string_len_field). The input string
+// cannot be larger than $max_length
+#[macro_export]
+macro_rules! string_field_setter {
+    ( $( $string_field:ident ).+, $( $string_len_field:ident ).+, $name:ident, $max_length:expr ) => {
+        paste::paste! {
+        pub fn [<set_ $name>](&mut self, input_str: &str) -> Result<(), AfbError> {
+            self.$( $string_len_field ).+ = str_to_array(input_str, &mut self.$( $string_field ).+, $max_length)?;
+            Ok(())
+        }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! string_field_getter_and_setter {
+    ( $( $string_field:ident ).+, $( $string_len_field:ident ).+, $name:ident, $max_length:expr ) => {
+        $crate::string_field_getter!($( $string_field ).+, $( $string_len_field ).+, $name);
+        $crate::string_field_setter!($( $string_field ).+, $( $string_len_field ).+, $name, $max_length);
+    };
+}
+
 pub mod prelude {
-    pub use afbv4::prelude::*;
-    pub use crate::capi::exi_encoder::*;
-    pub use crate::capi::v2g_encoder::*;
-    pub use crate::capi::iso2_encoder::*;
     pub use crate::capi::din_encoder::*;
+    pub use crate::capi::exi_encoder::*;
+    pub use crate::capi::iso20_encoder::*;
+    pub use crate::capi::iso2_encoder::*;
     pub use crate::capi::pki_sign::*;
+    pub use crate::capi::v2g_encoder::*;
+    pub use afbv4::prelude::*;
 }
