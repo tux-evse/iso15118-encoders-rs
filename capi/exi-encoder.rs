@@ -165,7 +165,10 @@ pub fn bytes_to_array(src: &[u8], dst: &mut [u8], max: u32) -> Result<u16, AfbEr
         return afb_error!("byte-to-array", "fail (src:{:?} longer than:{})", src, max);
     }
 
-    dst.clone_from_slice(src);
+    for idx in 0..src.len() {
+        dst[idx] = src[idx];
+    }
+    //dst.clone_from_slice(src);
     Ok(src.len() as u16)
 }
 

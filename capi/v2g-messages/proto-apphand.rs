@@ -88,6 +88,7 @@ impl AppHandAppProtocolType {
         protocol: &SupportedAppProtocolConf,
         priority: u8,
     ) -> Result<Self, AfbError> {
+        println!("==== protocol name: {}", protocol.name);
         let mut payload = unsafe { mem::zeroed::<cglue::appHand_AppProtocolType>() };
         payload.ProtocolNamespace.charactersLen = str_to_array(
             protocol.name,

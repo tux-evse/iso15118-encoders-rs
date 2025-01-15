@@ -12,6 +12,8 @@ use std::str::FromStr;
 pub enum MessageTagId {
     SessionSetupReq,
     SessionSetupRes,
+    AuthorizationSetupReq,
+    AuthorizationSetupRes,
     Unsupported,
 }
 

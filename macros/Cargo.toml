@@ -1,0 +1,12 @@
+[package]
+name = "macros"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "v2g_macros"
+path = "src/lib.rs"
+proc-macro = true
+
+[dependencies]
+syn = "2.0"

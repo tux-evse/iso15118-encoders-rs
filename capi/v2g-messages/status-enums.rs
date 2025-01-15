@@ -59,7 +59,9 @@ pub enum ProtocolTagId {
 
 const PROTO_DIN:&str = "urn:din:70121:2012:MsgDef";
 const PROTO_ISO2:&str =  "urn:iso:15118:2:2013:MsgDef";
-const PROTO_ISO20:&str = "urn:iso:15118:20:2018:MsgDef";
+const PROTO_ISO20:&str = "urn:iso:std:iso:15118:-20";
+const PROTO_ISO20_AC:&str = "urn:iso:std:iso:15118:-20:AC";
+const PROTO_ISO20_DC:&str = "urn:iso:std:iso:15118:-20:DC";
 
 impl ProtocolTagId {
     pub fn from_u8(code: u8) -> Self {
@@ -70,8 +72,10 @@ impl ProtocolTagId {
     pub fn from_urn(urn: &str) -> Result<Self, AfbError> {
         let proto= match urn {
            PROTO_DIN => ProtocolTagId::Din,
-           PROTO_ISO2=> ProtocolTagId::Iso2,
-           PROTO_ISO20=> ProtocolTagId::Iso20,
+           PROTO_ISO2 => ProtocolTagId::Iso2,
+           PROTO_ISO20 => ProtocolTagId::Iso20,
+           PROTO_ISO20_AC => ProtocolTagId::Iso20,
+           PROTO_ISO20_DC => ProtocolTagId::Iso20,
            _ => return afb_error!("get-from-urn", "fail deserialize:{}", urn)
         };
 
@@ -173,9 +177,9 @@ impl SupportedAppProtocolConf {
 // default protocol configuration for test and simulation
 pub const V2G_PROTOCOLS_SUPPORTED_LIST: [&SupportedAppProtocolConf; 3] = [
     &SupportedAppProtocolConf {
-        name: "urn:iso:15118:20:2022:MsgDef",
+        name: "urn:iso:std:iso:15118:-20:AC",
         tag_id: ProtocolTagId::Iso20,
-        major: 2,
+        major: 1,
         minor: 0,
     },
     &SupportedAppProtocolConf {

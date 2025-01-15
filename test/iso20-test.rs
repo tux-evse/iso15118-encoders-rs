@@ -1,6 +1,6 @@
 use iso15118::prelude::iso20_exi::*;
 use iso15118::prelude::v2g;
-use iso15118::prelude::{ExiStream, dump_buffer};
+use iso15118::prelude::{dump_buffer, ExiStream};
 
 pub fn encode_to_stream(mut message: ExiMessageDoc) -> Result<ExiStream, AfbError> {
     const SESSION_ID: [u8; 8] = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
@@ -65,6 +65,67 @@ fn session_setup_response() -> Result<(), AfbError> {
 
     assert!(req2.get_evse_id() == evseid_in);
     assert!(req2.get_rcode() == code);
+
+    Ok(())
+}
+
+#[test]
+fn authorization_setup_response() -> Result<(), AfbError> {
+    let mut r = AuthorizationSetupResponse::default();
+
+    let empty_services = Vec::<AuthorizationType>::new();
+    assert!(r.set_authorization_services(&empty_services).is_err());
+
+    // array too wide
+    let services = vec![
+        AuthorizationType::EIM,
+        AuthorizationType::PnC,
+        AuthorizationType::EIM,
+    ];
+    assert!(r.set_authorization_services(&services).is_err());
+
+    let services = vec![AuthorizationType::EIM, AuthorizationType::PnC];
+    assert!(r.set_authorization_services(&services).is_ok());
+    assert!(r.get_authorization_services() == services);
+
+    r.set_eim_authorization_mode(true);
+    assert!(r.get_eim_authorization_mode() == true);
+    r.set_eim_authorization_mode(false);
+    assert!(r.get_eim_authorization_mode() == false);
+
+    // PnC authorization mode
+    assert!(r.get_pnc_authorization_mode().is_none());
+    assert!(r.set_pnc_authorization_mode(None).is_ok());
+    assert!(r.get_pnc_authorization_mode().is_none());
+
+    // empty provider list
+    assert!(PnCAuthorizationMode::new([42u8; 16], vec![]).is_ok());
+
+    let pnc_mode = PnCAuthorizationMode::new([42u8; 16], vec![String::from("Provider1")]);
+    assert!(pnc_mode.is_ok());
+    let pnc_mode = pnc_mode.unwrap();
+
+    assert!(pnc_mode.get_challenge() == [42u8; 16]);
+    assert!(pnc_mode.get_provider_list() == vec![String::from("Provider1")]);
+
+    assert!(r.set_pnc_authorization_mode(Some(pnc_mode)).is_ok());
+    let read_pnc_mode = r.get_pnc_authorization_mode();
+    assert!(read_pnc_mode.is_some());
+    let read_pnc_mode = read_pnc_mode.unwrap();
+    assert!(read_pnc_mode.is_ok());
+    let read_pnc_mode = read_pnc_mode.unwrap();
+    assert!(read_pnc_mode.get_challenge() == [42u8; 16]);
+    assert!(read_pnc_mode.get_provider_list() == vec![String::from("Provider1")]);
+
+    // after EXI encoding
+    let r2 = encode_then_decode(&r)?;
+    let read_pnc_mode = r2.get_pnc_authorization_mode();
+    assert!(read_pnc_mode.is_some());
+    let read_pnc_mode = read_pnc_mode.unwrap();
+    assert!(read_pnc_mode.is_ok());
+    let read_pnc_mode = read_pnc_mode.unwrap();
+    assert!(read_pnc_mode.get_challenge() == [42u8; 16]);
+    assert!(read_pnc_mode.get_provider_list() == vec![String::from("Provider1")]);
 
     Ok(())
 }

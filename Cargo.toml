@@ -16,6 +16,7 @@ afbv4 = { git = "https://github.com/redpesk-common/afb-librust", optional = true
 strum_macros = "0.26"
 strum = { version = "0.26", features = ["derive"] }
 paste = "1.0"
+macros = {path = "macros"}
 
 [build-dependencies]
 bindgen    = ">=0.6"

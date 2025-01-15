@@ -22,13 +22,15 @@ use std::mem;
 
 use crate::string_field_getter_and_setter;
 
-#[derive(Clone)]
+use v2g_macros::CGlue;
+
+#[derive(CGlue)]
+#[cglue_union_member(SessionSetupReq)]
 pub struct SessionSetupRequest {
     payload: cglue::iso20_SessionSetupReqType,
 }
 impl SessionSetupRequest {
-    pub fn empty() -> Self {
-        let payload = unsafe { mem::zeroed::<cglue::iso20_SessionSetupReqType>() };
+    pub fn from_cglue(payload: cglue::iso20_SessionSetupReqType) -> Self {
         Self { payload }
     }
 
@@ -36,7 +38,7 @@ impl SessionSetupRequest {
         if evcc_id.len() == 0 {
             return afb_error!("session-setup-new", "EVCCID: should not be null");
         }
-        let mut this = SessionSetupRequest::empty();
+        let mut this = SessionSetupRequest::default();
         this.set_evcc_id(evcc_id)?;
         Ok(this)
     }
@@ -47,51 +49,27 @@ impl SessionSetupRequest {
         evcc_id,
         cglue::iso20_EVCCID_CHARACTER_SIZE
     );
-
 }
 
-impl EncodeToDocument for SessionSetupRequest {
-    fn encode(&self) -> Box<cglue::iso20_exiDocument> {
-        unsafe {
-            let mut exi_body = Box::<cglue::iso20_exiDocument>::new_uninit().assume_init();
-            exi_body.__bindgen_anon_1.SessionSetupReq = self.payload;
-            exi_body.set_SessionSetupReq_isUsed(1);
-            exi_body
-        }
-    }
-}
-
-// TODO: write a Derive macro
-impl TryFrom<ExiMessageDoc> for SessionSetupRequest {
-    type Error = AfbError;
-
-    fn try_from(doc: ExiMessageDoc) -> Result<Self, Self::Error> {
-        if doc.get_payload().SessionSetupReq_isUsed() == 0 {
-            return afb_error!("ExiMessageDoc-from-SessionSetupReq", "Wrong type");
-        }
-        unsafe {
-            Ok(SessionSetupRequest {
-                payload: doc.get_payload().__bindgen_anon_1.SessionSetupReq,
-            })
-        }
-    }
-}
-
+#[derive(CGlue)]
+#[cglue_union_member(SessionSetupRes)]
 pub struct SessionSetupResponse {
     payload: cglue::iso20_SessionSetupResType,
 }
 
 impl SessionSetupResponse {
     pub fn new(evse_id: &str, code: ResponseCode) -> Result<Self, AfbError> {
-        let mut payload = unsafe { mem::zeroed::<cglue::iso20_SessionSetupResType>() };
+        let mut this = SessionSetupResponse::default();
 
-        payload.ResponseCode = code as u32;
-
-        let mut this = Self { payload };
+        this.payload.ResponseCode = code as u32;
         this.set_evse_id(evse_id)?;
 
         Ok(this)
     }
+
+    pub fn from_cglue(payload: cglue::iso20_SessionSetupResType) -> Self {
+        Self { payload }
+    }    
 
     string_field_getter_and_setter!(
         payload.EVSEID.characters,
@@ -102,31 +80,5 @@ impl SessionSetupResponse {
 
     pub fn get_rcode(&self) -> ResponseCode {
         ResponseCode::from_u32(self.payload.ResponseCode)
-    }
-}
-
-impl TryFrom<ExiMessageDoc> for SessionSetupResponse {
-    type Error = AfbError;
-
-    fn try_from(doc: ExiMessageDoc) -> Result<Self, Self::Error> {
-        if doc.get_payload().SessionSetupRes_isUsed() == 0 {
-            return afb_error!("ExiMessageDoc-from-SessionSetupRes", "Wrong type");
-        }
-        unsafe {
-            Ok(SessionSetupResponse {
-                payload: doc.get_payload().__bindgen_anon_1.SessionSetupRes,
-            })
-        }
-    }
-}
-
-impl EncodeToDocument for SessionSetupResponse {
-    fn encode(&self) -> Box<cglue::iso20_exiDocument> {
-        unsafe {
-            let mut exi_body = Box::<cglue::iso20_exiDocument>::new_uninit().assume_init();
-            exi_body.__bindgen_anon_1.SessionSetupRes = self.payload;
-            exi_body.set_SessionSetupRes_isUsed(1);
-            exi_body
-        }
     }
 }

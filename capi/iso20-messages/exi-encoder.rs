@@ -48,7 +48,8 @@ impl ExiMessageDoc {
             if status < 0 {
                 return afb_error!(
                     "iso20-exi-decode",
-                    "fail to decode iso-20 (ExiDocument) from stream: {}", status
+                    "fail to decode iso-20 (ExiDocument) from stream: {}",
+                    status
                 );
             }
             locked.reset();
@@ -105,28 +106,47 @@ impl ExiMessageDoc {
         &self.payload
     }
 
-    fn get_header(&self) -> &cglue::iso20_MessageHeaderType {
+    pub fn to_body(&self) -> Result<MessageBody, AfbError> {
         unsafe {
             if self.payload.SessionSetupReq_isUsed() != 0 {
-                return &self.payload.__bindgen_anon_1.SessionSetupReq.Header;
+                return Ok(MessageBody::SessionSetupReq(
+                    SessionSetupRequest::from_cglue(self.payload.__bindgen_anon_1.SessionSetupReq),
+                ));
+            } else if self.payload.SessionSetupRes_isUsed() != 0 {
+                return Ok(MessageBody::SessionSetupRes(
+                    SessionSetupResponse::from_cglue(self.payload.__bindgen_anon_1.SessionSetupRes),
+                ));
+            } else if self.payload.AuthorizationSetupReq_isUsed() != 0 {
+                return Ok(MessageBody::AuthorizationSetupReq(
+                    AuthorizationSetupRequest::from_cglue(
+                        self.payload.__bindgen_anon_1.AuthorizationSetupReq,
+                    ),
+                ));
+            } else if self.payload.AuthorizationSetupRes_isUsed() != 0 {
+                return Ok(MessageBody::AuthorizationSetupRes(
+                    AuthorizationSetupResponse::from_cglue(
+                        self.payload.__bindgen_anon_1.AuthorizationSetupRes,
+                    ),
+                ));
             }
-            else if self.payload.SessionSetupRes_isUsed() != 0 {
-                return &self.payload.__bindgen_anon_1.SessionSetupRes.Header;
-            }
+
+            println!("== bitfield: {:?}", self.payload._bitfield_1);
         }
-        panic!();
+        return afb_error!("iso20-exi-message-doc-to-body", "Unsupported body type");
+    }
+
+    fn get_header(&self) -> &cglue::iso20_MessageHeaderType {
+        // we assume here all messages have a similar memory layout
+        unsafe {
+            return &self.payload.__bindgen_anon_1.SessionSetupReq.Header;
+        }
     }
 
     fn get_mut_header(&mut self) -> &mut cglue::iso20_MessageHeaderType {
+        // we assume here all messages have a similar memory layout
         unsafe {
-            if self.payload.SessionSetupReq_isUsed() != 0 {
-                return &mut self.payload.__bindgen_anon_1.SessionSetupReq.Header;
-            }
-            else if self.payload.SessionSetupRes_isUsed() != 0 {
-                return &mut self.payload.__bindgen_anon_1.SessionSetupRes.Header;
-            }
+            return &mut self.payload.__bindgen_anon_1.SessionSetupReq.Header;
         }
-        panic!();
     }
 
     pub fn set_session_id(&mut self, session_id: &[u8]) {
