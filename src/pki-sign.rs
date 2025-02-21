@@ -64,8 +64,8 @@ impl PkiConfig {
 
     #[track_caller]
     pub fn get_public_key(&self) -> Result<PkiPubKey, AfbError> {
-        let cert = self.pki.get_cert(0)?;
-        let public= cert.get_public_key()?;
+        let certs = self.pki.get_cert(0)?;
+        let public = certs.get_public_key()?;
         Ok(public)
     }
 
