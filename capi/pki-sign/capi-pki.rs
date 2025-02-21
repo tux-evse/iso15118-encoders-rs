@@ -650,24 +650,25 @@ impl GnuPkiConfig {
 
     pub fn get_cert(&self, index: u32) -> Result<GnuPkiCerts, AfbError> {
         let list = unsafe {
-            let mut buffer = mem::MaybeUninit::<cglue::gnutls_x509_crt_t>::uninit();
+            let mut buffer = mem::MaybeUninit::<*mut cglue::gnutls_x509_crt_t>::uninit();
             let count = 0;
             let status = cglue::gnutls_certificate_get_x509_crt(
                 self.payload,
                 index,
-                &mut buffer.as_mut_ptr(),
+                buffer.as_mut_ptr(),
                 &count as *const _ as *mut u32,
             );
             if status < 0 {
                 return afb_error!(
                     "gpki-credentials-get-trusted",
-                    "file to retrieve cert from config index:{}, error:{}",
+                    "failed to retrieve cert from config index:{}, error:{}",
                     index,
                     gtls_perror(status)
                 );
             }
             GnuPkiCerts {
-                payload: buffer.assume_init(),
+                // only return the first certificate here
+                payload: *buffer.assume_init(),
                 count,
             }
         };
