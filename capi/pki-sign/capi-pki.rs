@@ -445,10 +445,17 @@ impl GnuPkiConfig {
         };
 
         if let Some(ca) = ca_trust {
+            let ca_cstr = match CString::new(ca) {
+                Ok(str) => str,
+                Err(err) => {
+                    return afb_error!("gpki-credentials-new", "CString::new failure: {}", err);
+                }
+            };
+
             unsafe {
                 let status = cglue::gnutls_certificate_set_x509_trust_dir(
                     payload,
-                    ca.as_ptr() as *mut raw::c_char,
+                    ca_cstr.as_ptr() as *mut raw::c_char,
                     ca_format as u32,
                 );
 
