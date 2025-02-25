@@ -696,7 +696,11 @@ impl GnuPkiConfig {
                 );
             }
             let key_private = key_private.assume_init();
-            let status = cglue::gnutls_privkey_import_x509(key_private, key_x509, 0);
+            let status = cglue::gnutls_privkey_import_x509(
+                key_private,
+                key_x509,
+                cglue::C_GNUTLS_PRIVKEY_IMPORT_AUTO_RELEASE as u32,
+            );
             if status < 0 {
                 return afb_error!(
                     "gpki-credentials-get-private",
@@ -704,7 +708,7 @@ impl GnuPkiConfig {
                     gtls_perror(status)
                 );
             }
-            cglue::gnutls_x509_privkey_deinit(key_x509);
+
             key_private
         };
 
