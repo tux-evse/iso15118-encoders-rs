@@ -1,3 +1,4 @@
+use core::mem;
 /*
  * Copyright (C) 2015-2022 IoT.bzh Company
  * Author: Fulup Ar Foll <fulup@iot.bzh>
@@ -27,7 +28,6 @@ use afbv4::utilv4::*;
 use cglue::gnutls_privkey_init;
 use std::ffi::CStr;
 use std::ffi::CString;
-use std::mem;
 use std::slice;
 use std::str;
 
@@ -332,6 +332,24 @@ impl GnuPkiCerts {
         dn
     }
 
+    pub fn get_issuer_cn(&self) -> String {
+        let mut buffer = [0 as raw::c_char; 32];
+        let mut len = buffer.len();
+        let dn = unsafe {
+            cglue::gnutls_x509_crt_get_issuer_dn_by_oid(
+                self.payload,
+                cglue::GNUTLS_OID_X520_COMMON_NAME as *const _ as *const raw::c_char,
+                0,
+                0,
+                buffer.as_mut_ptr() as *mut raw::c_void,
+                &mut len,
+            );
+            let slice = slice::from_raw_parts(&buffer as *const _ as *const u8, len);
+            str::from_utf8(slice).unwrap().to_string()
+        };
+        dn
+    }
+
     pub fn get_public_key(&self) -> Result<PkiPubKey, AfbError> {
         let mut pub_key = mem::MaybeUninit::<cglue::gnutls_pubkey_t>::uninit();
         let status = unsafe { cglue::gnutls_pubkey_init(pub_key.as_mut_ptr()) };
@@ -383,6 +401,22 @@ impl GnuPkiCerts {
         }
         Ok(buffer[0..len].to_vec())
     }
+
+    pub fn export(&self, format: GnuPkiCertFormat) -> Result<GnuPkiDatum, AfbError> {
+        let mut buffer = mem::MaybeUninit::<cglue::gnutls_datum_t>::uninit();
+        unsafe {
+            let status =
+                cglue::gnutls_x509_crt_export2(self.payload, format as u32, buffer.as_mut_ptr());
+            if status < 0 {
+                return afb_error!("gpki-cert-export", "Cannot export: {}", gtls_perror(status));
+            }
+
+            Ok(GnuPkiDatum {
+                payload: buffer.assume_init(),
+                gtls_owned: true,
+            })
+        }
+    }
 }
 
 impl Drop for GnuPkiCerts {
@@ -395,6 +429,9 @@ impl Drop for GnuPkiCerts {
 
 pub struct GnuPkiTrustList {
     payload: cglue::gnutls_x509_trust_list_t,
+    iter: cglue::gnutls_x509_trust_list_iter_t,
+    // whether the struct must be explicitely dropped
+    to_deinit: bool,
 }
 
 impl GnuPkiTrustList {
@@ -405,8 +442,34 @@ impl GnuPkiTrustList {
 
 impl Drop for GnuPkiTrustList {
     fn drop(&mut self) {
+        if self.to_deinit {
+            unsafe {
+                cglue::gnutls_x509_trust_list_deinit(self.payload, 1);
+            }
+        }
+    }
+}
+
+//
+// Implement the Iterator trait, so that we can write "for x in trust_list"
+//
+impl Iterator for GnuPkiTrustList {
+    type Item = GnuPkiCerts;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut cert = mem::MaybeUninit::<cglue::gnutls_x509_crt_t>::uninit();
         unsafe {
-            cglue::gnutls_x509_trust_list_deinit(self.payload, 1);
+            match cglue::gnutls_x509_trust_list_iter_get_ca(
+                self.payload,
+                &mut self.iter,
+                cert.as_mut_ptr(),
+            ) {
+                cglue::C_GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE => None,
+                _ => Some(GnuPkiCerts {
+                    payload: cert.assume_init(),
+                    count: 1,
+                }),
+            }
         }
     }
 }
@@ -445,10 +508,17 @@ impl GnuPkiConfig {
         };
 
         if let Some(ca) = ca_trust {
+            let ca_cstr = match CString::new(ca) {
+                Ok(str) => str,
+                Err(err) => {
+                    return afb_error!("gpki-credentials-new", "CString::new failure: {}", err);
+                }
+            };
+
             unsafe {
                 let status = cglue::gnutls_certificate_set_x509_trust_dir(
                     payload,
-                    ca.as_ptr() as *mut raw::c_char,
+                    ca_cstr.as_ptr() as *mut raw::c_char,
                     ca_format as u32,
                 );
 
@@ -626,7 +696,11 @@ impl GnuPkiConfig {
                 );
             }
             let key_private = key_private.assume_init();
-            let status = cglue::gnutls_privkey_import_x509(key_private, key_x509, 0);
+            let status = cglue::gnutls_privkey_import_x509(
+                key_private,
+                key_x509,
+                cglue::C_GNUTLS_PRIVKEY_IMPORT_AUTO_RELEASE as u32,
+            );
             if status < 0 {
                 return afb_error!(
                     "gpki-credentials-get-private",
@@ -634,7 +708,7 @@ impl GnuPkiConfig {
                     gtls_perror(status)
                 );
             }
-            cglue::gnutls_x509_privkey_deinit(key_x509);
+
             key_private
         };
 
@@ -643,24 +717,25 @@ impl GnuPkiConfig {
 
     pub fn get_cert(&self, index: u32) -> Result<GnuPkiCerts, AfbError> {
         let list = unsafe {
-            let mut buffer = mem::MaybeUninit::<cglue::gnutls_x509_crt_t>::uninit();
+            let mut buffer = mem::MaybeUninit::<*mut cglue::gnutls_x509_crt_t>::uninit();
             let count = 0;
             let status = cglue::gnutls_certificate_get_x509_crt(
                 self.payload,
                 index,
-                &mut buffer.as_mut_ptr(),
+                buffer.as_mut_ptr(),
                 &count as *const _ as *mut u32,
             );
             if status < 0 {
                 return afb_error!(
                     "gpki-credentials-get-trusted",
-                    "file to retrieve cert from config index:{}, error:{}",
+                    "failed to retrieve cert from config index:{}, error:{}",
                     index,
                     gtls_perror(status)
                 );
             }
             GnuPkiCerts {
-                payload: buffer.assume_init(),
+                // only return the first certificate here
+                payload: *buffer.assume_init(),
                 count,
             }
         };
@@ -670,14 +745,16 @@ impl GnuPkiConfig {
     pub fn get_trusted_ca(&self) -> GnuPkiTrustList {
         let mut buffer = mem::MaybeUninit::<cglue::gnutls_x509_trust_list_t>::uninit();
 
-        let list = unsafe {
+        unsafe {
             cglue::gnutls_x509_trust_list_init(buffer.as_mut_ptr(), 0);
             cglue::gnutls_certificate_get_trust_list(self.payload, buffer.as_mut_ptr());
             GnuPkiTrustList {
                 payload: buffer.assume_init(),
+                iter: core::ptr::null_mut(),
+                // internal trust_list, it must not be manually freed
+                to_deinit: false,
             }
-        };
-        list
+        }
     }
 
     pub fn check_cert(

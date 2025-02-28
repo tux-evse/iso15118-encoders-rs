@@ -64,9 +64,87 @@ impl PkiConfig {
 
     #[track_caller]
     pub fn get_public_key(&self) -> Result<PkiPubKey, AfbError> {
-        let cert = self.pki.get_cert(0)?;
-        let public= cert.get_public_key()?;
+        let certs = self.pki.get_cert(0)?;
+        let public = certs.get_public_key()?;
         Ok(public)
+    }
+
+    ///
+    /// Get the contract chain as JSON from:
+    /// - the contract cert (the has to be added before through e.g. set_cert_key)
+    /// - MO Sub CA1 and MO Sub CA 2 certificates
+    ///
+    /// Certificates are looked for in the trust list (ca_trust argument in ::new())
+    ///
+    /// The returned JSON follows this structure:
+    /// {
+    ///   "emaid": "${emaid}",
+    ///   "chain": {
+    ///     "cert": "${contract}",
+    ///     "sub_certs": [
+    ///       "${mo_sub1}",
+    ///       "${mo_sub2}"
+    ///   ]
+    /// }
+    pub fn get_contract_chain_as_json(&self) -> Result<JsoncObj, AfbError> {
+        // look for the contract certificate in the trust list
+        let contract_cert: GnuPkiCerts = self.pki.get_cert(0)?;
+        let contract_emaid = contract_cert.get_cn();
+        let contract_issuer = contract_cert.get_issuer_cn();
+
+        let mut sub_ca1_cert = None;
+        for cert in self.pki.get_trusted_ca() {
+            if cert.get_cn() == contract_issuer {
+                sub_ca1_cert = Some(cert);
+                break;
+            }
+        }
+        if sub_ca1_cert.is_none() {
+            return afb_error!(
+                "get-contract-chain-as-json",
+                "Cannot find a certificate issued by {} in the trust store",
+                contract_issuer
+            );
+        }
+
+        let sub_ca1_cert = sub_ca1_cert.unwrap();
+
+        let sub_ca1_issuer = sub_ca1_cert.get_issuer_cn();
+        let mut sub_ca2_cert = None;
+        for cert in self.pki.get_trusted_ca() {
+            if cert.get_cn() == sub_ca1_issuer {
+                sub_ca2_cert = Some(cert);
+                break;
+            }
+        }
+        if sub_ca2_cert.is_none() {
+            return afb_error!(
+                "get-contract-chain-as-json",
+                "Cannot find a certificate issued by {} in the trust store",
+                sub_ca1_issuer
+            );
+        }
+
+        let contract_cert = contract_cert.export(GnuPkiCertFormat::DER)?.b64encode()?;
+
+        let sub1 = sub_ca1_cert.export(GnuPkiCertFormat::DER)?.b64encode()?;
+        let sub2 = sub_ca2_cert
+            .unwrap()
+            .export(GnuPkiCertFormat::DER)?
+            .b64encode()?;
+
+        let sub_certs = JsoncObj::array();
+        sub_certs.append(&sub1.to_string()?)?;
+        sub_certs.append(&sub2.to_string()?)?;
+        let chain_json = JsoncObj::new();
+        chain_json.add("cert", &contract_cert.to_string()?)?;
+        chain_json.add("sub_certs", sub_certs)?;
+
+        let json = JsoncObj::new();
+        json.add("emaid", &contract_emaid)?;
+        json.add("chain", chain_json)?;
+
+        Ok(json)
     }
 
     #[track_caller]

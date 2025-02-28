@@ -33,10 +33,10 @@ mod iso2_encoder;
 mod din_encoder;
 
 pub mod prelude {
-    pub use afbv4::prelude::*;
-    pub use crate::capi::exi_encoder::*;
-    pub use crate::capi::v2g_encoder::*;
-    pub use crate::capi::iso2_encoder::*;
     pub use crate::capi::din_encoder::*;
+    pub use crate::capi::exi_encoder::*;
+    pub use crate::capi::iso2_encoder::*;
     pub use crate::capi::pki_sign::*;
+    pub use crate::capi::v2g_encoder::*;
+    pub use afbv4::prelude::*;
 }
