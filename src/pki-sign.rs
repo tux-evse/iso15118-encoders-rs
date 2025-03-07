@@ -34,14 +34,22 @@ pub trait PkiSignature {
 
 pub struct PkiConfig {
     pki: GnuPkiConfig,
+    mo_sub_ca_2_cn: Option<String>,
 }
 
 impl PkiConfig {
-    pub fn new(ca_trust: Option<&str>, ca_format: &str) -> Result<&'static Self, AfbError> {
+    pub fn new(
+        ca_trust: Option<&str>,
+        ca_format: &str,
+        mo_sub_ca_2_cn: Option<String>,
+    ) -> Result<&'static Self, AfbError> {
         let format = GnuPkiCertFormat::from_label(ca_format)?;
         let pki = GnuPkiConfig::new(ca_trust, format)?;
 
-        let handle = Box::new(PkiConfig { pki });
+        let handle = Box::new(PkiConfig {
+            pki,
+            mo_sub_ca_2_cn,
+        });
         Ok(Box::leak(handle))
     }
 
@@ -67,6 +75,25 @@ impl PkiConfig {
         let certs = self.pki.get_cert(0)?;
         let public = certs.get_public_key()?;
         Ok(public)
+    }
+
+    pub fn get_mo_sub_ca_2_public_key(&self) -> Result<PkiPubKey, AfbError> {
+        if self.mo_sub_ca_2_cn.is_none() {
+            return afb_error!(
+                "pki-config::get_mo_sub_ca_2_public_key",
+                "No 'mo_sub_ca_2_cn' defined"
+            );
+        }
+        for cert in self.pki.get_trusted_ca() {
+            if &cert.get_cn() == self.mo_sub_ca_2_cn.as_ref().unwrap() {
+                return Ok(cert.get_public_key()?);
+            }
+        }
+        return afb_error!(
+            "pki-config::get_mo_sub_ca_2_public_key",
+            "No certificate found with subject CN = {}",
+            self.mo_sub_ca_2_cn.as_ref().unwrap()
+        );
     }
 
     ///
@@ -162,7 +189,10 @@ impl PkiConfig {
                 return afb_error!("pki-config-from-jsonc", "ca_trust when define should > 0");
             }
         }
-        let pki = PkiConfig::new(ca_trust, cert_format)?;
+
+        let mo_sub_ca_2_cn = jtls.optional::<String>("mo_sub_ca_2_cn")?;
+
+        let pki = PkiConfig::new(ca_trust, cert_format, mo_sub_ca_2_cn)?;
 
         let cert_path = jtls.optional::<&str>("certs")?;
         if let Some(path) = cert_path {
