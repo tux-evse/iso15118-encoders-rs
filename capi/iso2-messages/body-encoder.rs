@@ -193,6 +193,12 @@ impl PkiSignature for ExiMessageDoc {
             MessageTagId::MeteringReceiptReq => unsafe {
                 cglue::iso2_sign_check_metering_receipt_req(&self.payload, pub_key.get_payload())
             },
+            MessageTagId::ParamDiscoveryRes => unsafe {
+                cglue::iso2_sign_check_charge_parameter_discovery_res_sales_tariff(
+                    &self.payload,
+                    pub_key.get_payload(),
+                )
+            },
             others => {
                 return afb_error!(
                     "exi-message-check-signature",
